@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>wertzui</Authors>
+    <PackageProjectUrl>https://github.com/wertzui/HAL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/wertzui/HAL</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\Repos\wertzui\HAL\src\HAL\HAL.Common\HAL.Common.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>C:\Repos\wertzui\HAL\src\HAL\HAL.Common\HAL.Common.xml</DocumentationFile>
+  </PropertyGroup>
+
+</Project>
