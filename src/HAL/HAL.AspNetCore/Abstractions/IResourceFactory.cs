@@ -25,7 +25,7 @@ namespace HAL.AspNetCore.Abstractions
 
         /// <summary>
         /// Creates a resource for a get endpoint.
-        /// Call this during a get request in your controller as it will automatically add a "_self" link.
+        /// Call this during a get request in your controller as it will automatically add a "self" link.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="state">The state.</param>
@@ -34,7 +34,7 @@ namespace HAL.AspNetCore.Abstractions
 
         /// <summary>
         /// Creates a resource for a list endpoint.
-        /// Call this during a get all request in your controller as it will automatically add a "_self" link.
+        /// Call this during a get all request in your controller as it will automatically add a "self" link.
         /// This only works if your get endpoint to get the full resources looks like this: "Get(TId id)".
         /// </summary>
         /// <typeparam name="T"></typeparam>

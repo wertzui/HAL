@@ -8,7 +8,7 @@ namespace HAL.AspNetCore.Abstractions
     public interface ILinkFactory
     {
         /// <summary>
-        /// Adds the "_self" link to the given resource.
+        /// Adds the "self" link to the given resource.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>

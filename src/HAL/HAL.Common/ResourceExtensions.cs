@@ -131,7 +131,7 @@ namespace HAL.Common
         }
 
         /// <summary>
-        /// Adds a "_self" link.
+        /// Adds a "self" link.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>
@@ -140,7 +140,7 @@ namespace HAL.Common
         public static TResource AddSelfLink<TResource>(this TResource resource, string href)
             where TResource : IResource
         {
-            var link = new Link { Name = "_self", Href = href };
+            var link = new Link { Name = Constants.SelfLinkName, Href = href };
 
             return resource.AddLink(link);
         }

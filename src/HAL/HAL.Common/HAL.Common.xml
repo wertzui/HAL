@@ -116,6 +116,11 @@
             The name of the links property: "_links".
             </summary>
         </member>
+        <member name="F:HAL.Common.Constants.SelfLinkName">
+            <summary>
+            The name of the "self" link which points to the resource where it is added as a link.
+            </summary>
+        </member>
         <member name="T:HAL.Common.Converters.ResourceJsonConverter">
             <summary>
             A converter that can read and write <see cref="T:HAL.Common.Resource"/>.
@@ -307,7 +312,7 @@
         </member>
         <member name="M:HAL.Common.ResourceExtensions.AddSelfLink``1(``0,System.String)">
             <summary>
-            Adds a "_self" link.
+            Adds a "self" link.
             </summary>
             <typeparam name="TResource">The type of the resource.</typeparam>
             <param name="resource">The resource.</param>

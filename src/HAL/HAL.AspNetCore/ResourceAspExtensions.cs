@@ -9,7 +9,7 @@ namespace HAL.Common
     public static class ResourceAspExtensions
     {
         /// <summary>
-        /// Adds the "_self" link to the resource.
+        /// Adds the "self" link to the resource.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>

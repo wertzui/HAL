@@ -38,6 +38,6 @@ namespace HAL.AspNetCore
                 resources,
                 idAccessor,
                 r => Create(r)
-                    .AddLink("_self", _linkFactory.Create("_self", "Get", null, new { id = idAccessor(r) })));
+                    .AddLink(Constants.SelfLinkName, _linkFactory.Create(Constants.SelfLinkName, "Get", null, new { id = idAccessor(r) })));
     }
 }
