@@ -1,8 +1,11 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
 using HAL.Common.Abstractions;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HAL.AspNetCore
 {
@@ -10,14 +13,22 @@ namespace HAL.AspNetCore
     public class ResourceFactory : IResourceFactory
     {
         private readonly ILinkFactory _linkFactory;
+        private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ResourceFactory"/> class.
+        /// Initializes a new instance of the <see cref="ResourceFactory" /> class.
         /// </summary>
         /// <param name="linkFactory">The link factory.</param>
-        public ResourceFactory(ILinkFactory linkFactory)
+        /// <param name="apiExplorer">The API explorer.</param>
+        /// <exception cref="ArgumentNullException">
+        /// linkFactory
+        /// or
+        /// apiExplorer
+        /// </exception>
+        public ResourceFactory(ILinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
-            _linkFactory = linkFactory;
+            _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
+            _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
         }
 
         /// <inheritdoc/>
@@ -32,12 +43,20 @@ namespace HAL.AspNetCore
             .AddSelfLink(_linkFactory);
 
         /// <inheritdoc/>
-        public IResource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor) =>
+        public IResource CreateForHomeEndpoint() =>
+            Create()
+            .AddLink(_linkFactory.CreateAllLinksWithoutParameters(), link => link)
+            .AddSelfLink(_linkFactory);
+
+        /// <inheritdoc/>
+        public IResource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get") =>
             Create()
             .AddEmbedded(
                 resources,
                 idAccessor,
                 r => Create(r)
-                    .AddLink(Constants.SelfLinkName, _linkFactory.Create(Constants.SelfLinkName, "Get", null, new { id = idAccessor(r) })));
+                    .AddLink(Constants.SelfLinkName, _linkFactory.Create(Constants.SelfLinkName, StripAsyncSuffix(getMethod), null, new { id = idAccessor(r) })));
+
+        private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
     }
 }

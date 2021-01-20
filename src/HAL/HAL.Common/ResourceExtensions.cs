@@ -113,12 +113,11 @@ namespace HAL.Common
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <typeparam name="TSource">The type of the source.</typeparam>
-        /// <typeparam name="TKey">The type of the key.</typeparam>
         /// <param name="resource">The resource.</param>
         /// <param name="source">The source collection containing the items that will be converted to links.</param>
         /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
         /// <returns></returns>
-        public static TResource AddLink<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, ILink> linkSelector)
+        public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, ILink> linkSelector)
             where TResource : IResource
         {
             foreach (var item in source)

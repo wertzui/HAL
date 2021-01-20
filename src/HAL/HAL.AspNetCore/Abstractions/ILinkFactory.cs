@@ -1,4 +1,5 @@
 ﻿using HAL.Common.Abstractions;
+using System.Collections.Generic;
 
 namespace HAL.AspNetCore.Abstractions
 {
@@ -78,5 +79,11 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="href">The href.</param>
         /// <returns></returns>
         ILink Create(string name, string title, string href);
+
+        /// <summary>
+        /// Creates all possible links to all controller actions that do not have any parameters in your application.
+        /// </summary>
+        /// <returns></returns>
+        ICollection<ILink> CreateAllLinksWithoutParameters();
     }
 }

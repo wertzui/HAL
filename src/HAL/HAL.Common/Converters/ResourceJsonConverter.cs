@@ -8,13 +8,21 @@ using System.Text.Json.Serialization;
 namespace HAL.Common.Converters
 {
     /// <summary>
-    /// A converter that can read and write <see cref="Resource"/>.
+    /// A converter that can read and write <see cref="IResource"/>.
     /// </summary>
-    /// <seealso cref="JsonConverter{Resource}" />
-    public class ResourceJsonConverter : JsonConverter<Resource>
+    /// <seealso cref="JsonConverter{IResource}" />
+    public class ResourceJsonConverter : JsonConverter<IResource>
     {
         /// <inheritdoc/>
-        public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return
+                typeToConvert == typeof(IResource) ||
+                typeToConvert == typeof(Resource);
+        }
+
+        /// <inheritdoc/>
+        public override IResource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
             {
@@ -62,14 +70,14 @@ namespace HAL.Common.Converters
         }
 
         /// <inheritdoc/>
-        public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, IResource value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
 
             var type = value.GetType();
             if (type.IsGenericType)
             {
-                var stateProperty = type.GetProperty(nameof(Resource<object>.State));
+                var stateProperty = type.GetProperty(nameof(IResource<object>.State));
                 var state = stateProperty.GetValue(value);
                 WriteState(writer, state, options);
             }

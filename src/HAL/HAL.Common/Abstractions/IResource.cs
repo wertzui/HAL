@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using HAL.Common.Converters;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Abstractions
@@ -9,6 +10,7 @@ namespace HAL.Common.Abstractions
     ///   <para>   (1)  "_links": contains links to other resources.</para>
     ///   <para>   (2)  "_embedded": contains embedded resources.</para>
     /// </summary>
+    [JsonInterfaceConverter(typeof(ResourceJsonConverter))]
     public interface IResource
     {
         /// <summary>

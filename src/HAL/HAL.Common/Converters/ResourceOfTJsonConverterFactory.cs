@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HAL.Common.Abstractions;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,7 +18,7 @@ namespace HAL.Common.Converters
                 return false;
 
             var generic = typeToConvert.GetGenericTypeDefinition();
-            if (generic == typeof(Resource<>))
+            if (generic == typeof(IResource<>) || generic == typeof(Resource<>))
                 return true;
 
             return false;

@@ -15,6 +15,14 @@ namespace HAL.Common.Converters
         where T : new()
     {
         /// <inheritdoc/>
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return
+                typeToConvert == typeof(IResource) ||
+                typeToConvert == typeof(Resource);
+        }
+
+        /// <inheritdoc/>
         public override Resource<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)

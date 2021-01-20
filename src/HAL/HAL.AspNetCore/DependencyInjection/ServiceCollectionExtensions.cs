@@ -12,22 +12,27 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds all services needed for HAL, so you can inject <see cref="ILinkFactory"/> and <see cref="IResourceFactory"/>.
+        /// Adds all services needed for HAL, so you can inject <see cref="ILinkFactory" /> and <see cref="IResourceFactory" />.
         /// </summary>
-        /// <param name="services">The services.</param>
+        /// <param name="builder">The MVC builder.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">services</exception>
-        public static IServiceCollection AddHAL(this IServiceCollection services)
+        public static IMvcBuilder AddHAL(this IMvcBuilder builder)
         {
-            if (services is null)
-                throw new ArgumentNullException(nameof(services));
+            if (builder is null)
+                throw new ArgumentNullException(nameof(builder));
 
+            var services = builder.Services;
             services.AddScoped<ILinkFactory, LinkFactory>();
             services.AddScoped<IResourceFactory, ResourceFactory>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddSingleton<IUrlHelperFactory, UrlHelperFactory>();
 
-            return services;
+            // This is needed for Action Link generation.
+            // See https://github.com/dotnet/aspnetcore/issues/14606
+            builder.AddMvcOptions(o => o.SuppressAsyncSuffixInActionNames = true);
+
+            return builder;
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿namespace HAL.Common.Abstractions
+﻿using HAL.Common.Converters;
+using System.Text.Json.Serialization;
+
+namespace HAL.Common.Abstractions
 {
     /// <summary>
     ///   <para>   A Resource Object represents a resource.</para>
@@ -7,6 +10,7 @@
     ///   <para>   (2)  "_embedded": contains embedded resources.</para>
     ///   <para>   In addition this resource also has a state.</para>
     /// </summary>
+    [JsonInterfaceConverter(typeof(ResourceOfTJsonConverterFactory))]
     public interface IResource<TState> : IResource
     {
         /// <summary>

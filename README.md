@@ -16,11 +16,11 @@ public void ConfigureServices(IServiceCollection services)
 {
     services
         .AddControllers() // or .AddMvc()
-        .AddJsonOptions(o =>
+        .AddHal()
+        .AddJsonOptions(o => // not neccessary, but creates a much nicer output
         {
-            o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault; // not neccessary, but creates a much nicer output
+            o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault; 
         });
-    services.AddHAL();
 }
  ```
 
