@@ -1,4 +1,4 @@
-﻿using HAL.Common.Abstractions;
+﻿using HAL.Common;
 using System;
 using System.Collections.Generic;
 
@@ -13,7 +13,7 @@ namespace HAL.AspNetCore.Abstractions
         /// Creates an empty resource.
         /// </summary>
         /// <returns></returns>
-        IResource Create();
+        Resource Create();
 
         /// <summary>
         /// Creates a resource with the specified state.
@@ -21,7 +21,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <typeparam name="T"></typeparam>
         /// <param name="state">The state.</param>
         /// <returns></returns>
-        IResource<T> Create<T>(T state);
+        Resource<T> Create<T>(T state);
 
         /// <summary>
         /// Creates a resource for a get endpoint.
@@ -30,13 +30,13 @@ namespace HAL.AspNetCore.Abstractions
         /// <typeparam name="T"></typeparam>
         /// <param name="state">The state.</param>
         /// <returns></returns>
-        IResource<T> CreateForGetEndpoint<T>(T state);
+        Resource<T> CreateForGetEndpoint<T>(T state);
 
         /// <summary>
         /// Creates a resource for the home endpoint which will contain all possible links to all controller actions that do not have any parameters in your application.
         /// </summary>
         /// <returns></returns>
-        IResource CreateForHomeEndpoint();
+        Resource CreateForHomeEndpoint();
 
         /// <summary>
         /// Creates a resource for a list endpoint.
@@ -49,6 +49,6 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="idAccessor">The identifier accessor.</param>
         /// <param name="getMethod">The name of the get method. Default is "Get".</param>
         /// <returns></returns>
-        IResource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get");
+        Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get");
     }
 }

@@ -1,4 +1,4 @@
-﻿using HAL.Common.Abstractions;
+﻿using HAL.Common;
 using System.Collections.Generic;
 
 namespace HAL.AspNetCore.Abstractions
@@ -15,7 +15,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="resource">The resource.</param>
         /// <returns></returns>
         TResource AddSelfLinkTo<TResource>(TResource resource)
-            where TResource : IResource;
+            where TResource : Resource;
 
         /// <summary>
         /// Creates a link to the specified action in the specified controller.
@@ -27,14 +27,14 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        ILink Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL.
         /// </summary>
         /// <param name="href">The href.</param>
         /// <returns></returns>
-        ILink Create(string href);
+        Link Create(string href);
 
         /// <summary>
         /// Creates a link to the specified action in the specified controller with the given name.
@@ -47,7 +47,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        ILink Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL with the given name.
@@ -55,7 +55,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="name">The name.</param>
         /// <param name="href">The href.</param>
         /// <returns></returns>
-        ILink Create(string name, string href);
+        Link Create(string name, string href);
 
         /// <summary>
         /// Creates a link to the specified action in the specified controller with the given name and title.
@@ -69,7 +69,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        ILink Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL with the given name and title.
@@ -78,12 +78,12 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="title">The title.</param>
         /// <param name="href">The href.</param>
         /// <returns></returns>
-        ILink Create(string name, string title, string href);
+        Link Create(string name, string title, string href);
 
         /// <summary>
         /// Creates all possible links to all controller actions that do not have any parameters in your application.
         /// </summary>
         /// <returns></returns>
-        ICollection<ILink> CreateAllLinksWithoutParameters();
+        ICollection<Link> CreateAllLinksWithoutParameters();
     }
 }

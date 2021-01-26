@@ -1,6 +1,6 @@
-﻿using HAL.Common.Abstractions;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,13 +12,12 @@ namespace HAL.Common.Converters
     /// <typeparam name="T">The type of the state of the resource.</typeparam>
     /// <seealso cref="JsonConverter{Resource{T}}" />
     public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
-        where T : new()
     {
         /// <inheritdoc/>
         public override bool CanConvert(Type typeToConvert)
         {
             return
-                typeToConvert == typeof(IResource) ||
+                typeToConvert == typeof(Resource) ||
                 typeToConvert == typeof(Resource);
         }
 
@@ -30,19 +29,25 @@ namespace HAL.Common.Converters
                 throw new JsonException();
             }
 
-            var result = new Resource<T>();
-            var state = new T();
-            dynamic dynamicState = state;
-            var hasState = false;
+            Resource<T> resource;
+            IDictionary<string, ICollection<Link>> links = default;
+            IDictionary<string, ICollection<Resource>> embedded = default;
+            T state = default;
+            var stateType = typeof(T);
 
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
-                    if (hasState)
-                        result.State = state;
+                    resource = new Resource<T> { State = state };
 
-                    return result;
+                    if (embedded is not null)
+                        resource.Embedded = embedded;
+
+                    if (links is not null)
+                        resource.Links = links;
+
+                    return resource;
                 }
 
                 if (reader.TokenType != JsonTokenType.PropertyName)
@@ -53,17 +58,27 @@ namespace HAL.Common.Converters
                 var propertyName = reader.GetString();
                 if (propertyName == Constants.EmbeddedPropertyName)
                 {
-                    result.Embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<IResource>>>(ref reader, options);
+                    embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
                 }
                 else if (propertyName == Constants.LinksPropertyName)
                 {
-                    result.Links = JsonSerializer.Deserialize<IDictionary<string, ICollection<ILink>>>(ref reader, options);
+                    links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
                 }
                 else
                 {
-                    hasState = true;
-                    Type propertyType = dynamicState[propertyName].GetType();
-                    dynamicState[propertyName] = JsonSerializer.Deserialize(ref reader, propertyType, options);
+                    var property = stateType.GetProperty(propertyName);
+                    if(property == null && options.PropertyNameCaseInsensitive)
+                    {
+                        property = stateType.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    }
+
+                    if(property != null)
+                    {
+                        if(state is null)
+                            state = Activator.CreateInstance<T>();
+
+                        property.SetValue(state, JsonSerializer.Deserialize(ref reader, property.PropertyType, options));
+                    }
                 }
             }
 

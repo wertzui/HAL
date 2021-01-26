@@ -1,19 +1,16 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using HAL.Common.Abstractions;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Controllers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace HAL.AspNetCore
 {
     /// <inheritdoc/>
     public class ResourceFactory : IResourceFactory
     {
-        private readonly ILinkFactory _linkFactory;
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
+        private readonly LinkFactory _linkFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceFactory" /> class.
@@ -25,31 +22,31 @@ namespace HAL.AspNetCore
         /// or
         /// apiExplorer
         /// </exception>
-        public ResourceFactory(ILinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
+        public ResourceFactory(LinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
             _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
             _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
         }
 
         /// <inheritdoc/>
-        public IResource Create() => new Resource();
+        public Resource Create() => new Resource();
 
         /// <inheritdoc/>
-        public IResource<T> Create<T>(T state) => new Resource<T> { State = state };
+        public Resource<T> Create<T>(T state) => new Resource<T> { State = state };
 
         /// <inheritdoc/>
-        public IResource<T> CreateForGetEndpoint<T>(T state) =>
+        public Resource<T> CreateForGetEndpoint<T>(T state) =>
             Create(state)
             .AddSelfLink(_linkFactory);
 
         /// <inheritdoc/>
-        public IResource CreateForHomeEndpoint() =>
+        public Resource CreateForHomeEndpoint() =>
             Create()
             .AddLink(_linkFactory.CreateAllLinksWithoutParameters(), link => link)
             .AddSelfLink(_linkFactory);
 
         /// <inheritdoc/>
-        public IResource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get") =>
+        public Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get") =>
             Create()
             .AddEmbedded(
                 resources,

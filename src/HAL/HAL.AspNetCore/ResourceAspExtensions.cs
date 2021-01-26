@@ -1,10 +1,9 @@
 ﻿using HAL.AspNetCore.Abstractions;
-using HAL.Common.Abstractions;
 
 namespace HAL.Common
 {
     /// <summary>
-    /// Contains extension methods for <see cref="IResource"/> which also utilize services from ASP.Net Core.
+    /// Contains extension methods for <see cref="Resource"/> which also utilize services from ASP.Net Core.
     /// </summary>
     public static class ResourceAspExtensions
     {
@@ -16,7 +15,7 @@ namespace HAL.Common
         /// <param name="linkFactory">The link factory.</param>
         /// <returns></returns>
         public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory)
-            where TResource : IResource
+            where TResource : Resource
         {
             return linkFactory.AddSelfLinkTo(resource);
         }

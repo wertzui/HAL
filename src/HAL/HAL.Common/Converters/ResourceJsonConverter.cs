@@ -1,47 +1,48 @@
-﻿using HAL.Common.Abstractions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Converters
 {
     /// <summary>
-    /// A converter that can read and write <see cref="IResource"/>.
+    /// A converter that can read and write <see cref="Resource"/>.
     /// </summary>
-    /// <seealso cref="JsonConverter{IResource}" />
-    public class ResourceJsonConverter : JsonConverter<IResource>
+    /// <seealso cref="JsonConverter{Resource}" />
+    public class ResourceJsonConverter : JsonConverter<Resource>
     {
         /// <inheritdoc/>
-        public override bool CanConvert(Type typeToConvert)
-        {
-            return
-                typeToConvert == typeof(IResource) ||
-                typeToConvert == typeof(Resource);
-        }
-
-        /// <inheritdoc/>
-        public override IResource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
             {
                 throw new JsonException();
             }
 
-            var result = new Resource<dynamic>();
+            Resource resource;
+            IDictionary<string, ICollection<Link>> links = default;
+            IDictionary<string, ICollection<Resource>> embedded = default;
             var state = new ExpandoObject();
-            dynamic dynamicState = state;
-            var hasState = false;
+            JsonSerializerOptions optionsWithDynamicConverter = default;
 
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
-                    if (hasState)
-                        result.State = state;
+                    if (state.Any())
+                        resource = new Resource<object> { State = state };
+                    else
+                        resource = new Resource();
 
-                    return result;
+                    if (embedded is not null)
+                        resource.Embedded = embedded;
+
+                    if (links is not null)
+                        resource.Links = links;
+
+                    return resource;
                 }
 
                 if (reader.TokenType != JsonTokenType.PropertyName)
@@ -52,32 +53,40 @@ namespace HAL.Common.Converters
                 var propertyName = reader.GetString();
                 if (propertyName == Constants.EmbeddedPropertyName)
                 {
-                    result.Embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<IResource>>>(ref reader, options);
+                    embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
                 }
                 else if (propertyName == Constants.LinksPropertyName)
                 {
-                    result.Links = JsonSerializer.Deserialize<IDictionary<string, ICollection<ILink>>>(ref reader, options);
+                    links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
                 }
                 else
                 {
-                    hasState = true;
-                    Type propertyType = dynamicState[propertyName].GetType();
-                    dynamicState[propertyName] = JsonSerializer.Deserialize(ref reader, propertyType, options);
+                    if (optionsWithDynamicConverter is null)
+                        optionsWithDynamicConverter = AddDynamicConverter(options);
+
+                    state.TryAdd(propertyName, (object)JsonSerializer.Deserialize<dynamic>(ref reader, optionsWithDynamicConverter));
                 }
             }
 
             throw new JsonException();
         }
 
+        private static JsonSerializerOptions AddDynamicConverter(JsonSerializerOptions options)
+        {
+            var newOptions = new JsonSerializerOptions(options);
+            newOptions.Converters.Add(new DynamicJsonConverter());
+            return newOptions;
+        }
+
         /// <inheritdoc/>
-        public override void Write(Utf8JsonWriter writer, IResource value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
 
             var type = value.GetType();
             if (type.IsGenericType)
             {
-                var stateProperty = type.GetProperty(nameof(IResource<object>.State));
+                var stateProperty = type.GetProperty(nameof(Resource<object>.State));
                 var state = stateProperty.GetValue(value);
                 WriteState(writer, state, options);
             }

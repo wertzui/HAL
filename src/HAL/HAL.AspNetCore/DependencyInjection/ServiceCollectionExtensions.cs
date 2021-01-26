@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds all services needed for HAL, so you can inject <see cref="ILinkFactory" /> and <see cref="IResourceFactory" />.
+        /// Adds all services needed for HAL, so you can inject <see cref="LinkFactory" /> and <see cref="ResourceFactory" />.
         /// </summary>
         /// <param name="builder">The MVC builder.</param>
         /// <returns></returns>
@@ -23,8 +23,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(builder));
 
             var services = builder.Services;
-            services.AddScoped<ILinkFactory, LinkFactory>();
-            services.AddScoped<IResourceFactory, ResourceFactory>();
+            services.AddScoped<LinkFactory, LinkFactory>();
+            services.AddScoped<ResourceFactory, ResourceFactory>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddSingleton<IUrlHelperFactory, UrlHelperFactory>();
 

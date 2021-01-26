@@ -1,11 +1,10 @@
-﻿using HAL.Common.Abstractions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace HAL.Common
 {
     /// <summary>
-    /// Contains extension methods for <see cref="IResource"/>
+    /// Contains extension methods for <see cref="Resource"/>
     /// </summary>
     public static class ResourceExtensions
     {
@@ -18,7 +17,7 @@ namespace HAL.Common
         /// <param name="embedded">The embedded resource to add.</param>
         /// <returns></returns>
         public static TResource AddEmbedded<TResource>(this TResource resource, string key, TResource embedded)
-            where TResource : IResource
+            where TResource : Resource
         {
             var collection = GetOrCreateEmbeddedCollection(resource, key);
 
@@ -39,7 +38,7 @@ namespace HAL.Common
         /// <param name="embeddedSelector">A function to convert each state of the source collection into a resource.</param>
         /// <returns></returns>
         public static TResource AddEmbedded<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TResource> embeddedSelector)
-            where TResource : IResource
+            where TResource : Resource
         {
             foreach (var item in source)
             {
@@ -58,8 +57,8 @@ namespace HAL.Common
         /// <param name="resource">The resource.</param>
         /// <param name="link">The link to add.</param>
         /// <returns></returns>
-        public static TResource AddLink<TResource>(this TResource resource, ILink link)
-            where TResource : IResource
+        public static TResource AddLink<TResource>(this TResource resource, Link link)
+            where TResource : Resource
         {
             var key = link.Name;
 
@@ -74,8 +73,8 @@ namespace HAL.Common
         /// <param name="key">The key to add the link to.</param>
         /// <param name="link">The link to add.</param>
         /// <returns></returns>
-        public static TResource AddLink<TResource>(this TResource resource, string key, ILink link)
-            where TResource : IResource
+        public static TResource AddLink<TResource>(this TResource resource, string key, Link link)
+            where TResource : Resource
         {
             var collection = GetOrCreateLinkCollection(resource, key);
 
@@ -95,8 +94,8 @@ namespace HAL.Common
         /// <param name="keySelector">A function to select the key of link.</param>
         /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
         /// <returns></returns>
-        public static TResource AddLink<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, ILink> linkSelector)
-            where TResource : IResource
+        public static TResource AddLink<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, Link> linkSelector)
+            where TResource : Resource
         {
             foreach (var item in source)
             {
@@ -117,8 +116,8 @@ namespace HAL.Common
         /// <param name="source">The source collection containing the items that will be converted to links.</param>
         /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
         /// <returns></returns>
-        public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, ILink> linkSelector)
-            where TResource : IResource
+        public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, Link> linkSelector)
+            where TResource : Resource
         {
             foreach (var item in source)
             {
@@ -137,35 +136,35 @@ namespace HAL.Common
         /// <param name="href">The URL to the resource itself.</param>
         /// <returns></returns>
         public static TResource AddSelfLink<TResource>(this TResource resource, string href)
-            where TResource : IResource
+            where TResource : Resource
         {
             var link = new Link { Name = Constants.SelfLinkName, Href = href };
 
             return resource.AddLink(link);
         }
 
-        private static ICollection<IResource> GetOrCreateEmbeddedCollection(IResource resource, string key)
+        private static ICollection<Resource> GetOrCreateEmbeddedCollection(Resource resource, string key)
         {
             if (resource.Embedded is null)
-                resource.Embedded = new Dictionary<string, ICollection<IResource>>();
+                resource.Embedded = new Dictionary<string, ICollection<Resource>>();
 
             if (!resource.Embedded.TryGetValue(key, out var collection))
             {
-                collection = new List<IResource>();
+                collection = new List<Resource>();
                 resource.Embedded[key] = collection;
             }
 
             return collection;
         }
 
-        private static ICollection<ILink> GetOrCreateLinkCollection(IResource resource, string key)
+        private static ICollection<Link> GetOrCreateLinkCollection(Resource resource, string key)
         {
             if (resource.Links is null)
-                resource.Links = new Dictionary<string, ICollection<ILink>>();
+                resource.Links = new Dictionary<string, ICollection<Link>>();
 
             if (!resource.Links.TryGetValue(key, out var collection))
             {
-                collection = new List<ILink>();
+                collection = new List<Link>();
                 resource.Links[key] = collection;
             }
 

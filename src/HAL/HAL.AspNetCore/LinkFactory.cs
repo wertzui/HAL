@@ -1,6 +1,5 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using HAL.Common.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -14,8 +13,8 @@ namespace HAL.AspNetCore
     /// <inheritdoc/>
     public class LinkFactory : ILinkFactory
     {
-        private readonly IUrlHelper _urlHelper;
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
+        private readonly IUrlHelper _urlHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LinkFactory" /> class.
@@ -48,34 +47,34 @@ namespace HAL.AspNetCore
 
         /// <inheritdoc/>
         public TResource AddSelfLinkTo<TResource>(TResource resource)
-            where TResource : IResource
+            where TResource : Resource
         {
             return resource.AddSelfLink(_urlHelper.ActionLink());
         }
 
         /// <inheritdoc/>
-        public ILink Create(string href) => new Link { Href = href };
+        public Link Create(string href) => new Link { Href = href };
 
         /// <inheritdoc/>
-        public ILink Create(string name, string href) => new Link { Name = name, Href = href };
+        public Link Create(string name, string href) => new Link { Name = name, Href = href };
 
         /// <inheritdoc/>
-        public ILink Create(string name, string title, string href) => new Link { Name = name, Title = title, Href = href };
+        public Link Create(string name, string title, string href) => new Link { Name = name, Title = title, Href = href };
 
         /// <inheritdoc/>
-        public ILink Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
             => Create(_urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
 
         /// <inheritdoc/>
-        public ILink Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
             => Create(name, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
 
         /// <inheritdoc/>
-        public ILink Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
             => Create(name, title, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
 
         /// <inheritdoc/>
-        public ICollection<ILink> CreateAllLinksWithoutParameters() =>
+        public ICollection<Link> CreateAllLinksWithoutParameters() =>
             _apiExplorer.ApiDescriptionGroups.Items[0].Items
                     .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
                     .Where(descriptor =>
