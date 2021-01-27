@@ -23,8 +23,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(builder));
 
             var services = builder.Services;
-            services.AddScoped<LinkFactory, LinkFactory>();
-            services.AddScoped<ResourceFactory, ResourceFactory>();
+            services.AddScoped<ILinkFactory, LinkFactory>();
+            services.AddScoped<IResourceFactory, ResourceFactory>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddSingleton<IUrlHelperFactory, UrlHelperFactory>();
 

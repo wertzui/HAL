@@ -18,6 +18,16 @@ namespace HAL.AspNetCore.Abstractions
             where TResource : Resource;
 
         /// <summary>
+        /// Adds a curie link that uses swagger UI under /swagger/index.html#/{rel} to give information about relations.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <param name="name">The name of the curie. You should prefix all your self defined rels in other links with name: so the user knows where to get information on that relation.</param>
+        /// <returns></returns>
+        TResource AddSwaggerUiCurieLinkTo<TResource>(TResource resource, string name)
+            where TResource : Resource;
+
+        /// <summary>
         /// Creates a link to the specified action in the specified controller.
         /// </summary>
         /// <param name="action">The action.</param>
@@ -85,5 +95,13 @@ namespace HAL.AspNetCore.Abstractions
         /// </summary>
         /// <returns></returns>
         ICollection<Link> CreateAllLinksWithoutParameters();
+
+        /// <summary>
+        /// Creates all possible links to all controller actions.
+        /// If they have parameters these will appear as templated parameters in the link.
+        /// </summary>
+        /// <param name="prefix">The prefix to use in all generated rels. This should match the name of a curie.</param>
+        /// <returns></returns>
+        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null);
     }
 }

@@ -19,5 +19,10 @@
         /// The name of the "self" link which points to the resource where it is added as a link.
         /// </summary>
         public const string SelfLinkName = "self";
+
+        /// <summary>
+        /// The rel for curies links.
+        /// </summary>
+        public const string CuriesLinkRel = "curies";
     }
 }

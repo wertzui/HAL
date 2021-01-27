@@ -34,9 +34,21 @@ namespace HAL.AspNetCore.Abstractions
 
         /// <summary>
         /// Creates a resource for the home endpoint which will contain all possible links to all controller actions that do not have any parameters in your application.
+        /// Each controller will become one relation with all the methods as links inside of that relation.
+        /// It will also add a curie to point to a documentation about the relations.
         /// </summary>
         /// <returns></returns>
-        Resource CreateForHomeEndpoint();
+        Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate);
+
+        /// <summary>
+        /// Creates a resource for the home endpoint which will contain all possible links to all controller actions that do not have any parameters in your application.
+        /// Each controller will become one relation with all the methods as links inside of that relation.
+        /// It will also add a curie to point to a documentation about the relations based on the default Swagger UI endpoint at /swagger/index.html.
+        /// For this to work, you must enable deep linking in your call to app.UseSwaggerUI(...).
+        /// </summary>
+        /// <param name="curieName">Name of the curie.</param>
+        /// <returns></returns>
+        Resource CreateForHomeEndpointWithSwaggerUi(string curieName);
 
         /// <summary>
         /// Creates a resource for a list endpoint.

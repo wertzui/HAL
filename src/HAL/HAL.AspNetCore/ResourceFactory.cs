@@ -10,7 +10,7 @@ namespace HAL.AspNetCore
     public class ResourceFactory : IResourceFactory
     {
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
-        private readonly LinkFactory _linkFactory;
+        private readonly ILinkFactory _linkFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceFactory" /> class.
@@ -22,7 +22,7 @@ namespace HAL.AspNetCore
         /// or
         /// apiExplorer
         /// </exception>
-        public ResourceFactory(LinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
+        public ResourceFactory(ILinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
             _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
             _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
@@ -40,10 +40,18 @@ namespace HAL.AspNetCore
             .AddSelfLink(_linkFactory);
 
         /// <inheritdoc/>
-        public Resource CreateForHomeEndpoint() =>
+        public Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate) =>
             Create()
-            .AddLink(_linkFactory.CreateAllLinksWithoutParameters(), link => link)
-            .AddSelfLink(_linkFactory);
+            .AddLinks(_linkFactory.CreateAllLinks(curieName))
+            .AddSelfLink(_linkFactory)
+            .AddLink("curies", new Link { Name = curieName, Href = curieUrlTemplate, Templated = true });
+
+        /// <inheritdoc/>
+        public Resource CreateForHomeEndpointWithSwaggerUi(string curieName) =>
+            Create()
+            .AddLinks(_linkFactory.CreateAllLinks(curieName))
+            .AddSelfLink(_linkFactory)
+            .AddSwaggerUiCurieLink(_linkFactory, curieName);
 
         /// <inheritdoc/>
         public Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get") =>
