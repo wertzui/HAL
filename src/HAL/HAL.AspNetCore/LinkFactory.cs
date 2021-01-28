@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 
 namespace HAL.AspNetCore
@@ -250,26 +251,66 @@ namespace HAL.AspNetCore
 
                     // strip the type part ":long" from "{id:long}"
                     var isInType = false;
-                    foreach (var c in provider.Template)
+                    using (var templateEnumerator = provider.Template.GetEnumerator())
                     {
-                        if (!isInType)
+                        char c;
+                        while(templateEnumerator.MoveNext())
                         {
-                            if (c == ':')
-                                isInType = true;
-                            else
-                                sb.Append(c);
-                        }
-                        else
-                        {
-                            if (c == '}')
+                            c = templateEnumerator.Current;
+
+                            if (c == '[')
                             {
-                                isTemplated = true;
-                                isInType = false;
-                                sb.Append(c);
+                                AppendDirectReplaceParameter(descriptor, sb, provider.Template, templateEnumerator);
+                                continue;
+                            }
+
+                            if (!isInType)
+                            {
+                                if (c == ':')
+                                    isInType = true;
+                                else
+                                    sb.Append(c);
+                            }
+                            else
+                            {
+                                if (c == '}')
+                                {
+                                    isTemplated = true;
+                                    isInType = false;
+                                    sb.Append(c);
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+
+        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
+        {
+            var parameterToReplaceBuilder = new StringBuilder();
+            while(templateEnumerator.MoveNext())
+            {
+                if (templateEnumerator.Current == ']')
+                {
+                    AppendDirectReplaceParameter(descriptor, sb, parameterToReplaceBuilder.ToString());
+                    return;
+                }
+                else
+                    parameterToReplaceBuilder.Append(templateEnumerator.Current);
+            }
+            throw new FormatException($"The route template {routeTemplate} is missing a closing ']'");
+        }
+
+        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string parameter)
+        {
+            switch (parameter)
+            {
+                case "controller":
+                    sb.Append(descriptor.ControllerName);
+                    break;
+                default:
+                    throw new FormatException($"Unknown parameter in route template [{parameter}]");
             }
         }
     }
