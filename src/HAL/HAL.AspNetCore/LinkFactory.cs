@@ -19,6 +19,7 @@ namespace HAL.AspNetCore
     /// <inheritdoc/>
     public class LinkFactory : ILinkFactory
     {
+        private readonly IActionContextAccessor _actionContextAccessor;
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
         private readonly IUrlHelper _urlHelper;
 
@@ -48,6 +49,7 @@ namespace HAL.AspNetCore
             }
 
             _urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
+            _actionContextAccessor = actionContextAccessor;
             _apiExplorer = apiExplorer ?? throw new System.ArgumentNullException(nameof(apiExplorer));
         }
 
@@ -85,6 +87,30 @@ namespace HAL.AspNetCore
         /// <inheritdoc/>
         public Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
             => Create(name, title, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
+
+        /// <inheritdoc/>
+        public ICollection<Link> CreateTemplated(string action, string controller = null)
+        {
+            if (controller is null)
+                controller = GetCurrentControllerName();
+
+            return _apiExplorer.ApiDescriptionGroups.Items[0].Items
+                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+                .Where(descriptor =>
+                    descriptor is not null && // only ControllerActionDescriptors
+                    descriptor.ControllerName.Equals(controller, StringComparison.OrdinalIgnoreCase) && // controller must match
+                    descriptor.ActionName.Equals(action, StringComparison.OrdinalIgnoreCase)) // action must match
+                .Select(d => CreateTemplated(d))
+                .ToList();
+        }
+
+        private string GetCurrentControllerName()
+        {
+            if (_actionContextAccessor.ActionContext is ControllerContext controllerContext)
+                return controllerContext.ActionDescriptor.ControllerName;
+
+            throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
+        }
 
         /// <inheritdoc/>
         public ICollection<Link> CreateAllLinksWithoutParameters() =>
@@ -194,7 +220,8 @@ namespace HAL.AspNetCore
         public Link CreateTemplated(ControllerActionDescriptor descriptor)
         {
             var hrefBuilder = new StringBuilder();
-            hrefBuilder.Append(_urlHelper.Link(null, null)); // now we have a url like https://localhost:5001/
+            var request = _actionContextAccessor.ActionContext.HttpContext.Request;
+            hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a url like https://localhost:5001/
 
             AppendPath(descriptor, hrefBuilder, out var pathIsTemplated);
 

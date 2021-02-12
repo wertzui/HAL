@@ -1,6 +1,8 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
 using System.Collections.Generic;
 
@@ -17,11 +19,12 @@ namespace HAL.AspNetCore
         /// </summary>
         /// <param name="linkFactory">The link factory.</param>
         /// <param name="apiExplorer">The API explorer.</param>
-        /// <exception cref="ArgumentNullException">
-        /// linkFactory
+        /// <exception cref="System.ArgumentNullException">linkFactory
         /// or
-        /// apiExplorer
-        /// </exception>
+        /// apiExplorer</exception>
+        /// <exception cref="ArgumentNullException">linkFactory
+        /// or
+        /// apiExplorer</exception>
         public ResourceFactory(ILinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
             _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
@@ -59,8 +62,19 @@ namespace HAL.AspNetCore
             .AddEmbedded(
                 resources,
                 idAccessor,
-                r => Create(r)
-                    .AddLink(Constants.SelfLinkName, _linkFactory.Create(Constants.SelfLinkName, StripAsyncSuffix(getMethod), null, new { id = idAccessor(r) })));
+                r =>
+                {
+                    var embeddedResource =
+                        Create(r)
+                        .AddLinks(_linkFactory.CreateTemplated(StripAsyncSuffix(getMethod)), _ => Constants.SelfLinkName, l => l);
+
+                    foreach (var link in embeddedResource.Links[Constants.SelfLinkName])
+                    {
+                        link.Href = link.Href.Replace("{id}", idAccessor(r)?.ToString());
+                    }
+
+                    return embeddedResource;
+                });
 
         private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
     }

@@ -91,6 +91,14 @@ namespace HAL.AspNetCore.Abstractions
         Link Create(string name, string title, string href);
 
         /// <summary>
+        /// Creates all templated links that match the given controller and action.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <returns></returns>
+        ICollection<Link> CreateTemplated(string action, string controller = null);
+
+        /// <summary>
         /// Creates all possible links to all controller actions that do not have any parameters in your application.
         /// </summary>
         /// <returns></returns>
