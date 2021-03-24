@@ -13,6 +13,7 @@ namespace HAL.Common.Converters
     /// </summary>
     public class DynamicJsonConverter : JsonConverter<dynamic>
     {
+        /// <inheritdoc/>
         public override dynamic Read(ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options)
@@ -57,6 +58,7 @@ namespace HAL.Common.Converters
             return document.RootElement.Clone();
         }
 
+        /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer,
             object value,
             JsonSerializerOptions options)
@@ -64,9 +66,9 @@ namespace HAL.Common.Converters
             throw new NotSupportedException("This is just a temp workaround for deserializing to a dynamic object");
         }
 
-        private object? ReadList(JsonElement jsonElement)
+        private object ReadList(JsonElement jsonElement)
         {
-            IList<object?> list = new List<object?>();
+            IList<object> list = new List<object>();
             foreach (var item in jsonElement.EnumerateArray())
             {
                 list.Add(ReadValue(item));
@@ -86,7 +88,7 @@ namespace HAL.Common.Converters
             return expandoObject;
         }
 
-        private object? ReadValue(JsonElement jsonElement)
+        private object ReadValue(JsonElement jsonElement)
         {
             object result;
             switch (jsonElement.ValueKind)

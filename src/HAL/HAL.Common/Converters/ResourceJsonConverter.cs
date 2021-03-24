@@ -71,13 +71,6 @@ namespace HAL.Common.Converters
             throw new JsonException();
         }
 
-        private static JsonSerializerOptions AddDynamicConverter(JsonSerializerOptions options)
-        {
-            var newOptions = new JsonSerializerOptions(options);
-            newOptions.Converters.Add(new DynamicJsonConverter());
-            return newOptions;
-        }
-
         /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
         {
@@ -104,6 +97,13 @@ namespace HAL.Common.Converters
             }
 
             writer.WriteEndObject();
+        }
+
+        private static JsonSerializerOptions AddDynamicConverter(JsonSerializerOptions options)
+        {
+            var newOptions = new JsonSerializerOptions(options);
+            newOptions.Converters.Add(new DynamicJsonConverter());
+            return newOptions;
         }
 
         private void WriteState(Utf8JsonWriter writer, object state, JsonSerializerOptions options)

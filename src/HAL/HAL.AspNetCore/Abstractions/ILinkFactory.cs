@@ -91,12 +91,12 @@ namespace HAL.AspNetCore.Abstractions
         Link Create(string name, string title, string href);
 
         /// <summary>
-        /// Creates all templated links that match the given controller and action.
+        /// Creates all possible links to all controller actions.
+        /// If they have parameters these will appear as templated parameters in the link.
         /// </summary>
-        /// <param name="action">The action.</param>
-        /// <param name="controller">The controller.</param>
+        /// <param name="prefix">The prefix to use in all generated rels. This should match the name of a curie.</param>
         /// <returns></returns>
-        ICollection<Link> CreateTemplated(string action, string controller = null);
+        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null);
 
         /// <summary>
         /// Creates all possible links to all controller actions that do not have any parameters in your application.
@@ -105,11 +105,11 @@ namespace HAL.AspNetCore.Abstractions
         ICollection<Link> CreateAllLinksWithoutParameters();
 
         /// <summary>
-        /// Creates all possible links to all controller actions.
-        /// If they have parameters these will appear as templated parameters in the link.
+        /// Creates all templated links that match the given controller and action.
         /// </summary>
-        /// <param name="prefix">The prefix to use in all generated rels. This should match the name of a curie.</param>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
         /// <returns></returns>
-        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null);
+        ICollection<Link> CreateTemplated(string action, string controller = null);
     }
 }

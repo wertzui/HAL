@@ -1,8 +1,6 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
 using System.Collections.Generic;
 
@@ -11,8 +9,8 @@ namespace HAL.AspNetCore
     /// <inheritdoc/>
     public class ResourceFactory : IResourceFactory
     {
+        protected readonly ILinkFactory _linkFactory;
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
-        private readonly ILinkFactory _linkFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceFactory" /> class.
@@ -57,9 +55,38 @@ namespace HAL.AspNetCore
             .AddSwaggerUiCurieLink(_linkFactory, curieName);
 
         /// <inheritdoc/>
-        public Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get") =>
-            Create()
-            .AddEmbedded(
+        public Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get")
+        {
+            var resource = Create();
+
+            AddSelfAndEmbedded(resources, idAccessor, getMethod, resource);
+
+            return resource;
+        }
+
+        /// <inheritdoc/>
+        public Resource<Page> CreateForListEndpointWithPaging<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get")
+        {
+            var resource = Create(state ?? new Page());
+
+            AddSelfAndEmbedded(resources, idAccessor, getMethod, resource);
+
+            if (!string.IsNullOrWhiteSpace(prevHref))
+                resource.AddLink(new Link { Name = "prev", Href = prevHref });
+
+            if (!string.IsNullOrWhiteSpace(nextHref))
+                resource.AddLink(new Link { Name = "next", Href = nextHref });
+
+            return resource;
+        }
+
+        private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
+
+        private void AddSelfAndEmbedded<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod, Resource resource)
+        {
+            resource
+                .AddSelfLink(_linkFactory)
+                .AddEmbedded(
                 resources,
                 idAccessor,
                 r =>
@@ -75,7 +102,6 @@ namespace HAL.AspNetCore
 
                     return embeddedResource;
                 });
-
-        private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
+        }
     }
 }

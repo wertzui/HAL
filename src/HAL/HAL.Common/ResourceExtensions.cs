@@ -9,6 +9,25 @@ namespace HAL.Common
     public static class ResourceExtensions
     {
         /// <summary>
+        /// Adds a curie link.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <param name="name">The name of the curie.</param>
+        /// <param name="href">The URL to the documentation.</param>
+        /// <returns></returns>
+        public static TResource AddCurieLink<TResource>(this TResource resource, string name, string href)
+            where TResource : Resource
+        {
+            if (!href.Contains("{rel}"))
+                throw new ArgumentException("A curie must contain a {rel} template.");
+
+            var link = new Link { Name = name, Href = href, Templated = true };
+
+            return resource.AddLink(Constants.CuriesLinkRel, link);
+        }
+
+        /// <summary>
         /// Adds an embedded resource.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
@@ -84,6 +103,27 @@ namespace HAL.Common
         }
 
         /// <summary>
+        /// Adds multiple links from a collection while using the links names as keys.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <typeparam name="TSource">The type of the source.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <param name="source">The source collection containing the items that will be converted to links.</param>
+        /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
+        /// <returns></returns>
+        public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, Link> linkSelector)
+            where TResource : Resource
+        {
+            foreach (var item in source)
+            {
+                var value = linkSelector(item);
+                resource.AddLink(value);
+            }
+
+            return resource;
+        }
+
+        /// <summary>
         /// Adds multiple links from a collection.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
@@ -134,27 +174,6 @@ namespace HAL.Common
         }
 
         /// <summary>
-        /// Adds multiple links from a collection while using the links names as keys.
-        /// </summary>
-        /// <typeparam name="TResource">The type of the resource.</typeparam>
-        /// <typeparam name="TSource">The type of the source.</typeparam>
-        /// <param name="resource">The resource.</param>
-        /// <param name="source">The source collection containing the items that will be converted to links.</param>
-        /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
-        /// <returns></returns>
-        public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, Link> linkSelector)
-            where TResource : Resource
-        {
-            foreach (var item in source)
-            {
-                var value = linkSelector(item);
-                resource.AddLink(value);
-            }
-
-            return resource;
-        }
-
-        /// <summary>
         /// Adds a "self" link.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
@@ -167,25 +186,6 @@ namespace HAL.Common
             var link = new Link { Name = Constants.SelfLinkName, Href = href };
 
             return resource.AddLink(link);
-        }
-
-        /// <summary>
-        /// Adds a curie link.
-        /// </summary>
-        /// <typeparam name="TResource">The type of the resource.</typeparam>
-        /// <param name="resource">The resource.</param>
-        /// <param name="name">The name of the curie.</param>
-        /// <param name="href">The URL to the documentation.</param>
-        /// <returns></returns>
-        public static TResource AddCurieLink<TResource>(this TResource resource, string name, string href)
-            where TResource : Resource
-        {
-            if (!href.Contains("{rel}"))
-                throw new ArgumentException("A curie must contain a {rel} template.");
-
-            var link = new Link { Name = name, Href = href, Templated = true };
-
-            return resource.AddLink(Constants.CuriesLinkRel, link);
         }
 
         private static ICollection<Resource> GetOrCreateEmbeddedCollection(Resource resource, string key)

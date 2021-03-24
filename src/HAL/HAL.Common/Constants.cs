@@ -6,6 +6,11 @@
     public static class Constants
     {
         /// <summary>
+        /// The rel for curies links.
+        /// </summary>
+        public const string CuriesLinkRel = "curies";
+
+        /// <summary>
         /// The name of the embedded property: "_embedded".
         /// </summary>
         public const string EmbeddedPropertyName = "_embedded";
@@ -19,10 +24,5 @@
         /// The name of the "self" link which points to the resource where it is added as a link.
         /// </summary>
         public const string SelfLinkName = "self";
-
-        /// <summary>
-        /// The rel for curies links.
-        /// </summary>
-        public const string CuriesLinkRel = "curies";
     }
 }

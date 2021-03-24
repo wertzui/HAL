@@ -6,11 +6,13 @@ This project aims to bring a simple to use implementation of the Hypertext Appli
  - A more informal documentation can be found under http://stateless.co/hal_specification.html.
 
  ## Usage
- The project consists of two packages
+ The project consists of three packages
  1. `HAL.Common` which contains the `IResource`, `IResource<T>` and `ILink` implementations and the converters needed for serialization with `System.Text.Json`.
  2. `HAL.AspNetCore` adds `IResourceFactory` and `ILinkFactory` which can be used in your controllers to easily generate resources from your models.
+ 3. `HAL.AspNetCore.OData` adds `IODataResourceFactory` which can be used in your controllers to easily generate list endoints with paging from OData $skip and $top syntax.
 
-### In Startup.cs
+### Without OData support
+#### In Startup.cs
  ```
 public void ConfigureServices(IServiceCollection services)
 {
@@ -24,7 +26,7 @@ public void ConfigureServices(IServiceCollection services)
 }
  ```
 
- ### In your controller
+ #### In your controller
  ```
 [Route("[controller]")]
 [ApiController]
@@ -38,7 +40,8 @@ public class MyController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IResource> Get()
+    [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Get))]
+    public ActionResult<IResource> GetList()
     {
         var models = new[]
         {
@@ -62,5 +65,77 @@ public class MyController : ControllerBase
     }
 
     // PUT, POST, ...
+}
+ ```
+
+### With OData support
+#### In Startup.cs
+ ```
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddOData();
+
+    services
+        .AddControllers() // or .AddMvc()
+        .AddHALOData()
+        .AddJsonOptions(o => // not neccessary, but creates a much nicer output
+        {
+            o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault; 
+        });
+}
+
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    // ...
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+        endpoints.EnableDependencyInjection();  // Required for OData to work.
+    });
+
+    // ...
+}
+ ```
+
+ #### In your controller
+  ```
+[Route("[controller]")]
+[ApiController]
+public class MyController : ControllerBase
+{
+    private readonly IODataResourceFactory _resourceFactory;
+
+    public Table(IODataResourceFactory resourceFactory)
+    {
+        _resourceFactory = resourceFactory ?? throw new ArgumentNullException(nameof(resourceFactory));
+    }
+
+    [HttpGet]
+    [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Get))]
+    public ActionResult<IResource> GetList()
+    {
+        // You may also create the OData model one time and reuse it.
+        var modelBuilder = new ODataConventionModelBuilder();
+        modelBuilder.EntitySet<MyModelListDto>(typeof(MyModelListDto).Name);
+        var model = modelBuilder.GetEdmModel();
+        var context = new ODataQueryContext(model, typeof(MyModelListDto), new ODataPath());
+        var options = new ODataQueryOptions<MyModelListDto>(context, Request);
+
+        var models = new[]
+        {
+            new MyModelListDto {Id = 1, Name = "Test1"},
+            new MyModelListDto {Id = 2, Name = "Test2"},
+        };
+
+        // Apply the OData filtering
+        models = options.Apply(models.AsQueryable()).Cast<MyModelListDto>().ToArray()
+
+        var result = _resourceFactory.CreateForOdataListEndpointUsingSkipTopPaging(models, m => m.Id, options);
+
+        return Ok(result);
+    }
+
+    // GET, PUT, POST, ...
 }
  ```

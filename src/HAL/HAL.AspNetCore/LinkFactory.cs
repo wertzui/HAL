@@ -1,7 +1,6 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -11,7 +10,6 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Text;
 
 namespace HAL.AspNetCore
@@ -57,7 +55,7 @@ namespace HAL.AspNetCore
         public TResource AddSelfLinkTo<TResource>(TResource resource)
             where TResource : Resource
         {
-            return resource.AddSelfLink(_urlHelper.ActionLink());
+            return resource.AddSelfLink(_urlHelper.ActionLink() + _actionContextAccessor.ActionContext.HttpContext.Request.QueryString);
         }
 
         /// <inheritdoc/>
@@ -89,6 +87,28 @@ namespace HAL.AspNetCore
             => Create(name, title, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
 
         /// <inheritdoc/>
+        public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null) =>
+            _apiExplorer.ApiDescriptionGroups.Items[0].Items
+                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+                    .Where(descriptor =>
+                        descriptor is not null && // only ControllerActionDescriptors
+                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
+                    .Select(d => (d.ControllerName, CreateTemplated(d)))
+                    .GroupBy(p => p.ControllerName)
+                    .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToList());
+
+        /// <inheritdoc/>
+        public ICollection<Link> CreateAllLinksWithoutParameters() =>
+            _apiExplorer.ApiDescriptionGroups.Items[0].Items
+                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+                    .Where(descriptor =>
+                        descriptor is not null && // only ControllerActionDescriptors
+                        descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
+                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
+                    .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
+                    .ToList();
+
+        /// <inheritdoc/>
         public ICollection<Link> CreateTemplated(string action, string controller = null)
         {
             if (controller is null)
@@ -103,36 +123,6 @@ namespace HAL.AspNetCore
                 .Select(d => CreateTemplated(d))
                 .ToList();
         }
-
-        private string GetCurrentControllerName()
-        {
-            if (_actionContextAccessor.ActionContext is ControllerContext controllerContext)
-                return controllerContext.ActionDescriptor.ControllerName;
-
-            throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
-        }
-
-        /// <inheritdoc/>
-        public ICollection<Link> CreateAllLinksWithoutParameters() =>
-            _apiExplorer.ApiDescriptionGroups.Items[0].Items
-                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
-                    .Where(descriptor =>
-                        descriptor is not null && // only ControllerActionDescriptors
-                        descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
-                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
-                    .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
-                    .ToList();
-
-        /// <inheritdoc/>
-        public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null) =>
-            _apiExplorer.ApiDescriptionGroups.Items[0].Items
-                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
-                    .Where(descriptor =>
-                        descriptor is not null && // only ControllerActionDescriptors
-                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
-                    .Select(d => (d.ControllerName, CreateTemplated(d)))
-                    .GroupBy(p => p.ControllerName)
-                    .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToList());
 
         /// <inheritdoc/>
         public Link CreateTemplated(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
@@ -198,24 +188,6 @@ namespace HAL.AspNetCore
             return link;
         }
 
-        private (IReadOnlyDictionary<string, object> nonTemplated, IReadOnlyCollection<string> templated) GetParameters(object values)
-        {
-            var routeValues = new RouteValueDictionary(values);
-            var nonTemplated = new Dictionary<string, object>();
-            var templated = new List<string>();
-
-            foreach (var routeValue in routeValues)
-            {
-                // check for reference and value types.
-                if (routeValue.Value == default || routeValue.Value == Activator.CreateInstance(routeValue.Value.GetType()))
-                    templated.Add(routeValue.Key);
-                else
-                    nonTemplated.Add(routeValue.Key, routeValue.Value);
-            }
-
-            return (nonTemplated, templated);
-        }
-
         /// <inheritdoc/>
         public Link CreateTemplated(ControllerActionDescriptor descriptor)
         {
@@ -235,31 +207,33 @@ namespace HAL.AspNetCore
             };
         }
 
-        private static void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
+        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
         {
-            var queryStarted = false;
-            foreach (var parameter in descriptor.Parameters)
+            var parameterToReplaceBuilder = new StringBuilder();
+            while (templateEnumerator.MoveNext())
             {
-                if (parameter.BindingInfo.BindingSource == BindingSource.Query)
+                if (templateEnumerator.Current == ']')
                 {
-                    if (!queryStarted)
-                    {
-                        queryStarted = true;
-                        sb.Append("{?");
-                    }
-                    else
-                    {
-                        sb.Append(',');
-                    }
-
-                    sb.Append(parameter.Name);
+                    AppendDirectReplaceParameter(descriptor, sb, parameterToReplaceBuilder.ToString());
+                    return;
                 }
+                else
+                    parameterToReplaceBuilder.Append(templateEnumerator.Current);
             }
+            throw new FormatException($"The route template {routeTemplate} is missing a closing ']'");
+        }
 
-            if (queryStarted)
-                sb.Append('}');
+        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string parameter)
+        {
+            switch (parameter)
+            {
+                case "controller":
+                    sb.Append(descriptor.ControllerName);
+                    break;
 
-            isTemplated = queryStarted;
+                default:
+                    throw new FormatException($"Unknown parameter in route template [{parameter}]");
+            }
         }
 
         private static void AppendPath(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
@@ -281,7 +255,7 @@ namespace HAL.AspNetCore
                     using (var templateEnumerator = provider.Template.GetEnumerator())
                     {
                         char c;
-                        while(templateEnumerator.MoveNext())
+                        while (templateEnumerator.MoveNext())
                         {
                             c = templateEnumerator.Current;
 
@@ -313,32 +287,57 @@ namespace HAL.AspNetCore
             }
         }
 
-        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
+        private static void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
         {
-            var parameterToReplaceBuilder = new StringBuilder();
-            while(templateEnumerator.MoveNext())
+            var queryStarted = false;
+            foreach (var parameter in descriptor.Parameters)
             {
-                if (templateEnumerator.Current == ']')
+                if (parameter.BindingInfo.BindingSource == BindingSource.Query)
                 {
-                    AppendDirectReplaceParameter(descriptor, sb, parameterToReplaceBuilder.ToString());
-                    return;
+                    if (!queryStarted)
+                    {
+                        queryStarted = true;
+                        sb.Append("{?");
+                    }
+                    else
+                    {
+                        sb.Append(',');
+                    }
+
+                    sb.Append(parameter.Name);
                 }
-                else
-                    parameterToReplaceBuilder.Append(templateEnumerator.Current);
             }
-            throw new FormatException($"The route template {routeTemplate} is missing a closing ']'");
+
+            if (queryStarted)
+                sb.Append('}');
+
+            isTemplated = queryStarted;
         }
 
-        private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string parameter)
+        private string GetCurrentControllerName()
         {
-            switch (parameter)
+            if (_actionContextAccessor.ActionContext is ControllerContext controllerContext)
+                return controllerContext.ActionDescriptor.ControllerName;
+
+            throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
+        }
+
+        private (IReadOnlyDictionary<string, object> nonTemplated, IReadOnlyCollection<string> templated) GetParameters(object values)
+        {
+            var routeValues = new RouteValueDictionary(values);
+            var nonTemplated = new Dictionary<string, object>();
+            var templated = new List<string>();
+
+            foreach (var routeValue in routeValues)
             {
-                case "controller":
-                    sb.Append(descriptor.ControllerName);
-                    break;
-                default:
-                    throw new FormatException($"Unknown parameter in route template [{parameter}]");
+                // check for reference and value types.
+                if (routeValue.Value == default || routeValue.Value == Activator.CreateInstance(routeValue.Value.GetType()))
+                    templated.Add(routeValue.Key);
+                else
+                    nonTemplated.Add(routeValue.Key, routeValue.Value);
             }
+
+            return (nonTemplated, templated);
         }
     }
 }

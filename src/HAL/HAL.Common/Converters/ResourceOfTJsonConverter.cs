@@ -67,14 +67,14 @@ namespace HAL.Common.Converters
                 else
                 {
                     var property = stateType.GetProperty(propertyName);
-                    if(property == null && options.PropertyNameCaseInsensitive)
+                    if (property == null && options.PropertyNameCaseInsensitive)
                     {
                         property = stateType.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
                     }
 
-                    if(property != null)
+                    if (property != null)
                     {
-                        if(state is null)
+                        if (state is null)
                             state = Activator.CreateInstance<T>();
 
                         property.SetValue(state, JsonSerializer.Deserialize(ref reader, property.PropertyType, options));

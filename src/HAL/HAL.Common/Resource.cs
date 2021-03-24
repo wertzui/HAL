@@ -1,7 +1,6 @@
 ﻿using HAL.Common.Converters;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -34,6 +33,32 @@ namespace HAL.Common
         [JsonPropertyName(Constants.LinksPropertyName)]
         public virtual IDictionary<string, ICollection<Link>> Links { get; set; }
 
+        /// <summary>
+        /// Implements the operator !=.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
+        public static bool operator !=(Resource left, Resource right)
+        {
+            return !(left == right);
+        }
+
+        /// <summary>
+        /// Implements the operator ==.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
+        public static bool operator ==(Resource left, Resource right)
+        {
+            return EqualityComparer<Resource>.Default.Equals(left, right);
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
@@ -52,6 +77,35 @@ namespace HAL.Common
             return other != null &&
                    DictionaryEqual(Embedded, other.Embedded) &&
                    DictionaryEqual(Links, other.Links);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Embedded, Links);
+        }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.Append("{ ");
+            if (Links is not null)
+            {
+                sb.Append(Constants.LinksPropertyName);
+                sb.Append("[");
+                sb.Append(Links.Count);
+                sb.Append("]");
+            }
+            if (Embedded is not null)
+            {
+                sb.Append(Constants.EmbeddedPropertyName);
+                sb.Append("[");
+                sb.Append(Embedded.Count);
+                sb.Append("]");
+            }
+            sb.Append(" }");
+            return sb.ToString();
         }
 
         private static bool DictionaryEqual<T>(IDictionary<string, ICollection<T>> oldDict, IDictionary<string, ICollection<T>> newDict)
@@ -86,62 +140,6 @@ namespace HAL.Common
             }
 
             return true;
-
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Embedded, Links);
-        }
-
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>
-        /// The result of the operator.
-        /// </returns>
-        public static bool operator ==(Resource left, Resource right)
-        {
-            return EqualityComparer<Resource>.Default.Equals(left, right);
-        }
-
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>
-        /// The result of the operator.
-        /// </returns>
-        public static bool operator !=(Resource left, Resource right)
-        {
-            return !(left == right);
-        }
-
-        /// <inheritdoc/>
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.Append("{ ");
-            if(Links is not null)
-            {
-                sb.Append(Constants.LinksPropertyName);
-                sb.Append("[");
-                sb.Append(Links.Count);
-                sb.Append("]");
-            }
-            if (Embedded is not null)
-            {
-                sb.Append(Constants.EmbeddedPropertyName);
-                sb.Append("[");
-                sb.Append(Embedded.Count);
-                sb.Append("]");
-            }
-            sb.Append(" }");
-            return sb.ToString();
         }
     }
 }

@@ -23,6 +23,32 @@ namespace HAL.Common
         /// </value>
         public TState State { get; set; }
 
+        /// <summary>
+        /// Implements the operator !=.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
+        public static bool operator !=(Resource<TState> left, Resource<TState> right)
+        {
+            return !(left == right);
+        }
+
+        /// <summary>
+        /// Implements the operator ==.
+        /// </summary>
+        /// <param name="left">The left.</param>
+        /// <param name="right">The right.</param>
+        /// <returns>
+        /// The result of the operator.
+        /// </returns>
+        public static bool operator ==(Resource<TState> left, Resource<TState> right)
+        {
+            return EqualityComparer<Resource<TState>>.Default.Equals(left, right);
+        }
+
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
@@ -47,32 +73,6 @@ namespace HAL.Common
         public override int GetHashCode()
         {
             return HashCode.Combine(base.GetHashCode(), State);
-        }
-
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>
-        /// The result of the operator.
-        /// </returns>
-        public static bool operator ==(Resource<TState> left, Resource<TState> right)
-        {
-            return EqualityComparer<Resource<TState>>.Default.Equals(left, right);
-        }
-
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>
-        /// The result of the operator.
-        /// </returns>
-        public static bool operator !=(Resource<TState> left, Resource<TState> right)
-        {
-            return !(left == right);
         }
     }
 }

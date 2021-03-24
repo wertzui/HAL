@@ -19,6 +19,7 @@ namespace HAL.Common
         {
             return linkFactory.AddSelfLinkTo(resource);
         }
+
         /// <summary>
         /// Adds the "self" link to the resource.
         /// </summary>

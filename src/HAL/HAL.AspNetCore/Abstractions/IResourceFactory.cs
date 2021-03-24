@@ -62,5 +62,21 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="getMethod">The name of the get method. Default is "Get".</param>
         /// <returns></returns>
         Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get");
+
+        /// <summary>
+        /// Creates a resource for a list endpoint.
+        /// Call this during a get all request in your controller as it will automatically add a "self" link.
+        /// This only works if your get endpoint to get the full resources looks like this: "MyGetMethod(TId id)".
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId">The type of the identifier.</typeparam>
+        /// <param name="resources">The resources.</param>
+        /// <param name="idAccessor">The identifier accessor.</param>
+        /// <param name="prevHref">The href to the previous page (optional).</param>
+        /// <param name="nextHref">The href to the next page (optional).</param>
+        /// <param name="state">The state with paging information (optional if the endpoint supports it).</param>
+        /// <param name="getMethod">The name of the get method. Default is "Get".</param>
+        /// <returns></returns>
+        Resource<Page> CreateForListEndpointWithPaging<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get");
     }
 }
