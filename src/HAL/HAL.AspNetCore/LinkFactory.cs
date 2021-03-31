@@ -304,7 +304,7 @@ namespace HAL.AspNetCore
                         sb.Append(',');
                     }
 
-                    sb.Append(parameter.Name);
+                    sb.Append(parameter.BindingInfo.BinderModelName ?? parameter.Name);
                 }
             }
 
