@@ -151,12 +151,10 @@ namespace HAL.Common
         /// Adds multiple links from a collection.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
-        /// <typeparam name="TSource">The type of the source.</typeparam>
         /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TLinkCollection">The type of the link collection.</typeparam>
         /// <param name="resource">The resource.</param>
         /// <param name="source">The source collection containing the items that will be converted to links.</param>
-        /// <param name="keySelector">A function to select the key of link.</param>
-        /// <param name="linkSelector">A function to convert each item of the source collection into a link.</param>
         /// <returns></returns>
         public static TResource AddLinks<TResource, TKey, TLinkCollection>(this TResource resource, IEnumerable<KeyValuePair<TKey, TLinkCollection>> source)
             where TResource : Resource
