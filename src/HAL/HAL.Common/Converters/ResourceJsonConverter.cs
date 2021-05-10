@@ -120,11 +120,36 @@ namespace HAL.Common.Converters
                 var value = property.GetValue(state);
                 var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
-                if (!object.Equals(value, defaultValue) || options.DefaultIgnoreCondition == JsonIgnoreCondition.Never)
+                if (ShouldWriteValue(value, defaultValue, options.DefaultIgnoreCondition))
                 {
                     writer.WritePropertyName(name);
                     JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Determines if the given value should be written to the JSON payload based on the ignore condition.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <param name="ignoreCondition">The ignore condition.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
+        public static bool ShouldWriteValue(object value, object defaultValue, JsonIgnoreCondition ignoreCondition)
+        {
+            switch (ignoreCondition)
+            {
+                case JsonIgnoreCondition.Never:
+                    return true;
+                case JsonIgnoreCondition.Always:
+                    return false;
+                case JsonIgnoreCondition.WhenWritingDefault:
+                    return !Equals(value, defaultValue);
+                case JsonIgnoreCondition.WhenWritingNull:
+                    return value is not null;
+                default:
+                    throw new ArgumentOutOfRangeException($"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.");
             }
         }
     }

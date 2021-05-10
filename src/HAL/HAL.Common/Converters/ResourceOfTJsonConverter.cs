@@ -121,7 +121,7 @@ namespace HAL.Common.Converters
                 var value = property.GetValue(state);
                 var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
-                if (!object.Equals(value, defaultValue) || options.DefaultIgnoreCondition == JsonIgnoreCondition.Never)
+                if (ResourceJsonConverter.ShouldWriteValue(value, defaultValue, options.DefaultIgnoreCondition))
                 {
                     writer.WritePropertyName(name);
                     JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);

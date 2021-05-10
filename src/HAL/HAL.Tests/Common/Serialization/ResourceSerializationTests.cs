@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace HAL.Tests.Common.Serialization
 {
@@ -120,14 +121,14 @@ namespace HAL.Tests.Common.Serialization
         public void Resource_with_state_can_be_deserialized()
         {
             // Arrange
-            var expectedResource = new Resource<TestState>
+            var expectedResource = new Resource<TestState<string>>
             {
-                State = new TestState { Foo = "Bar" }
+                State = new TestState<string> { Foo = "Bar" }
             };
             var resourceJson = "{\"foo\":\"Bar\"}";
 
             // Act
-            var actualResource = JsonSerializer.Deserialize<Resource<TestState>>(resourceJson, Constants.DefaultSerializerOptions);
+            var actualResource = JsonSerializer.Deserialize<Resource<TestState<string>>>(resourceJson, Constants.DefaultSerializerOptions);
 
             // Assert
             Assert.AreEqual(expectedResource, actualResource);
@@ -137,9 +138,9 @@ namespace HAL.Tests.Common.Serialization
         public void Resource_with_state_can_be_deserialized_without_type_parameter()
         {
             // Arrange
-            var expectedResource = new Resource<TestState>
+            var expectedResource = new Resource<TestState<string>>
             {
-                State = new TestState { Foo = "Bar" }
+                State = new TestState<string> { Foo = "Bar" }
             };
             var resourceJson = "{\"foo\":\"Bar\"}";
 
@@ -156,9 +157,9 @@ namespace HAL.Tests.Common.Serialization
         {
             // Arrange
 
-            var resource = new Resource<TestState>
+            var resource = new Resource<TestState<string>>
             {
-                State = new TestState { Foo = "Bar" }
+                State = new TestState<string> { Foo = "Bar" }
             };
             var expectedResourceJson = "{\"foo\":\"Bar\"}";
 
@@ -169,9 +170,36 @@ namespace HAL.Tests.Common.Serialization
             Assert.AreEqual(expectedResourceJson, actualResourceJson);
         }
 
-        private record TestState
+        [DataTestMethod]
+        [DataRow(JsonIgnoreCondition.Never)]
+        [DataRow(JsonIgnoreCondition.WhenWritingDefault)]
+        [DataRow(JsonIgnoreCondition.WhenWritingNull)]
+        public void Options_are_taken_into_account_when_writing_non_nullable_default_values(JsonIgnoreCondition ignoreCondition)
         {
-            public string Foo { get; set; }
+            // Arrange
+            var resource = new Resource<TestState<int>>
+            {
+                State = new TestState<int> { Foo = default }
+            };
+            var expectedResourceJson = ignoreCondition switch
+            {
+                JsonIgnoreCondition.Never => "{\"foo\":0}",
+                JsonIgnoreCondition.WhenWritingDefault => "{}",
+                JsonIgnoreCondition.WhenWritingNull => "{\"foo\":0}",
+                _ => throw new System.Exception("Unhandled condition.")
+            };
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = ignoreCondition };
+
+            // Act
+            var actualResourceJson = JsonSerializer.Serialize(resource, options);
+
+            // Assert
+            Assert.AreEqual(expectedResourceJson, actualResourceJson);
+        }
+
+        private record TestState<T>
+        {
+            public T Foo { get; set; }
         }
     }
 }
