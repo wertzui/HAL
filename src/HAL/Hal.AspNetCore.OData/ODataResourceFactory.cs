@@ -126,7 +126,7 @@ namespace HAL.AspNetCore.OData
             if (totalCount.HasValue)
                 lastHref = baseHref + GenerateQuery(rawValues, skipOverride: Math.Max(0, top * Math.Ceiling((double)totalCount / top) - top).ToString());
 
-            return (prevHref, nextHref, firstHref, lastHref);
+            return (firstHref, prevHref, nextHref, lastHref);
         }
     }
 }
