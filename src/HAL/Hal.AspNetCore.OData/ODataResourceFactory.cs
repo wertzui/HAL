@@ -33,11 +33,11 @@ namespace HAL.AspNetCore.OData
 
             (long skip, long top) = GetSkipAndTop(maxTop, rawValues);
 
-            var page = new Page { CurrentPage = skip == 0 ? 0 : skip / top, TotalPages = totalCount / top };
+            var page = new Page { CurrentPage = (skip == 0 ? 0 : skip / top) + 1, TotalPages = (long)Math.Ceiling((double)totalCount / top) };
 
-            (string prevHref, string nextHref) = GetPrevAndNextHref(resources, rawValues, skip, top);
+            (string firstHref, string prevHref, string nextHref, string lastHref) = GetListNavigation(resources, rawValues, skip, top, totalCount);
 
-            var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, prevHref, nextHref, page, getMethod);
+            var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, firstHref, prevHref, nextHref, lastHref, page, getMethod);
 
             return resource;
         }
@@ -108,18 +108,25 @@ namespace HAL.AspNetCore.OData
             return (skip, top);
         }
 
-        private (string prevHref, string nextHref) GetPrevAndNextHref<TDto>(IEnumerable<TDto> resources, ODataRawQueryOptions rawValues, long skip, long top)
+        private (string firstHref, string prevHref, string nextHref, string lastHref) GetListNavigation<TDto>(IEnumerable<TDto> resources, ODataRawQueryOptions rawValues, long skip, long top, long? totalCount)
         {
             var baseHref = _linkFactory.Create().Href;
             string prevHref = null;
             string nextHref = null;
+            string lastHref = null;
+
+            string firstHref = baseHref + GenerateQuery(rawValues, skipOverride: "0");
+
             if (skip > 0)
                 prevHref = baseHref + GenerateQuery(rawValues, skipOverride: Math.Max(0, skip - top).ToString());
 
             if (resources.Count() == top)
                 nextHref = baseHref + GenerateQuery(rawValues, skipOverride: (skip + top).ToString());
 
-            return (prevHref, nextHref);
+            if (totalCount.HasValue)
+                lastHref = baseHref + GenerateQuery(rawValues, skipOverride: Math.Max(0, top * Math.Ceiling((double)totalCount / top) - top).ToString());
+
+            return (prevHref, nextHref, firstHref, lastHref);
         }
     }
 }

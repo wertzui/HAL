@@ -65,17 +65,23 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get")
+        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref, string prevHref, string nextHref, string lastHref = null, Page state = null, string getMethod = "Get")
         {
             var resource = Create(state ?? new Page());
 
             AddSelfAndEmbedded(resources, keyAccessor, idAccessor, getMethod, resource);
+
+            if (!string.IsNullOrWhiteSpace(firstHref))
+                resource.AddLink(new Link { Name = "first", Href = firstHref });
 
             if (!string.IsNullOrWhiteSpace(prevHref))
                 resource.AddLink(new Link { Name = "prev", Href = prevHref });
 
             if (!string.IsNullOrWhiteSpace(nextHref))
                 resource.AddLink(new Link { Name = "next", Href = nextHref });
+
+            if (!string.IsNullOrWhiteSpace(lastHref))
+                resource.AddLink(new Link { Name = "last", Href = lastHref });
 
             return resource;
         }
