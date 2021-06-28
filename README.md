@@ -75,6 +75,10 @@ public void ConfigureServices(IServiceCollection services)
 {
     services.AddOData();
 
+    var modelBuilder = new ODataConventionModelBuilder();
+    modelBuilder.EntitySet<MyModelListDto>(typeof(MyModelListDto).Name);
+    services.AddSingleton(_ => modelBuilder.GetEdmModel());
+
     services
         .AddControllers() // or .AddMvc()
         .AddHALOData()
@@ -113,15 +117,15 @@ public class MyController : ControllerBase
 
     [HttpGet]
     [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Get))]
-    public ActionResult<IResource> GetList()
+    public ActionResult<Resource> GetList(
+            // The SwaggerIgnore attribute and all parameters beside the options are just here to give you a nice swagger experience.
+            // If you do not need that, you can remove everything except the options parameter.
+            [SwaggerIgnore] ODataQueryOptions<TEntity> options,
+            [FromQuery(Name = "$filter")] string? filter = default,
+            [FromQuery(Name = "$orderby")] string? orderby = default,
+            [FromQuery(Name = "$top")] long? top = default,
+            [FromQuery(Name = "$skip")] long? skip = default)
     {
-        // You may also create the OData model one time and reuse it.
-        var modelBuilder = new ODataConventionModelBuilder();
-        modelBuilder.EntitySet<MyModelListDto>(typeof(MyModelListDto).Name);
-        var model = modelBuilder.GetEdmModel();
-        var context = new ODataQueryContext(model, typeof(MyModelListDto), new ODataPath());
-        var options = new ODataQueryOptions<MyModelListDto>(context, Request);
-
         var models = new[]
         {
             new MyModelListDto {Id = 1, Name = "Test1"},
