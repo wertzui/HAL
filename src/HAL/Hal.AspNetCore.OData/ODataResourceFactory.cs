@@ -27,7 +27,7 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public Resource CreateForOdataListEndpointUsingSkipTopPaging<TDto, TEntity, TId>(IEnumerable<TDto> resources, Func<TDto, TId> idAccessor, ODataQueryOptions<TEntity> oDataQueryOptions, long maxTop = 50, long? totalCount = null, string getMethod = "Get")
+        public Resource CreateForOdataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataQueryOptions<TEntity> oDataQueryOptions, long maxTop = 50, long? totalCount = null, string getMethod = "Get")
         {
             var rawValues = oDataQueryOptions.RawValues;
 
@@ -37,7 +37,7 @@ namespace HAL.AspNetCore.OData
 
             (string prevHref, string nextHref) = GetPrevAndNextHref(resources, rawValues, skip, top);
 
-            var resource = CreateForListEndpointWithPaging(resources, idAccessor, prevHref, nextHref, page, getMethod);
+            var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, prevHref, nextHref, page, getMethod);
 
             return resource;
         }

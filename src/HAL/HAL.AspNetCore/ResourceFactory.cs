@@ -55,21 +55,21 @@ namespace HAL.AspNetCore
             .AddSwaggerUiCurieLink(_linkFactory, curieName);
 
         /// <inheritdoc/>
-        public Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get")
+        public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod = "Get")
         {
             var resource = Create();
 
-            AddSelfAndEmbedded(resources, idAccessor, getMethod, resource);
+            AddSelfAndEmbedded(resources, keyAccessor, idAccessor, getMethod, resource);
 
             return resource;
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForListEndpointWithPaging<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get")
+        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get")
         {
             var resource = Create(state ?? new Page());
 
-            AddSelfAndEmbedded(resources, idAccessor, getMethod, resource);
+            AddSelfAndEmbedded(resources, keyAccessor, idAccessor, getMethod, resource);
 
             if (!string.IsNullOrWhiteSpace(prevHref))
                 resource.AddLink(new Link { Name = "prev", Href = prevHref });
@@ -82,13 +82,13 @@ namespace HAL.AspNetCore
 
         private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
 
-        private void AddSelfAndEmbedded<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod, Resource resource)
+        private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod, Resource resource)
         {
             resource
                 .AddSelfLink(_linkFactory)
                 .AddEmbedded(
                 resources,
-                idAccessor,
+                keyAccessor,
                 r =>
                 {
                     var embeddedResource =

@@ -49,7 +49,7 @@ public class MyController : ControllerBase
             new MyModelListDto {Id = 2, Name = "Test2"},
         };
 
-        var result = _resourceFactory.CreateForListEndpoint(models, m => m.Id);
+        var result = _resourceFactory.CreateForListEndpoint(models, _ => "items", m => m.Id);
 
         return Ok(result);
     }
@@ -131,7 +131,7 @@ public class MyController : ControllerBase
         // Apply the OData filtering
         models = options.Apply(models.AsQueryable()).Cast<MyModelListDto>().ToArray()
 
-        var result = _resourceFactory.CreateForOdataListEndpointUsingSkipTopPaging(models, m => m.Id, options);
+        var result = _resourceFactory.CreateForOdataListEndpointUsingSkipTopPaging(models, _ => "items", m => m.Id, options);
 
         return Ok(result);
     }

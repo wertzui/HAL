@@ -56,12 +56,14 @@ namespace HAL.AspNetCore.Abstractions
         /// This only works if your get endpoint to get the full resources looks like this: "MyGetMethod(TId id)".
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
         /// <typeparam name="TId">The type of the identifier.</typeparam>
         /// <param name="resources">The resources.</param>
+        /// <param name="keyAccessor">The key accessor which is used as the name of the collection in the _embedded object. If you do not specify a constant value, you will have multiple collections in the _embedded object.</param>
         /// <param name="idAccessor">The identifier accessor.</param>
         /// <param name="getMethod">The name of the get method. Default is "Get".</param>
         /// <returns></returns>
-        Resource CreateForListEndpoint<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string getMethod = "Get");
+        Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod = "Get");
 
         /// <summary>
         /// Creates a resource for a list endpoint.
@@ -69,14 +71,16 @@ namespace HAL.AspNetCore.Abstractions
         /// This only works if your get endpoint to get the full resources looks like this: "MyGetMethod(TId id)".
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
         /// <typeparam name="TId">The type of the identifier.</typeparam>
         /// <param name="resources">The resources.</param>
+        /// <param name="keyAccessor">The key accessor which is used as the name of the collection in the _embedded object. If you do not specify a constant value, you will have multiple collections in the _embedded object.</param>
         /// <param name="idAccessor">The identifier accessor.</param>
         /// <param name="prevHref">The href to the previous page (optional).</param>
         /// <param name="nextHref">The href to the next page (optional).</param>
         /// <param name="state">The state with paging information (optional if the endpoint supports it).</param>
         /// <param name="getMethod">The name of the get method. Default is "Get".</param>
         /// <returns></returns>
-        Resource<Page> CreateForListEndpointWithPaging<T, TId>(IEnumerable<T> resources, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get");
+        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string prevHref, string nextHref, Page state = null, string getMethod = "Get");
     }
 }
