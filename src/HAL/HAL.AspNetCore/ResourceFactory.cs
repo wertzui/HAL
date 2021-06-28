@@ -65,7 +65,7 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref, string prevHref, string nextHref, string lastHref = null, Page state = null, string getMethod = "Get")
+        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string getMethod = "Get")
         {
             var resource = Create(state ?? new Page());
 
