@@ -95,7 +95,7 @@ namespace HAL.AspNetCore
                         descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
                     .Select(d => (d.ControllerName, CreateTemplated(d)))
                     .GroupBy(p => p.ControllerName)
-                    .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToList());
+                    .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
 
         /// <inheritdoc/>
         public ICollection<Link> CreateAllLinksWithoutParameters() =>

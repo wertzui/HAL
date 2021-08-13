@@ -170,6 +170,24 @@ namespace HAL.Tests.Common.Serialization
             Assert.AreEqual(expectedResourceJson, actualResourceJson);
         }
 
+        [TestMethod]
+        public void Resource_with_enum_can_be_serialized_with_enum_as_string()
+        {
+            // Arrange
+
+            var resource = new Resource<TestState<TestEnum>>
+            {
+                State = new TestState<TestEnum> { Foo = TestEnum.Two }
+            };
+            var expectedResourceJson = "{\"foo\":\"two\"}";
+
+            // Act
+            var actualResourceJson = JsonSerializer.Serialize(resource, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.AreEqual(expectedResourceJson, actualResourceJson);
+        }
+
         [DataTestMethod]
         [DataRow(JsonIgnoreCondition.Never)]
         [DataRow(JsonIgnoreCondition.WhenWritingDefault)]
@@ -200,6 +218,12 @@ namespace HAL.Tests.Common.Serialization
         private record TestState<T>
         {
             public T Foo { get; set; }
+        }
+
+        private enum TestEnum
+        {
+            One,
+            Two
         }
     }
 }

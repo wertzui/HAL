@@ -5,6 +5,12 @@ namespace HAL.Tests
 {
     public static class Constants
     {
-        public static JsonSerializerOptions DefaultSerializerOptions { get; } = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+        static Constants()
+        {
+            DefaultSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+            DefaultSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        }
+        public static JsonSerializerOptions DefaultSerializerOptions { get; }
+
     }
 }

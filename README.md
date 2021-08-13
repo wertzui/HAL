@@ -29,8 +29,7 @@ public void ConfigureServices(IServiceCollection services)
  #### In your controller
  ```
 [Route("[controller]")]
-[ApiController]
-public class MyController : ControllerBase
+public class MyController : HalControllerBase
 {
     private readonly IResourceFactory _resourceFactory;
 
@@ -105,8 +104,7 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
  #### In your controller
   ```
 [Route("[controller]")]
-[ApiController]
-public class MyController : ControllerBase
+public class MyController : HalControllerBase
 {
     private readonly IODataResourceFactory _resourceFactory;
 
