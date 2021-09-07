@@ -13,11 +13,14 @@ namespace HAL.Common
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>
         /// <param name="linkFactory">The link factory.</param>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory)
+        public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory, string action = null, string controller = null, object routeValues = null)
             where TResource : Resource
         {
-            return linkFactory.AddSelfLinkTo(resource);
+            return linkFactory.AddSelfLinkTo(resource, action, controller, routeValues);
         }
 
         /// <summary>

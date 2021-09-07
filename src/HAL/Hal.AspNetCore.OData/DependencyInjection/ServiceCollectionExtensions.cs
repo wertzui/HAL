@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.AddHAL();
 
             var services = builder.Services;
+            services.AddSingleton<IODataQueryFactory, ODataQueryFactory>();
             services.AddScoped<IODataResourceFactory, ODataResourceFactory>();
 
             return builder;

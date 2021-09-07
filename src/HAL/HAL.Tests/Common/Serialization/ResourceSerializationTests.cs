@@ -9,6 +9,12 @@ namespace HAL.Tests.Common.Serialization
     [TestClass]
     public class ResourceSerializationTests
     {
+        private enum TestEnum
+        {
+            One,
+            Two
+        }
+
         [TestMethod]
         public void Empty_resource_can_be_deserialized()
         {
@@ -32,6 +38,33 @@ namespace HAL.Tests.Common.Serialization
 
             // Act
             var actualResourceJson = JsonSerializer.Serialize(resource, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.AreEqual(expectedResourceJson, actualResourceJson);
+        }
+
+        [DataTestMethod]
+        [DataRow(JsonIgnoreCondition.Never)]
+        [DataRow(JsonIgnoreCondition.WhenWritingDefault)]
+        [DataRow(JsonIgnoreCondition.WhenWritingNull)]
+        public void Options_are_taken_into_account_when_writing_non_nullable_default_values(JsonIgnoreCondition ignoreCondition)
+        {
+            // Arrange
+            var resource = new Resource<TestState<int>>
+            {
+                State = new TestState<int> { Foo = default }
+            };
+            var expectedResourceJson = ignoreCondition switch
+            {
+                JsonIgnoreCondition.Never => "{\"foo\":0}",
+                JsonIgnoreCondition.WhenWritingDefault => "{}",
+                JsonIgnoreCondition.WhenWritingNull => "{\"foo\":0}",
+                _ => throw new System.Exception("Unhandled condition.")
+            };
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = ignoreCondition };
+
+            // Act
+            var actualResourceJson = JsonSerializer.Serialize(resource, options);
 
             // Assert
             Assert.AreEqual(expectedResourceJson, actualResourceJson);
@@ -69,6 +102,24 @@ namespace HAL.Tests.Common.Serialization
                 }
             };
             var expectedResourceJson = "{\"_embedded\":{\"foo\":[{}]}}";
+
+            // Act
+            var actualResourceJson = JsonSerializer.Serialize(resource, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.AreEqual(expectedResourceJson, actualResourceJson);
+        }
+
+        [TestMethod]
+        public void Resource_with_enum_can_be_serialized_with_enum_as_string()
+        {
+            // Arrange
+
+            var resource = new Resource<TestState<TestEnum>>
+            {
+                State = new TestState<TestEnum> { Foo = TestEnum.Two }
+            };
+            var expectedResourceJson = "{\"foo\":\"two\"}";
 
             // Act
             var actualResourceJson = JsonSerializer.Serialize(resource, Constants.DefaultSerializerOptions);
@@ -170,60 +221,9 @@ namespace HAL.Tests.Common.Serialization
             Assert.AreEqual(expectedResourceJson, actualResourceJson);
         }
 
-        [TestMethod]
-        public void Resource_with_enum_can_be_serialized_with_enum_as_string()
-        {
-            // Arrange
-
-            var resource = new Resource<TestState<TestEnum>>
-            {
-                State = new TestState<TestEnum> { Foo = TestEnum.Two }
-            };
-            var expectedResourceJson = "{\"foo\":\"two\"}";
-
-            // Act
-            var actualResourceJson = JsonSerializer.Serialize(resource, Constants.DefaultSerializerOptions);
-
-            // Assert
-            Assert.AreEqual(expectedResourceJson, actualResourceJson);
-        }
-
-        [DataTestMethod]
-        [DataRow(JsonIgnoreCondition.Never)]
-        [DataRow(JsonIgnoreCondition.WhenWritingDefault)]
-        [DataRow(JsonIgnoreCondition.WhenWritingNull)]
-        public void Options_are_taken_into_account_when_writing_non_nullable_default_values(JsonIgnoreCondition ignoreCondition)
-        {
-            // Arrange
-            var resource = new Resource<TestState<int>>
-            {
-                State = new TestState<int> { Foo = default }
-            };
-            var expectedResourceJson = ignoreCondition switch
-            {
-                JsonIgnoreCondition.Never => "{\"foo\":0}",
-                JsonIgnoreCondition.WhenWritingDefault => "{}",
-                JsonIgnoreCondition.WhenWritingNull => "{\"foo\":0}",
-                _ => throw new System.Exception("Unhandled condition.")
-            };
-            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = ignoreCondition };
-
-            // Act
-            var actualResourceJson = JsonSerializer.Serialize(resource, options);
-
-            // Assert
-            Assert.AreEqual(expectedResourceJson, actualResourceJson);
-        }
-
         private record TestState<T>
         {
             public T Foo { get; set; }
-        }
-
-        private enum TestEnum
-        {
-            One,
-            Two
         }
     }
 }

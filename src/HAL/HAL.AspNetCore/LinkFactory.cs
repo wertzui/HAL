@@ -1,6 +1,6 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -19,12 +19,12 @@ namespace HAL.AspNetCore
     {
         private readonly IActionContextAccessor _actionContextAccessor;
         private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
-        private readonly IUrlHelper _urlHelper;
+        private readonly LinkGenerator _linkGenerator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LinkFactory" /> class.
         /// </summary>
-        /// <param name="urlHelperFactory">The URL helper factory.</param>
+        /// <param name="linkGenerator">The link generator from ASP.Net Core.</param>
         /// <param name="actionContextAccessor">The action context accessor.</param>
         /// <param name="apiExplorer">The API explorer.</param>
         /// <exception cref="System.ArgumentNullException">
@@ -33,36 +33,37 @@ namespace HAL.AspNetCore
         /// actionContextAccessor
         /// or
         /// apiExplorer
+        /// or
+        /// linkGenerator
         /// </exception>
-        public LinkFactory(IUrlHelperFactory urlHelperFactory, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
+        /// <exception cref="ArgumentNullException">urlHelperFactory
+        /// or
+        /// actionContextAccessor
+        /// or
+        /// apiExplorer</exception>
+        public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
-            if (urlHelperFactory is null)
-            {
-                throw new System.ArgumentNullException(nameof(urlHelperFactory));
-            }
-
             if (actionContextAccessor is null)
             {
-                throw new System.ArgumentNullException(nameof(actionContextAccessor));
+                throw new ArgumentNullException(nameof(actionContextAccessor));
             }
-
-            _urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             _actionContextAccessor = actionContextAccessor;
-            _apiExplorer = apiExplorer ?? throw new System.ArgumentNullException(nameof(apiExplorer));
+            _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
+            _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
         }
 
         /// <inheritdoc/>
-        public TResource AddSelfLinkTo<TResource>(TResource resource)
+        public TResource AddSelfLinkTo<TResource>(TResource resource, string action = null, string controller = null, object routeValues = null)
             where TResource : Resource
         {
-            return resource.AddSelfLink(_urlHelper.ActionLink() + _actionContextAccessor.ActionContext.HttpContext.Request.QueryString);
+            return resource.AddSelfLink(_linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues) + _actionContextAccessor.ActionContext.HttpContext.Request.QueryString);
         }
 
         /// <inheritdoc/>
         public TResource AddSwaggerUiCurieLinkTo<TResource>(TResource resource, string name)
             where TResource : Resource
         {
-            return resource.AddCurieLink(name, _urlHelper.ActionLink() + "swagger/index.html#/{rel}");
+            return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
         }
 
         /// <inheritdoc/>
@@ -76,15 +77,15 @@ namespace HAL.AspNetCore
 
         /// <inheritdoc/>
         public Link Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
-            => Create(_urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
+            => Create(null, action, controller, values, protocol, host, fragment);
 
         /// <inheritdoc/>
         public Link Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
-            => Create(name, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
+            => Create(name, null, action, controller, values, protocol, host, fragment);
 
         /// <inheritdoc/>
         public Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
-            => Create(name, title, _urlHelper.ActionLink(action, controller, values, protocol, host, fragment));
+            => Create(name, title, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)));
 
         /// <inheritdoc/>
         public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null) =>
@@ -92,7 +93,7 @@ namespace HAL.AspNetCore
                     .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
                     .Where(descriptor =>
                         descriptor is not null && // only ControllerActionDescriptors
-                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
+                        descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
                     .Select(d => (d.ControllerName, CreateTemplated(d)))
                     .GroupBy(p => p.ControllerName)
                     .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
@@ -104,7 +105,7 @@ namespace HAL.AspNetCore
                     .Where(descriptor =>
                         descriptor is not null && // only ControllerActionDescriptors
                         descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
-                        descriptor != _urlHelper.ActionContext.ActionDescriptor) // without the self link
+                        descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
                     .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
                     .ToList();
 
@@ -145,7 +146,7 @@ namespace HAL.AspNetCore
             // non templated parameters with value, separated by &
             if (hasNonTemplatedParameters)
             {
-                uriSb.Append("?");
+                uriSb.Append('?');
 
                 var isFirst = true;
                 foreach (var nonTemplatedParameter in parameters.nonTemplated)
@@ -153,10 +154,10 @@ namespace HAL.AspNetCore
                     if (isFirst)
                         isFirst = false;
                     else
-                        uriSb.Append("&");
+                        uriSb.Append('&');
 
                     uriSb.Append(nonTemplatedParameter.Key);
-                    uriSb.Append("=");
+                    uriSb.Append('=');
                     uriSb.Append(Uri.EscapeDataString(nonTemplatedParameter.Value?.ToString()));
                 }
             }
@@ -164,11 +165,11 @@ namespace HAL.AspNetCore
             // templated parameters as comma separated list
             if (hasTemplatedParameters)
             {
-                uriSb.Append("{");
+                uriSb.Append('{');
                 if (hasNonTemplatedParameters)
-                    uriSb.Append("&");
+                    uriSb.Append('&');
                 else
-                    uriSb.Append("?");
+                    uriSb.Append('?');
 
                 var isFirst = true;
                 foreach (var templatedParameter in parameters.templated)
@@ -176,12 +177,12 @@ namespace HAL.AspNetCore
                     if (isFirst)
                         isFirst = false;
                     else
-                        uriSb.Append(",");
+                        uriSb.Append(',');
 
                     uriSb.Append(templatedParameter);
                 }
 
-                uriSb.Append("}");
+                uriSb.Append('}');
             }
 
             link.Href = uriSb.ToString();
@@ -314,15 +315,7 @@ namespace HAL.AspNetCore
             isTemplated = queryStarted;
         }
 
-        private string GetCurrentControllerName()
-        {
-            if (_actionContextAccessor.ActionContext is ControllerContext controllerContext)
-                return controllerContext.ActionDescriptor.ControllerName;
-
-            throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
-        }
-
-        private (IReadOnlyDictionary<string, object> nonTemplated, IReadOnlyCollection<string> templated) GetParameters(object values)
+        private static (IReadOnlyDictionary<string, object> nonTemplated, IReadOnlyCollection<string> templated) GetParameters(object values)
         {
             var routeValues = new RouteValueDictionary(values);
             var nonTemplated = new Dictionary<string, object>();
@@ -338,6 +331,14 @@ namespace HAL.AspNetCore
             }
 
             return (nonTemplated, templated);
+        }
+
+        private string GetCurrentControllerName()
+        {
+            if (_actionContextAccessor.ActionContext.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
+                return controllerActionDescriptor.ControllerName;
+
+            throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
         }
     }
 }

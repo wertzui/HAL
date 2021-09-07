@@ -107,7 +107,7 @@ namespace HAL.Common.Converters
             writer.WriteEndObject();
         }
 
-        private void WriteState(Utf8JsonWriter writer, T state, JsonSerializerOptions options)
+        private static void WriteState(Utf8JsonWriter writer, T state, JsonSerializerOptions options)
         {
             if (state is null)
                 return;

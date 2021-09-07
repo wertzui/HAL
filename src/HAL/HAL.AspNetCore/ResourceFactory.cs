@@ -1,6 +1,5 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using System;
 using System.Collections.Generic;
 
@@ -9,25 +8,25 @@ namespace HAL.AspNetCore
     /// <inheritdoc/>
     public class ResourceFactory : IResourceFactory
     {
-        protected readonly ILinkFactory _linkFactory;
-        private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceFactory" /> class.
         /// </summary>
         /// <param name="linkFactory">The link factory.</param>
-        /// <param name="apiExplorer">The API explorer.</param>
-        /// <exception cref="System.ArgumentNullException">linkFactory
+        /// <exception cref="ArgumentNullException">linkFactory
         /// or
         /// apiExplorer</exception>
         /// <exception cref="ArgumentNullException">linkFactory
         /// or
         /// apiExplorer</exception>
-        public ResourceFactory(ILinkFactory linkFactory, IApiDescriptionGroupCollectionProvider apiExplorer)
+        public ResourceFactory(ILinkFactory linkFactory)
         {
-            _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
-            _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
+            LinkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
         }
+
+        /// <summary>
+        /// Gets the link factory.
+        /// </summary>
+        protected ILinkFactory LinkFactory { get; }
 
         /// <inheritdoc/>
         public Resource Create() => new Resource();
@@ -36,23 +35,23 @@ namespace HAL.AspNetCore
         public Resource<T> Create<T>(T state) => new Resource<T> { State = state };
 
         /// <inheritdoc/>
-        public Resource<T> CreateForGetEndpoint<T>(T state) =>
+        public Resource<T> CreateForGetEndpoint<T>(T state, string action = "Get", string controller = null, object routeValues = null) =>
             Create(state)
-            .AddSelfLink(_linkFactory);
+            .AddSelfLink(LinkFactory, action, controller, routeValues);
 
         /// <inheritdoc/>
         public Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate) =>
             Create()
-            .AddLinks(_linkFactory.CreateAllLinks(curieName))
-            .AddSelfLink(_linkFactory)
+            .AddLinks(LinkFactory.CreateAllLinks(curieName))
+            .AddSelfLink(LinkFactory)
             .AddLink("curies", new Link { Name = curieName, Href = curieUrlTemplate, Templated = true });
 
         /// <inheritdoc/>
         public Resource CreateForHomeEndpointWithSwaggerUi(string curieName) =>
             Create()
-            .AddLinks(_linkFactory.CreateAllLinks(curieName))
-            .AddSelfLink(_linkFactory)
-            .AddSwaggerUiCurieLink(_linkFactory, curieName);
+            .AddLinks(LinkFactory.CreateAllLinks(curieName))
+            .AddSelfLink(LinkFactory)
+            .AddSwaggerUiCurieLink(LinkFactory, curieName);
 
         /// <inheritdoc/>
         public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod = "Get")
@@ -91,7 +90,7 @@ namespace HAL.AspNetCore
         private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod, Resource resource)
         {
             resource
-                .AddSelfLink(_linkFactory)
+                .AddSelfLink(LinkFactory)
                 .AddEmbedded(
                 resources,
                 keyAccessor,
@@ -99,11 +98,12 @@ namespace HAL.AspNetCore
                 {
                     var embeddedResource =
                         Create(r)
-                        .AddLinks(_linkFactory.CreateTemplated(StripAsyncSuffix(getMethod)), _ => Constants.SelfLinkName, l => l);
+                        .AddLinks(LinkFactory.CreateTemplated(StripAsyncSuffix(getMethod)), _ => Constants.SelfLinkName, l => l);
 
                     foreach (var link in embeddedResource.Links[Constants.SelfLinkName])
                     {
                         link.Href = link.Href.Replace("{id}", idAccessor(r)?.ToString());
+                        link.Templated = false;
                     }
 
                     return embeddedResource;

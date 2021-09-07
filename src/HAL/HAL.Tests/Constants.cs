@@ -10,7 +10,7 @@ namespace HAL.Tests
             DefaultSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
             DefaultSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         }
-        public static JsonSerializerOptions DefaultSerializerOptions { get; }
 
+        public static JsonSerializerOptions DefaultSerializerOptions { get; }
     }
 }

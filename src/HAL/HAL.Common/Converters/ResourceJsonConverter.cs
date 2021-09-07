@@ -13,6 +13,26 @@ namespace HAL.Common.Converters
     /// <seealso cref="JsonConverter{Resource}" />
     public class ResourceJsonConverter : JsonConverter<Resource>
     {
+        /// <summary>
+        /// Determines if the given value should be written to the JSON payload based on the ignore condition.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <param name="ignoreCondition">The ignore condition.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
+        public static bool ShouldWriteValue(object value, object defaultValue, JsonIgnoreCondition ignoreCondition)
+        {
+            return ignoreCondition switch
+            {
+                JsonIgnoreCondition.Never => true,
+                JsonIgnoreCondition.Always => false,
+                JsonIgnoreCondition.WhenWritingDefault => !Equals(value, defaultValue),
+                JsonIgnoreCondition.WhenWritingNull => value is not null,
+                _ => throw new ArgumentOutOfRangeException(nameof(ignoreCondition), $"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'."),
+            };
+        }
+
         /// <inheritdoc/>
         public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
@@ -106,7 +126,7 @@ namespace HAL.Common.Converters
             return newOptions;
         }
 
-        private void WriteState(Utf8JsonWriter writer, object state, JsonSerializerOptions options)
+        private static void WriteState(Utf8JsonWriter writer, object state, JsonSerializerOptions options)
         {
             if (state is null)
                 return;
@@ -125,31 +145,6 @@ namespace HAL.Common.Converters
                     writer.WritePropertyName(name);
                     JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Determines if the given value should be written to the JSON payload based on the ignore condition.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="defaultValue">The default value.</param>
-        /// <param name="ignoreCondition">The ignore condition.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
-        public static bool ShouldWriteValue(object value, object defaultValue, JsonIgnoreCondition ignoreCondition)
-        {
-            switch (ignoreCondition)
-            {
-                case JsonIgnoreCondition.Never:
-                    return true;
-                case JsonIgnoreCondition.Always:
-                    return false;
-                case JsonIgnoreCondition.WhenWritingDefault:
-                    return !Equals(value, defaultValue);
-                case JsonIgnoreCondition.WhenWritingNull:
-                    return value is not null;
-                default:
-                    throw new ArgumentOutOfRangeException($"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.");
             }
         }
     }

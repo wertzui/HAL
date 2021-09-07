@@ -13,8 +13,11 @@ namespace HAL.AspNetCore.Abstractions
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        TResource AddSelfLinkTo<TResource>(TResource resource)
+        TResource AddSelfLinkTo<TResource>(TResource resource, string action = null, string controller = null, object routeValues = null)
             where TResource : Resource;
 
         /// <summary>

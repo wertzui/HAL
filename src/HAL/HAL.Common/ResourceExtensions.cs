@@ -35,7 +35,7 @@ namespace HAL.Common
         /// <param name="key">The key of the embedded resource.</param>
         /// <param name="embedded">The embedded resource to add.</param>
         /// <returns></returns>
-        public static TResource AddEmbedded<TResource>(this TResource resource, string key, TResource embedded)
+        public static TResource AddEmbedded<TResource>(this TResource resource, string key, Resource embedded)
             where TResource : Resource
         {
             var collection = GetOrCreateEmbeddedCollection(resource, key);
@@ -56,7 +56,7 @@ namespace HAL.Common
         /// <param name="keySelector">A function to select the key of every resource.</param>
         /// <param name="embeddedSelector">A function to convert each state of the source collection into a resource.</param>
         /// <returns></returns>
-        public static TResource AddEmbedded<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TResource> embeddedSelector)
+        public static TResource AddEmbedded<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, Resource> embeddedSelector)
             where TResource : Resource
         {
             foreach (var item in source)
@@ -151,6 +151,24 @@ namespace HAL.Common
         /// Adds multiple links from a collection.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <param name="links">The links to be added to the resource. The Name of the link will become the rel.</param>
+        /// <returns></returns>
+        public static TResource AddLinks<TResource>(this TResource resource, IEnumerable<Link> links)
+            where TResource : Resource
+        {
+            foreach (var link in links)
+            {
+                resource.AddLink(link);
+            }
+
+            return resource;
+        }
+
+        /// <summary>
+        /// Adds multiple links from a collection.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <typeparam name="TKey">The type of the key.</typeparam>
         /// <typeparam name="TLinkCollection">The type of the link collection.</typeparam>
         /// <param name="resource">The resource.</param>
@@ -185,6 +203,38 @@ namespace HAL.Common
 
             return resource.AddLink(link);
         }
+
+        /// <summary>
+        /// Casts the state to the new type.
+        /// If the <paramref name="resource"/> is <see cref="Resource"/> then the state will be initialized with the default value.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <param name="resource">The resource.</param>
+        public static Resource<TState> CastState<TState>(this Resource resource)
+        {
+            var type = resource.GetType();
+
+            if (!type.IsGenericType)
+                return resource.ChangeStateTo<TState>(default);
+
+            return resource.ChangeStateTo((TState)type.GetProperty(nameof(Resource<object>.State)).GetValue(resource));
+        }
+
+        /// <summary>
+        /// Creates a new resource with the given new state and preserves the Embedded and Links properties.
+        /// </summary>
+        /// <typeparam name="TState">The type of the new state.</typeparam>
+        /// <param name="resource">The old resource.</param>
+        /// <param name="state">The new state.</param>
+        /// <returns></returns>
+        public static Resource<TState> ChangeStateTo<TState>(this Resource resource, TState state) => new Resource<TState> { Embedded = resource.Embedded, Links = resource.Links, State = state };
+
+        /// <summary>
+        /// Creates a new resource without the State.
+        /// </summary>
+        /// <param name="resource">The resource.</param>
+        /// <returns></returns>
+        public static Resource RemoveState(this Resource resource) => new() { Embedded = resource.Embedded, Links = resource.Links };
 
         private static ICollection<Resource> GetOrCreateEmbeddedCollection(Resource resource, string key)
         {

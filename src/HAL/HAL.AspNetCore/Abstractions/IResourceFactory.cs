@@ -29,8 +29,11 @@ namespace HAL.AspNetCore.Abstractions
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="state">The state.</param>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        Resource<T> CreateForGetEndpoint<T>(T state);
+        Resource<T> CreateForGetEndpoint<T>(T state, string action = "Get", string controller = null, object routeValues = null);
 
         /// <summary>
         /// Creates a resource for the home endpoint which will contain all possible links to all controller actions that do not have any parameters in your application.

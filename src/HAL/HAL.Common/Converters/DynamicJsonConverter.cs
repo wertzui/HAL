@@ -135,7 +135,7 @@ namespace HAL.Common.Converters
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException($"{nameof(jsonElement)}.{nameof(jsonElement.ValueKind)}", $"Unsupported {nameof(jsonElement.ValueKind)} '{jsonElement.ValueKind}'.");
             }
             return result;
         }

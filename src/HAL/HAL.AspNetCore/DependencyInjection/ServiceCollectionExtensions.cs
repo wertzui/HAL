@@ -1,7 +1,6 @@
 ﻿using HAL.AspNetCore;
 using HAL.AspNetCore.Abstractions;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
 using System;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -26,7 +25,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddScoped<ILinkFactory, LinkFactory>();
             services.AddScoped<IResourceFactory, ResourceFactory>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-            services.AddSingleton<IUrlHelperFactory, UrlHelperFactory>();
 
             // This is needed for Action Link generation.
             // See https://github.com/dotnet/aspnetcore/issues/14606
