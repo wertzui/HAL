@@ -1,4 +1,5 @@
 ﻿using HAL.Common;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
 namespace HAL.AspNetCore.Abstractions
@@ -98,21 +99,24 @@ namespace HAL.AspNetCore.Abstractions
         /// If they have parameters these will appear as templated parameters in the link.
         /// </summary>
         /// <param name="prefix">The prefix to use in all generated rels. This should match the name of a curie.</param>
+        /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null);
+        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null, ApiVersion version = null);
 
         /// <summary>
         /// Creates all possible links to all controller actions that do not have any parameters in your application.
         /// </summary>
+        /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        ICollection<Link> CreateAllLinksWithoutParameters();
+        ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion version = null);
 
         /// <summary>
         /// Creates all templated links that match the given controller and action.
         /// </summary>
         /// <param name="action">The action.</param>
         /// <param name="controller">The controller.</param>
+        /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        ICollection<Link> CreateTemplated(string action, string controller = null);
+        ICollection<Link> CreateTemplated(string action, string controller = null, ApiVersion version = null);
     }
 }

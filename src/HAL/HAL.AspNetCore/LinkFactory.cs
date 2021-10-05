@@ -1,6 +1,7 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -44,9 +45,8 @@ namespace HAL.AspNetCore
         public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
             if (actionContextAccessor is null)
-            {
                 throw new ArgumentNullException(nameof(actionContextAccessor));
-            }
+
             _actionContextAccessor = actionContextAccessor;
             _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
             _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
@@ -56,13 +56,23 @@ namespace HAL.AspNetCore
         public TResource AddSelfLinkTo<TResource>(TResource resource, string action = null, string controller = null, object routeValues = null)
             where TResource : Resource
         {
-            return resource.AddSelfLink(_linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues) + _actionContextAccessor.ActionContext.HttpContext.Request.QueryString);
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            string path = _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues);
+            QueryString queryString = _actionContextAccessor.ActionContext.HttpContext.Request.QueryString;
+            return resource.AddSelfLink(path + queryString);
         }
 
         /// <inheritdoc/>
         public TResource AddSwaggerUiCurieLinkTo<TResource>(TResource resource, string name)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
             return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
         }
 
@@ -88,35 +98,56 @@ namespace HAL.AspNetCore
             => Create(name, title, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)));
 
         /// <inheritdoc/>
-        public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null) =>
-            _apiExplorer.ApiDescriptionGroups.Items[0].Items
-                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
-                    .Where(descriptor =>
-                        descriptor is not null && // only ControllerActionDescriptors
-                        descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
-                    .Select(d => (d.ControllerName, CreateTemplated(d)))
-                    .GroupBy(p => p.ControllerName)
-                    .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
+        public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null, ApiVersion version = null)
+        {
+            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            return actionDescriptors
+                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+                .Where(descriptor =>
+                    descriptor is not null && // only ControllerActionDescriptors
+                    descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
+                .Select(d => (d.ControllerName, CreateTemplated(d)))
+                .GroupBy(p => p.ControllerName)
+                .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
+        }
+
+        private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion version)
+        {
+            var descriptorGroups = _apiExplorer.ApiDescriptionGroups.Items;
+
+            if (version is not null)
+            {
+                return descriptorGroups
+                    .SelectMany(g => g.Items)
+                    .Where(d => d.GetProperty<ApiVersion>() == version);
+            }
+
+            return descriptorGroups.Last().Items;
+        }
 
         /// <inheritdoc/>
-        public ICollection<Link> CreateAllLinksWithoutParameters() =>
-            _apiExplorer.ApiDescriptionGroups.Items[0].Items
-                    .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
-                    .Where(descriptor =>
-                        descriptor is not null && // only ControllerActionDescriptors
-                        descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
-                        descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
-                    .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
-                    .ToList();
+        public ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion version = null)
+        {
+            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            return actionDescriptors
+                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+                .Where(descriptor =>
+                    descriptor is not null && // only ControllerActionDescriptors
+                    descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
+                    descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
+                .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
+                .ToList();
+        }
 
         /// <inheritdoc/>
-        public ICollection<Link> CreateTemplated(string action, string controller = null)
+        public ICollection<Link> CreateTemplated(string action, string controller = null, ApiVersion version = null)
         {
             if (controller is null)
                 controller = GetCurrentControllerName();
 
-            return _apiExplorer.ApiDescriptionGroups.Items[0].Items
-                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
+            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            return actionDescriptors
+                .Select(description => description.ActionDescriptor as ControllerActionDescriptor)
                 .Where(descriptor =>
                     descriptor is not null && // only ControllerActionDescriptors
                     descriptor.ControllerName.Equals(controller, StringComparison.OrdinalIgnoreCase) && // controller must match
@@ -192,6 +223,9 @@ namespace HAL.AspNetCore
         /// <inheritdoc/>
         public Link CreateTemplated(ControllerActionDescriptor descriptor)
         {
+            if (descriptor is null)
+                throw new ArgumentNullException(nameof(descriptor));
+
             var hrefBuilder = new StringBuilder();
             var request = _actionContextAccessor.ActionContext.HttpContext.Request;
             hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a url like https://localhost:5001/

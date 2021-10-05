@@ -1,5 +1,6 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.Common;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
@@ -40,22 +41,34 @@ namespace HAL.AspNetCore
             .AddSelfLink(LinkFactory, action, controller, routeValues);
 
         /// <inheritdoc/>
-        public Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate) =>
+        public Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate, ApiVersion version = null) =>
             Create()
-            .AddLinks(LinkFactory.CreateAllLinks(curieName))
+            .AddLinks(LinkFactory.CreateAllLinks(curieName, version))
             .AddSelfLink(LinkFactory)
             .AddLink("curies", new Link { Name = curieName, Href = curieUrlTemplate, Templated = true });
 
         /// <inheritdoc/>
-        public Resource CreateForHomeEndpointWithSwaggerUi(string curieName) =>
+        public Resource CreateForHomeEndpointWithSwaggerUi(string curieName, ApiVersion version = null) =>
             Create()
-            .AddLinks(LinkFactory.CreateAllLinks(curieName))
+            .AddLinks(LinkFactory.CreateAllLinks(curieName, version))
             .AddSelfLink(LinkFactory)
             .AddSwaggerUiCurieLink(LinkFactory, curieName);
 
         /// <inheritdoc/>
         public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod = "Get")
         {
+            if (resources is null)
+                throw new ArgumentNullException(nameof(resources));
+
+            if (keyAccessor is null)
+                throw new ArgumentNullException(nameof(keyAccessor));
+
+            if (idAccessor is null)
+                throw new ArgumentNullException(nameof(idAccessor));
+
+            if (string.IsNullOrWhiteSpace(getMethod))
+                throw new ArgumentException($"'{nameof(getMethod)}' cannot be null or white space.", nameof(getMethod));
+
             var resource = Create();
 
             AddSelfAndEmbedded(resources, keyAccessor, idAccessor, getMethod, resource);
@@ -66,6 +79,18 @@ namespace HAL.AspNetCore
         /// <inheritdoc/>
         public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string getMethod = "Get")
         {
+            if (resources is null)
+                throw new ArgumentNullException(nameof(resources));
+
+            if (keyAccessor is null)
+                throw new ArgumentNullException(nameof(keyAccessor));
+
+            if (idAccessor is null)
+                throw new ArgumentNullException(nameof(idAccessor));
+
+            if (string.IsNullOrWhiteSpace(getMethod))
+                throw new ArgumentException($"'{nameof(getMethod)}' cannot be null or whitespace.", nameof(getMethod));
+
             var resource = Create(state ?? new Page());
 
             AddSelfAndEmbedded(resources, keyAccessor, idAccessor, getMethod, resource);
@@ -89,6 +114,18 @@ namespace HAL.AspNetCore
 
         private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod, Resource resource)
         {
+            if (resources is null)
+                throw new ArgumentNullException(nameof(resources));
+
+            if (keyAccessor is null)
+                throw new ArgumentNullException(nameof(keyAccessor));
+
+            if (idAccessor is null)
+                throw new ArgumentNullException(nameof(idAccessor));
+
+            if (string.IsNullOrWhiteSpace(getMethod))
+                throw new ArgumentException($"'{nameof(getMethod)}' cannot be null or white space.", nameof(getMethod));
+
             resource
                 .AddSelfLink(LinkFactory)
                 .AddEmbedded(

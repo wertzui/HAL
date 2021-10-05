@@ -1,4 +1,5 @@
 ﻿using HAL.Common;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
@@ -40,8 +41,11 @@ namespace HAL.AspNetCore.Abstractions
         /// Each controller will become one relation with all the methods as links inside of that relation.
         /// It will also add a curie to point to a documentation about the relations.
         /// </summary>
+        /// <param name="curieName">Name of the curie.</param>
+        /// <param name="curieUrlTemplate">The curie URL template.</param>
+        /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate);
+        Resource CreateForHomeEndpoint(string curieName, string curieUrlTemplate, ApiVersion version = null);
 
         /// <summary>
         /// Creates a resource for the home endpoint which will contain all possible links to all controller actions that do not have any parameters in your application.
@@ -50,8 +54,9 @@ namespace HAL.AspNetCore.Abstractions
         /// For this to work, you must enable deep linking in your call to app.UseSwaggerUI(...).
         /// </summary>
         /// <param name="curieName">Name of the curie.</param>
+        /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        Resource CreateForHomeEndpointWithSwaggerUi(string curieName);
+        Resource CreateForHomeEndpointWithSwaggerUi(string curieName, ApiVersion version = null);
 
         /// <summary>
         /// Creates a resource for a list endpoint.

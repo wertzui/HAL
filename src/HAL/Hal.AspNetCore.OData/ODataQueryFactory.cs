@@ -41,8 +41,19 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public IPageLinks GetListNavigation<TDto>(IEnumerable<TDto> resources, ODataRawQueryOptions rawValues, string baseHref, long skip, long top, long? totalCount)
-            => GetListNavigation(resources.LongCount(), rawValues, baseHref, skip, top, totalCount);
+        public IPageLinks GetListNavigation<TDto>(
+            IEnumerable<TDto> resources,
+            ODataRawQueryOptions rawValues,
+            string baseHref,
+            long skip,
+            long top,
+            long? totalCount)
+        {
+            if (resources is null)
+                throw new ArgumentNullException(nameof(resources));
+
+            return GetListNavigation(resources.LongCount(), rawValues, baseHref, skip, top, totalCount);
+        }
 
         /// <inheritdoc/>
         public IPageLinks GetListNavigation(long numberOfResourcesOnThisPage, ODataRawQueryOptions rawValues, string baseHref, long skip, long top, long? totalCount)

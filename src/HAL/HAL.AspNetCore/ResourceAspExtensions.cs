@@ -1,4 +1,5 @@
 ﻿using HAL.AspNetCore.Abstractions;
+using System;
 
 namespace HAL.Common
 {
@@ -20,6 +21,12 @@ namespace HAL.Common
         public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory, string action = null, string controller = null, object routeValues = null)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (linkFactory is null)
+                throw new ArgumentNullException(nameof(linkFactory));
+
             return linkFactory.AddSelfLinkTo(resource, action, controller, routeValues);
         }
 
@@ -34,6 +41,15 @@ namespace HAL.Common
         public static TResource AddSwaggerUiCurieLink<TResource>(this TResource resource, ILinkFactory linkFactory, string name)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (linkFactory is null)
+                throw new ArgumentNullException(nameof(linkFactory));
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
+
             return linkFactory.AddSwaggerUiCurieLinkTo(resource, name);
         }
     }

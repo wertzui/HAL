@@ -19,6 +19,15 @@ namespace HAL.Common
         public static TResource AddCurieLink<TResource>(this TResource resource, string name, string href)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(href))
+                throw new ArgumentException($"'{nameof(href)}' cannot be null or whitespace.", nameof(href));
+
             if (!href.Contains("{rel}"))
                 throw new ArgumentException("A curie must contain a {rel} template.");
 
@@ -38,6 +47,15 @@ namespace HAL.Common
         public static TResource AddEmbedded<TResource>(this TResource resource, string key, Resource embedded)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
+
+            if (embedded is null)
+                throw new ArgumentNullException(nameof(embedded));
+
             var collection = GetOrCreateEmbeddedCollection(resource, key);
 
             collection.Add(embedded);
@@ -59,6 +77,18 @@ namespace HAL.Common
         public static TResource AddEmbedded<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, Resource> embeddedSelector)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+
+            if (keySelector is null)
+                throw new ArgumentNullException(nameof(keySelector));
+
+            if (embeddedSelector is null)
+                throw new ArgumentNullException(nameof(embeddedSelector));
+
             foreach (var item in source)
             {
                 var key = keySelector(item)?.ToString();
@@ -79,6 +109,12 @@ namespace HAL.Common
         public static TResource AddLink<TResource>(this TResource resource, Link link)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (link is null)
+                throw new ArgumentNullException(nameof(link));
+
             var key = link.Name;
 
             return resource.AddLink(key, link);
@@ -95,6 +131,15 @@ namespace HAL.Common
         public static TResource AddLink<TResource>(this TResource resource, string rel, Link link)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(rel))
+                throw new ArgumentException($"'{nameof(rel)}' cannot be null or whitespace.", nameof(rel));
+
+            if (link is null)
+                throw new ArgumentNullException(nameof(link));
+
             var collection = GetOrCreateLinkCollection(resource, rel);
 
             collection.Add(link);
@@ -114,6 +159,15 @@ namespace HAL.Common
         public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, Link> linkSelector)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+
+            if (linkSelector is null)
+                throw new ArgumentNullException(nameof(linkSelector));
+
             foreach (var item in source)
             {
                 var value = linkSelector(item);
@@ -137,6 +191,18 @@ namespace HAL.Common
         public static TResource AddLinks<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> relSelector, Func<TSource, Link> linkSelector)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+
+            if (relSelector is null)
+                throw new ArgumentNullException(nameof(relSelector));
+
+            if (linkSelector is null)
+                throw new ArgumentNullException(nameof(linkSelector));
+
             foreach (var item in source)
             {
                 var key = relSelector(item)?.ToString();
@@ -157,6 +223,12 @@ namespace HAL.Common
         public static TResource AddLinks<TResource>(this TResource resource, IEnumerable<Link> links)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (links is null)
+                throw new ArgumentNullException(nameof(links));
+
             foreach (var link in links)
             {
                 resource.AddLink(link);
@@ -178,6 +250,12 @@ namespace HAL.Common
             where TResource : Resource
             where TLinkCollection : IEnumerable<Link>
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (source is null)
+                throw new ArgumentNullException(nameof(source));
+
             foreach (var rel in source)
             {
                 foreach (var link in rel.Value)
@@ -199,6 +277,12 @@ namespace HAL.Common
         public static TResource AddSelfLink<TResource>(this TResource resource, string href)
             where TResource : Resource
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(href))
+                throw new ArgumentException($"'{nameof(href)}' cannot be null or whitespace.", nameof(href));
+
             var link = new Link { Name = Constants.SelfLinkName, Href = href };
 
             return resource.AddLink(link);
@@ -212,6 +296,9 @@ namespace HAL.Common
         /// <param name="resource">The resource.</param>
         public static Resource<TState> CastState<TState>(this Resource resource)
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
             var type = resource.GetType();
 
             if (!type.IsGenericType)
@@ -227,17 +314,35 @@ namespace HAL.Common
         /// <param name="resource">The old resource.</param>
         /// <param name="state">The new state.</param>
         /// <returns></returns>
-        public static Resource<TState> ChangeStateTo<TState>(this Resource resource, TState state) => new Resource<TState> { Embedded = resource.Embedded, Links = resource.Links, State = state };
+        public static Resource<TState> ChangeStateTo<TState>(this Resource resource, TState state)
+        {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            return new Resource<TState> { Embedded = resource.Embedded, Links = resource.Links, State = state };
+        }
 
         /// <summary>
         /// Creates a new resource without the State.
         /// </summary>
         /// <param name="resource">The resource.</param>
         /// <returns></returns>
-        public static Resource RemoveState(this Resource resource) => new() { Embedded = resource.Embedded, Links = resource.Links };
+        public static Resource RemoveState(this Resource resource)
+        {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            return new() { Embedded = resource.Embedded, Links = resource.Links };
+        }
 
         private static ICollection<Resource> GetOrCreateEmbeddedCollection(Resource resource, string key)
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
+
             if (resource.Embedded is null)
                 resource.Embedded = new Dictionary<string, ICollection<Resource>>();
 
@@ -252,6 +357,12 @@ namespace HAL.Common
 
         private static ICollection<Link> GetOrCreateLinkCollection(Resource resource, string key)
         {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
+
             if (resource.Links is null)
                 resource.Links = new Dictionary<string, ICollection<Link>>();
 

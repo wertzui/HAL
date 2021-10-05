@@ -18,6 +18,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">services</exception>
         public static IMvcBuilder AddHALOData(this IMvcBuilder builder)
         {
+            if (builder is null)
+                throw new ArgumentNullException(nameof(builder));
+
             builder.AddHAL();
 
             var services = builder.Services;
