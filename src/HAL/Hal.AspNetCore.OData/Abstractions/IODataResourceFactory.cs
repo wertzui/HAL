@@ -25,9 +25,11 @@ namespace HAL.AspNetCore.OData.Abstractions
         /// <param name="oDataQueryOptions">The o data query options.</param>
         /// <param name="maxTop">The maximum top.</param>
         /// <param name="totalCount">The total count.</param>
-        /// <param name="getMethod">The get method.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
+        /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataQueryOptions<TEntity> oDataQueryOptions, long maxTop = 50, long? totalCount = null, string getMethod = "Get");
+        Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataQueryOptions<TEntity> oDataQueryOptions, long maxTop = 50, long? totalCount = null,string controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
 
         /// <summary>
         /// Creates a resource for a list endpoint using OData skip and top logic.
@@ -40,8 +42,10 @@ namespace HAL.AspNetCore.OData.Abstractions
         /// <param name="idAccessor">The identifier accessor.</param>
         /// <param name="links">The links from this page.</param>
         /// <param name="page">The page itself.</param>
-        /// <param name="getMethod">The get method.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
+        /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, IPageLinks links, Page page, string getMethod = "Get");
+        Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, IPageLinks links, Page page, string controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
     }
 }

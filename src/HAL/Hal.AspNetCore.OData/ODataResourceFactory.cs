@@ -34,7 +34,9 @@ namespace HAL.AspNetCore.OData
             ODataQueryOptions<TEntity> oDataQueryOptions,
             long maxTop = 50,
             long? totalCount = null,
-            string getMethod = "Get")
+            string controller = null,
+            string listGetMethod = "GetList",
+            string singleGetMethod = "Get")
         {
             if (resources is null)
                 throw new ArgumentNullException(nameof(resources));
@@ -54,8 +56,11 @@ namespace HAL.AspNetCore.OData
             if (totalCount.GetValueOrDefault() < 0)
                 throw new ArgumentOutOfRangeException(nameof(totalCount), $"'{nameof(totalCount)}' cannot be less than 0, but is {totalCount}.");
 
-            if (string.IsNullOrWhiteSpace(getMethod))
-                throw new ArgumentException($"'{nameof(getMethod)}' cannot be null or whitespace.", nameof(getMethod));
+            if (string.IsNullOrWhiteSpace(listGetMethod))
+                throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or whitespace.", nameof(listGetMethod));
+
+            if (string.IsNullOrWhiteSpace(singleGetMethod))
+                throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or whitespace.", nameof(singleGetMethod));
 
             var rawValues = oDataQueryOptions.RawValues;
 
@@ -67,7 +72,7 @@ namespace HAL.AspNetCore.OData
 
             var links = GetListNavigation(resources, rawValues, skip, top, totalCount);
 
-            var resource = CreateForOdataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, getMethod);
+            var resource = CreateForOdataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
 
             return resource;
         }
@@ -79,7 +84,9 @@ namespace HAL.AspNetCore.OData
             Func<TDto, TId> idAccessor,
             IPageLinks links,
             Page page,
-            string getMethod = "Get")
+            string controller = null,
+            string listGetMethod = "GetList",
+            string singleGetMethod = "Get")
         {
             if (resources is null)
                 throw new ArgumentNullException(nameof(resources));
@@ -96,10 +103,13 @@ namespace HAL.AspNetCore.OData
             if (page is null)
                 throw new ArgumentNullException(nameof(page));
 
-            if (string.IsNullOrWhiteSpace(getMethod))
-                throw new ArgumentException($"'{nameof(getMethod)}' cannot be null or whitespace.", nameof(getMethod));
+            if (string.IsNullOrWhiteSpace(listGetMethod))
+                throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or whitespace.", nameof(listGetMethod));
 
-            return CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links.FirstHref, links.PrevHref, links.NextHref, links.LastHref, page, getMethod);
+            if (string.IsNullOrWhiteSpace(singleGetMethod))
+                throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or whitespace.", nameof(singleGetMethod));
+
+            return CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links.FirstHref, links.PrevHref, links.NextHref, links.LastHref, page, controller, listGetMethod, singleGetMethod);
         }
 
         private IPageLinks GetListNavigation<TDto>(

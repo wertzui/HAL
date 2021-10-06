@@ -69,9 +69,11 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="resources">The resources.</param>
         /// <param name="keyAccessor">The key accessor which is used as the name of the collection in the _embedded object. If you do not specify a constant value, you will have multiple collections in the _embedded object.</param>
         /// <param name="idAccessor">The identifier accessor.</param>
-        /// <param name="getMethod">The name of the get method. Default is "Get".</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
+        /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string getMethod = "Get");
+        Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string controller = null, string listGetMethod = "Get", string singleGetMethod = "Get");
 
         /// <summary>
         /// Creates a resource for a list endpoint.
@@ -89,8 +91,10 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="nextHref">The href to the next page (optional).</param>
         /// <param name="lastHref">The href to the last page (optional).</param>
         /// <param name="state">The state with paging information (optional if the endpoint supports it).</param>
-        /// <param name="getMethod">The name of the get method. Default is "Get".</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
+        /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string getMethod = "Get");
+        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string controller = null, string listGetMethod = "Get", string singleGetMethod = "Get");
     }
 }
