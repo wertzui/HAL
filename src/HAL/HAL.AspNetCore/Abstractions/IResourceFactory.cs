@@ -73,7 +73,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
         /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string controller = null, string listGetMethod = "Get", string singleGetMethod = "Get");
+        Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
 
         /// <summary>
         /// Creates a resource for a list endpoint.
@@ -95,6 +95,6 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
         /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
         /// <returns></returns>
-        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string controller = null, string listGetMethod = "Get", string singleGetMethod = "Get");
+        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string firstHref = null, string prevHref = null, string nextHref = null, string lastHref = null, Page state = null, string controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
     }
 }
