@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/0.2.0-alpha">
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>0f864c29-31f2-4027-9601-08e2717feef0</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <StartupCommand>ng build &amp;&amp; cd dist/ngx-hal-client &amp;&amp; npm publish</StartupCommand>
+    <JavaScriptTestFramework>Jasmine</JavaScriptTestFramework>
+    <BuildCommand>ng build</BuildCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <BuildCommand>ng build</BuildCommand>
+    <StartupCommand>ng build &amp;&amp; cd dist/ngx-hal-client &amp;&amp; npm publish</StartupCommand>
+  </PropertyGroup>
+  <ItemGroup>
+    <Script Include="**" Exclude="*.esproj;**\node_modules\**" />
+  </ItemGroup>
+  <!-- This target is copied from the ASP.NET SPA template in order to ensure node_modules are in place. -->
+  <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
+    <!-- Ensure Node.js is installed -->
+    <Exec Command="node --version" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+    </Exec>
+    <Error Condition="'$(ErrorCode)' != '0'" Text="Node.js is required to build and run this project. To continue, please install Node.js from https://nodejs.org/, and then restart your command prompt or IDE." />
+    <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+  </Target>
+</Project>

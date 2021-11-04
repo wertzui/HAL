@@ -1,0 +1,12 @@
+/*
+ * Public API Surface of ngx-hal-client
+ */
+export * from './lib/hal-client';
+export * from './lib/hal-client.module';
+export * from './lib/Models/link';
+export * from './lib/Models/page';
+export * from './lib/Models/resource';
+export * from './lib/Models/listResource';
+export * from './lib/Models/pagedListResource';
+export * from './lib/Models/resourceOf';
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHVibGljLWFwaS5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL3Byb2plY3RzL25neC1oYWwtY2xpZW50L3NyYy9wdWJsaWMtYXBpLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBOztHQUVHO0FBRUgsY0FBYyxrQkFBa0IsQ0FBQztBQUNqQyxjQUFjLHlCQUF5QixDQUFDO0FBQ3hDLGNBQWMsbUJBQW1CLENBQUM7QUFDbEMsY0FBYyxtQkFBbUIsQ0FBQztBQUNsQyxjQUFjLHVCQUF1QixDQUFDO0FBQ3RDLGNBQWMsMkJBQTJCLENBQUM7QUFDMUMsY0FBYyxnQ0FBZ0MsQ0FBQztBQUMvQyxjQUFjLHlCQUF5QixDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLypcbiAqIFB1YmxpYyBBUEkgU3VyZmFjZSBvZiBuZ3gtaGFsLWNsaWVudFxuICovXG5cbmV4cG9ydCAqIGZyb20gJy4vbGliL2hhbC1jbGllbnQnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvaGFsLWNsaWVudC5tb2R1bGUnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvTW9kZWxzL2xpbmsnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvTW9kZWxzL3BhZ2UnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvTW9kZWxzL3Jlc291cmNlJztcbmV4cG9ydCAqIGZyb20gJy4vbGliL01vZGVscy9saXN0UmVzb3VyY2UnO1xuZXhwb3J0ICogZnJvbSAnLi9saWIvTW9kZWxzL3BhZ2VkTGlzdFJlc291cmNlJztcbmV4cG9ydCAqIGZyb20gJy4vbGliL01vZGVscy9yZXNvdXJjZU9mJztcbiJdfQ==

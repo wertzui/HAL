@@ -1,0 +1,39 @@
+{
+  "name": "@wertzui/ngx-hal-client",
+  "version": "1.0.3",
+  "author": "wertzui",
+  "description": "An Angular client to consume a REST service that serves application/hal+json.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wertzui/HAL"
+  },
+  "bugs": "https://github.com/wertzui/HAL/issues",
+  "homepage": "https://github.com/wertzui/HAL",
+  "keywords": [
+    "angular",
+    "hal",
+    "hal+json",
+    "rest"
+  ],
+  "license": "Unlicense",
+  "readme": "https://github.com/wertzui/HAL/blob/main/README.md",
+  "peerDependencies": {
+    "@angular/common": "12.2.11",
+    "@angular/core": "12.2.11",
+    "uri-templates": "0.2.0",
+    "lodash": "4.17.21"
+  },
+  "dependencies": {
+    "tslib": "2.3.1"
+  },
+  "main": "bundles/wertzui-ngx-hal-client.umd.js",
+  "module": "fesm2015/wertzui-ngx-hal-client.js",
+  "es2015": "fesm2015/wertzui-ngx-hal-client.js",
+  "esm2015": "esm2015/wertzui-ngx-hal-client.js",
+  "fesm2015": "fesm2015/wertzui-ngx-hal-client.js",
+  "typings": "wertzui-ngx-hal-client.d.ts",
+  "sideEffects": false
+}
