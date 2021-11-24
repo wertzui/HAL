@@ -27,7 +27,7 @@ export class HalClient {
     return resourceResponse;
   }
 
-  public async post<TResource extends Resource, TError extends Resource>(uri: string, body: Resource, TResource: { new(): TResource }, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>> {
+  public async post<TResource extends Resource, TError extends Resource>(uri: string, body: unknown, TResource: { new(): TResource }, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>> {
     const options = HalClient.createOptions(headers);
     let dtoResponse: HttpResponse<ResourceDto> | undefined;
     try {
@@ -45,7 +45,7 @@ export class HalClient {
     return resourceResponse;
   }
 
-  public async put<TResource extends Resource, TError extends Resource>(uri: string, body: Resource, TResource: { new(): TResource }, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>> {
+  public async put<TResource extends Resource, TError extends Resource>(uri: string, body: unknown, TResource: { new(): TResource }, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>> {
     const options = HalClient.createOptions(headers);
     let dtoResponse: HttpResponse<ResourceDto> | undefined;
     try {
@@ -65,9 +65,9 @@ export class HalClient {
 
   public async delete<TError extends Resource>(uri: string, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<void | TError>> {
     const options = HalClient.createOptions(headers);
-    let response: HttpResponse<any> | undefined;
+    let response: HttpResponse<ResourceDto | void> | undefined;
     try {
-      response = await this._httpClient.delete<HttpResponse<void>>(uri, options).toPromise();
+      response = await this._httpClient.delete<void>(uri, options).toPromise();
     }
     catch (e) {
       if (e instanceof HttpErrorResponse)
@@ -78,14 +78,14 @@ export class HalClient {
     if (!response)
       throw new Error(`DELETE ${uri} - options: ${options} did not return a response.`);
     if (!response.ok) {
-      const errorResponse = HalClient.convertResponse<TError>(TError, response);
+      const errorResponse = HalClient.convertResponse<TError>(TError, response as HttpResponse<ResourceDto>);
       return errorResponse;
     }
 
-    return response;
+    return response as HttpResponse<void>;
   }
 
-  private static createOptions(headers?: HttpHeaders): { headers?: HttpHeaders, responseType: 'json', observe: 'response' } {
+  private static createOptions(headers?: HttpHeaders): { headers?: HttpHeaders; responseType: 'json'; observe: 'response' } {
     headers?.append('Accept', 'application/hal+json')
     return {
       headers: headers,
@@ -94,8 +94,8 @@ export class HalClient {
     }
   }
 
-  public static convertResponse<TResource extends Resource>(TResource: { new(): TResource }, response: HttpResponse<ResourceDto>): HttpResponse<TResource> {
-    const resource = Resource.fromDto(response.body || new TResource(), TResource);
+  public static convertResponse<TResource extends Resource>(TResource: { new(dto?: ResourceDto | null): TResource; }, response: HttpResponse<ResourceDto>): HttpResponse<TResource> {
+    const resource = new TResource(response.body);
     const resourceResponse = response.clone<TResource>({ body: resource });
     return resourceResponse;
   }

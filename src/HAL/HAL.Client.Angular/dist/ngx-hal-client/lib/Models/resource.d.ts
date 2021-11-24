@@ -57,13 +57,13 @@ export declare class Resource {
         [name: string]: Link[] | undefined;
         self: Link[];
     };
+    constructor(dto?: ResourceDto);
     findLinks(rel: string): Link[];
     findLink(rel: string, name?: string): Link | undefined;
     findEmbedded(rel: string): Resource[];
-    static fromDto(dto: ResourceDto): Resource;
-    static fromDto<TResource extends Resource>(dto: ResourceDto, TResource: {
-        new (): TResource;
-    }): TResource;
-    static fromDtos(dtos: ResourceDto[] | null | undefined): Resource[];
+    getFormLinkHrefs(): string[];
+    private static isUrl;
+    private static fromDto;
+    private static fromDtos;
     private static parseDates;
 }

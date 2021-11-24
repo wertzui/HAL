@@ -3,7 +3,7 @@ import { Resource, ResourceDto } from "./resource";
 export interface ListResourceDto<TListDto extends ResourceDto> extends ResourceDto {
   _embedded?: {
     [name: string]: ResourceDto[];
-    items: TListDto[]
+    items: TListDto[];
   };
 }
 
@@ -13,14 +13,11 @@ export class ListResource extends Resource {
     items: Resource[];
   };
 
-  public static fromDto<TListDto extends ResourceDto>(dto: ListResourceDto<TListDto>): ListResource {
-    const resource = Resource.fromDto(dto);
+  public constructor(dto?: ListResourceDto<any>) {
+    super(dto);
 
-    if (!ListResource.isListResource(resource)) {
-      throw new TypeError(`The resource ${resource} is not a ListResource.`);
-    }
-
-    return resource;
+    if (!ListResource.isListResource(this))
+      throw new TypeError(`The resource ${dto} is not a ListResource.`);
   }
 
   public static isListResource(resource: ListResource | Resource): resource is ListResource {

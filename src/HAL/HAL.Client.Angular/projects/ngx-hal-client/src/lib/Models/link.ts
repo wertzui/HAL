@@ -1,5 +1,4 @@
 import * as utpl from 'uri-templates';
-import { URITemplate } from 'uri-templates'
 /**
  *  A Link Object represents a hyperlink from the containing resource to a URI.
  */

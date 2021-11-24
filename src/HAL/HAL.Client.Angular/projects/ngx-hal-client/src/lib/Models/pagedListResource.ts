@@ -1,7 +1,7 @@
 import { Link, LinkDto } from "./link";
 import { ListResource, ListResourceDto } from "./listResource";
 import { Page } from "./page";
-import { Resource, ResourceDto } from "./resource";
+import { ResourceDto } from "./resource";
 
 export interface PagedListResourceDto<TListDto extends ResourceDto> extends ListResourceDto<TListDto>, Page {
   _links?: {
@@ -27,9 +27,7 @@ export class PagedListResource extends ListResource implements Page {
   currentPage?: number;
   totalPages?: number;
 
-  public static fromDto<TListDto extends ResourceDto>(dto: PagedListResourceDto<TListDto>): PagedListResource {
-    const resource = ListResource.fromDto(dto);
-
-    return resource;
+  public constructor(dto?: PagedListResourceDto<any>) {
+    super(dto);
   }
 }

@@ -23,25 +23,17 @@ namespace HAL.AspNetCore
         private readonly LinkGenerator _linkGenerator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LinkFactory" /> class.
+        /// Initializes a new instance of the <see cref="LinkFactory"/> class.
         /// </summary>
         /// <param name="linkGenerator">The link generator from ASP.Net Core.</param>
         /// <param name="actionContextAccessor">The action context accessor.</param>
         /// <param name="apiExplorer">The API explorer.</param>
         /// <exception cref="System.ArgumentNullException">
-        /// urlHelperFactory
-        /// or
-        /// actionContextAccessor
-        /// or
-        /// apiExplorer
-        /// or
-        /// linkGenerator
+        /// urlHelperFactory or actionContextAccessor or apiExplorer or linkGenerator
         /// </exception>
-        /// <exception cref="ArgumentNullException">urlHelperFactory
-        /// or
-        /// actionContextAccessor
-        /// or
-        /// apiExplorer</exception>
+        /// <exception cref="ArgumentNullException">
+        /// urlHelperFactory or actionContextAccessor or apiExplorer
+        /// </exception>
         public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
         {
             if (actionContextAccessor is null)
@@ -50,6 +42,26 @@ namespace HAL.AspNetCore
             _actionContextAccessor = actionContextAccessor;
             _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
             _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
+        }
+
+        /// <inheritdoc/>
+        public TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string existingName = null, string action = null, string controller = null, object routeValues = null)
+            where TResource : Resource
+        {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            string path = _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues);
+            QueryString queryString = _actionContextAccessor.ActionContext.HttpContext.Request.QueryString;
+
+            if (!resource.Links.TryGetValue(existingRel, out var links) || links.Count == 0)
+                throw new ArgumentException($"The resource does not contain a link with the rel '{existingRel}'", nameof(existingRel));
+
+            var link = links.FirstOrDefault(l => existingName == null || l.Name == existingName);
+            if (link is null)
+                throw new ArgumentException($"The resource does not contain links with the rel '{existingRel}', but none with the name '{existingName}'", nameof(existingName));
+
+            return resource.AddLink(path + queryString, link);
         }
 
         /// <inheritdoc/>
@@ -109,20 +121,6 @@ namespace HAL.AspNetCore
                 .Select(d => (d.ControllerName, CreateTemplated(d)))
                 .GroupBy(p => p.ControllerName)
                 .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
-        }
-
-        private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion version)
-        {
-            var descriptorGroups = _apiExplorer.ApiDescriptionGroups.Items;
-
-            if (version is not null)
-            {
-                return descriptorGroups
-                    .SelectMany(g => g.Items)
-                    .Where(d => d.GetProperty<ApiVersion>() == version);
-            }
-
-            return descriptorGroups.Last().Items;
         }
 
         /// <inheritdoc/>
@@ -365,6 +363,20 @@ namespace HAL.AspNetCore
             }
 
             return (nonTemplated, templated);
+        }
+
+        private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion version)
+        {
+            var descriptorGroups = _apiExplorer.ApiDescriptionGroups.Items;
+
+            if (version is not null)
+            {
+                return descriptorGroups
+                    .SelectMany(g => g.Items)
+                    .Where(d => d.GetProperty<ApiVersion>() == version);
+            }
+
+            return descriptorGroups.Last().Items;
         }
 
         private string GetCurrentControllerName()

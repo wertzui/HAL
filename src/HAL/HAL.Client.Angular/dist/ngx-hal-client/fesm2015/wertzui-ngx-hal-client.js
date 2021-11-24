@@ -6,91 +6,6 @@ import { Injectable, NgModule } from '@angular/core';
 import * as utpl from 'uri-templates';
 import * as _ from 'lodash';
 
-/**
- *  A Link Object represents a hyperlink from the containing resource to a URI.
- */
-class Link {
-    fillTemplate(parameters) {
-        return utpl(this.href).fill(parameters);
-    }
-    static fromDto(dto) {
-        const link = Object.assign(new Link(), dto);
-        return link;
-    }
-    static fromDtos(dtos) {
-        if (!dtos)
-            return [];
-        const links = dtos
-            .filter(dto => !!(dto === null || dto === void 0 ? void 0 : dto.href))
-            .map(dto => Link.fromDto(dto));
-        return links;
-    }
-}
-
-/**
- *  A Resource Object represents a resource.
- *  It has two reserved properties:
- *  (1)  "_links": contains links to other resources.
- *  (2)  "_embedded": contains embedded resources.
- */
-class Resource {
-    findLinks(rel) {
-        const linksWithRel = this._links[rel];
-        if (!linksWithRel)
-            return [];
-        return linksWithRel;
-    }
-    findLink(rel, name) {
-        const linksWithRel = this.findLinks(rel);
-        if (linksWithRel.length === 0)
-            return undefined;
-        if (name)
-            return linksWithRel.find(link => link.name === name);
-        return linksWithRel[0];
-    }
-    findEmbedded(rel) {
-        const embeddedWithRel = this._embedded[rel];
-        if (!embeddedWithRel)
-            return [];
-        return embeddedWithRel;
-    }
-    static fromDto(dto, TResource) {
-        const links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
-        const embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, resources]) => [rel, Resource.fromDtos(resources)]));
-        const dtoWithParsedDates = Resource.parseDates(dto);
-        const resource = Object.assign(!!(TResource) ? new TResource() : new Resource(), dtoWithParsedDates, { _embedded: embedded, _links: links });
-        return resource;
-    }
-    static fromDtos(dtos) {
-        if (!dtos)
-            return [];
-        const resources = dtos
-            .filter(dto => !!dto)
-            .map(dto => Resource.fromDto(dto));
-        return resources;
-    }
-    static parseDates(dto) {
-        if (dto === null || dto === undefined)
-            return dto;
-        if (_.isString(dto)) {
-            if (this._iso8601RegEx.test(dto))
-                return new Date(dto);
-        }
-        else if (_.isArray(dto)) {
-            for (let i = 0; i < dto.length; i++) {
-                dto[i] = this.parseDates(dto[i]);
-            }
-        }
-        else if (_.isPlainObject(dto)) {
-            for (let [key, value] of Object.entries(dto)) {
-                dto[key] = this.parseDates(value);
-            }
-        }
-        return dto;
-    }
-}
-Resource._iso8601RegEx = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
-
 class HalClient {
     constructor(_httpClient) {
         this._httpClient = _httpClient;
@@ -183,7 +98,7 @@ class HalClient {
         };
     }
     static convertResponse(TResource, response) {
-        const resource = Resource.fromDto(response.body || new TResource(), TResource);
+        const resource = new TResource(response.body);
         const resourceResponse = response.clone({ body: resource });
         return resourceResponse;
     }
@@ -220,13 +135,192 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "12.2.11", ngImpo
                 }]
         }] });
 
-class ListResource extends Resource {
+/**
+ *  A Link Object represents a hyperlink from the containing resource to a URI.
+ */
+class Link {
+    fillTemplate(parameters) {
+        return utpl(this.href).fill(parameters);
+    }
     static fromDto(dto) {
-        const resource = Resource.fromDto(dto);
-        if (!ListResource.isListResource(resource)) {
-            throw new TypeError(`The resource ${resource} is not a ListResource.`);
+        const link = Object.assign(new Link(), dto);
+        return link;
+    }
+    static fromDtos(dtos) {
+        if (!dtos)
+            return [];
+        const links = dtos
+            .filter(dto => !!(dto === null || dto === void 0 ? void 0 : dto.href))
+            .map(dto => Link.fromDto(dto));
+        return links;
+    }
+}
+
+/**
+ *  A Resource Object represents a resource.
+ *  It has two reserved properties:
+ *  (1)  "_links": contains links to other resources.
+ *  (2)  "_embedded": contains embedded resources.
+ */
+class Resource {
+    constructor(dto) {
+        const links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
+        if (!links['self'])
+            throw new Error(`The self link is missing in the given ResourceDto: ${JSON.stringify(dto)}`);
+        const embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, resources]) => [rel, Resource.fromDtos(resources)]));
+        const dtoWithParsedDates = Resource.parseDates(dto);
+        Object.assign(this, dtoWithParsedDates);
+        // We ensured that it has a self property
+        this._links = links;
+        this._embedded = embedded;
+    }
+    findLinks(rel) {
+        const linksWithRel = this._links[rel];
+        if (!linksWithRel)
+            return [];
+        return linksWithRel;
+    }
+    findLink(rel, name) {
+        const linksWithRel = this.findLinks(rel);
+        if (linksWithRel.length === 0)
+            return undefined;
+        if (name)
+            return linksWithRel.find(link => link.name === name);
+        return linksWithRel[0];
+    }
+    findEmbedded(rel) {
+        const embeddedWithRel = this._embedded[rel];
+        if (!embeddedWithRel)
+            return [];
+        return embeddedWithRel;
+    }
+    getFormLinkHrefs() {
+        const allLinks = this._links;
+        if (!allLinks)
+            return [];
+        return Object.keys(allLinks)
+            .filter(key => Resource.isUrl(key));
+    }
+    static isUrl(possibleUrl) {
+        try {
+            new URL(possibleUrl);
+            return true;
         }
+        catch (_a) {
+            return false;
+        }
+    }
+    //public static fromDto(dto: ResourceDto): Resource;
+    //public static fromDto<TResource extends Resource>(dto: ResourceDto, TResource: { new(dto: ResourceDto): TResource }): TResource;
+    static fromDto(dto, TResource) {
+        const links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
+        const embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, embeddedResourceDtos]) => [rel, Resource.fromDtos(embeddedResourceDtos, TResource)]));
+        const dtoWithParsedDates = Resource.parseDates(dto);
+        const resource = Object.assign(TResource ? new TResource(dto) : new Resource(dto), dtoWithParsedDates, { _embedded: embedded, _links: links });
         return resource;
+    }
+    static fromDtos(dtos, TResource) {
+        if (!dtos)
+            return [];
+        const resources = dtos
+            .filter(dto => !!dto)
+            .map(dto => Resource.fromDto(dto, TResource));
+        return resources;
+    }
+    static parseDates(dto) {
+        if (dto === null || dto === undefined)
+            return dto;
+        if (_.isString(dto)) {
+            if (this._iso8601RegEx.test(dto))
+                return new Date(dto);
+        }
+        else if (_.isArray(dto)) {
+            for (let i = 0; i < dto.length; i++) {
+                dto[i] = this.parseDates(dto[i]);
+            }
+        }
+        else if (_.isPlainObject(dto)) {
+            for (const [key, value] of Object.entries(dto)) {
+                dto[key] = this.parseDates(value);
+            }
+        }
+        return dto;
+    }
+}
+Resource._iso8601RegEx = /^([+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([.,]\d+(?!:))?)?(\17[0-5]\d([.,]\d+)?)?([zZ]|([+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;
+
+;
+var PropertyType;
+(function (PropertyType) {
+    PropertyType["Hidden"] = "hidden";
+    PropertyType["Text"] = "text";
+    PropertyType["Textarea"] = "textarea";
+    PropertyType["Search"] = "search";
+    PropertyType["Tel"] = "tel";
+    PropertyType["Url"] = "url";
+    PropertyType["Email"] = "email";
+    PropertyType["Password"] = "password";
+    PropertyType["Date"] = "date";
+    PropertyType["Month"] = "month";
+    PropertyType["Week"] = "week";
+    PropertyType["Time"] = "time";
+    PropertyType["DatetimeLocal"] = "datetime-local";
+    PropertyType["Number"] = "number";
+    PropertyType["Range"] = "range";
+    PropertyType["Color"] = "color";
+    PropertyType["Bool"] = "bool";
+    PropertyType["DatetimeOffset"] = "datetime-offset";
+    PropertyType["Duration"] = "duration";
+    PropertyType["Image"] = "image";
+    PropertyType["File"] = "file";
+    PropertyType["Collection"] = "collection";
+    PropertyType["Object"] = "object";
+})(PropertyType || (PropertyType = {}));
+class Options {
+    constructor(dto) {
+        this.inline = [];
+        Object.assign(this, dto);
+        if (!this.inline)
+            this.inline = [];
+    }
+}
+class Property {
+    constructor(dto) {
+        Object.assign(this, dto);
+        this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+        if (this.options)
+            this.options = new Options(dto === null || dto === void 0 ? void 0 : dto.options);
+    }
+}
+;
+class Template {
+    constructor(dto) {
+        Object.assign(this, dto);
+        this.properties = !(dto === null || dto === void 0 ? void 0 : dto.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
+    }
+    get values() {
+        return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property.value]));
+    }
+}
+class FormsResource extends Resource {
+    constructor(dto) {
+        super(dto);
+        this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+    }
+    getTemplate(name) {
+        const templateNames = Object.getOwnPropertyNames(this._templates);
+        if (!templateNames.includes(name))
+            throw new Error(`The form ${this} does not have a _template with the name '${name}'. It only has ${templateNames}.`);
+        const template = this._templates[name];
+        return template;
+    }
+}
+
+class ListResource extends Resource {
+    constructor(dto) {
+        super(dto);
+        if (!ListResource.isListResource(this))
+            throw new TypeError(`The resource ${dto} is not a ListResource.`);
     }
     static isListResource(resource) {
         var _a, _b;
@@ -235,9 +329,8 @@ class ListResource extends Resource {
 }
 
 class PagedListResource extends ListResource {
-    static fromDto(dto) {
-        const resource = ListResource.fromDto(dto);
-        return resource;
+    constructor(dto) {
+        super(dto);
     }
 }
 
@@ -249,5 +342,5 @@ class PagedListResource extends ListResource {
  * Generated bundle index. Do not edit.
  */
 
-export { HalClient, HalClientModule, Link, ListResource, PagedListResource, Resource };
+export { FormsResource, HalClient, HalClientModule, Link, ListResource, Options, PagedListResource, Property, PropertyType, Resource, Template };
 //# sourceMappingURL=wertzui-ngx-hal-client.js.map

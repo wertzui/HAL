@@ -16,6 +16,11 @@
         public const string EmbeddedPropertyName = "_embedded";
 
         /// <summary>
+        /// The name of the templates property: "_templates".
+        /// </summary>
+        public const string FormTemplatesPropertyName = "_templates";
+
+        /// <summary>
         /// The name of the links property: "_links".
         /// </summary>
         public const string LinksPropertyName = "_links";

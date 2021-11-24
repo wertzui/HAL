@@ -10,7 +10,7 @@ namespace HAL.Common.Converters
     /// A converter that can read and write <see cref="Resource{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of the state of the resource.</typeparam>
-    /// <seealso cref="JsonConverter{Resource{T}}" />
+    /// <seealso cref="JsonConverter{T}" />
     public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     {
         /// <inheritdoc/>

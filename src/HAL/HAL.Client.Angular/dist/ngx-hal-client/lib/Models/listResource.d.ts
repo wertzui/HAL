@@ -10,6 +10,6 @@ export declare class ListResource extends Resource {
         [name: string]: Resource[];
         items: Resource[];
     };
-    static fromDto<TListDto extends ResourceDto>(dto: ListResourceDto<TListDto>): ListResource;
+    constructor(dto?: ListResourceDto<any>);
     static isListResource(resource: ListResource | Resource): resource is ListResource;
 }

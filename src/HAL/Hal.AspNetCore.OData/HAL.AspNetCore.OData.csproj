@@ -8,7 +8,7 @@
     <RepositoryUrl>https://github.com/wertzui/HAL</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <VersionPrefix>5.0.2</VersionPrefix>
+    <VersionPrefix>5.1.0</VersionPrefix>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

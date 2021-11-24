@@ -23,5 +23,5 @@ export declare class PagedListResource extends ListResource implements Page {
     };
     currentPage?: number;
     totalPages?: number;
-    static fromDto<TListDto extends ResourceDto>(dto: PagedListResourceDto<TListDto>): PagedListResource;
+    constructor(dto?: PagedListResourceDto<any>);
 }

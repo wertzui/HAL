@@ -345,114 +345,6 @@
         return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
     }
 
-    /**
-     *  A Link Object represents a hyperlink from the containing resource to a URI.
-     */
-    var Link = /** @class */ (function () {
-        function Link() {
-        }
-        Link.prototype.fillTemplate = function (parameters) {
-            return utpl__namespace(this.href).fill(parameters);
-        };
-        Link.fromDto = function (dto) {
-            var link = Object.assign(new Link(), dto);
-            return link;
-        };
-        Link.fromDtos = function (dtos) {
-            if (!dtos)
-                return [];
-            var links = dtos
-                .filter(function (dto) { return !!(dto === null || dto === void 0 ? void 0 : dto.href); })
-                .map(function (dto) { return Link.fromDto(dto); });
-            return links;
-        };
-        return Link;
-    }());
-
-    /**
-     *  A Resource Object represents a resource.
-     *  It has two reserved properties:
-     *  (1)  "_links": contains links to other resources.
-     *  (2)  "_embedded": contains embedded resources.
-     */
-    var Resource = /** @class */ (function () {
-        function Resource() {
-        }
-        Resource.prototype.findLinks = function (rel) {
-            var linksWithRel = this._links[rel];
-            if (!linksWithRel)
-                return [];
-            return linksWithRel;
-        };
-        Resource.prototype.findLink = function (rel, name) {
-            var linksWithRel = this.findLinks(rel);
-            if (linksWithRel.length === 0)
-                return undefined;
-            if (name)
-                return linksWithRel.find(function (link) { return link.name === name; });
-            return linksWithRel[0];
-        };
-        Resource.prototype.findEmbedded = function (rel) {
-            var embeddedWithRel = this._embedded[rel];
-            if (!embeddedWithRel)
-                return [];
-            return embeddedWithRel;
-        };
-        Resource.fromDto = function (dto, TResource) {
-            var links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(function (_a) {
-                var _b = __read(_a, 2), rel = _b[0], links = _b[1];
-                return [rel, Link.fromDtos(links)];
-            }));
-            var embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(function (_a) {
-                var _b = __read(_a, 2), rel = _b[0], resources = _b[1];
-                return [rel, Resource.fromDtos(resources)];
-            }));
-            var dtoWithParsedDates = Resource.parseDates(dto);
-            var resource = Object.assign(!!(TResource) ? new TResource() : new Resource(), dtoWithParsedDates, { _embedded: embedded, _links: links });
-            return resource;
-        };
-        Resource.fromDtos = function (dtos) {
-            if (!dtos)
-                return [];
-            var resources = dtos
-                .filter(function (dto) { return !!dto; })
-                .map(function (dto) { return Resource.fromDto(dto); });
-            return resources;
-        };
-        Resource.parseDates = function (dto) {
-            var e_1, _a;
-            if (dto === null || dto === undefined)
-                return dto;
-            if (___namespace.isString(dto)) {
-                if (this._iso8601RegEx.test(dto))
-                    return new Date(dto);
-            }
-            else if (___namespace.isArray(dto)) {
-                for (var i = 0; i < dto.length; i++) {
-                    dto[i] = this.parseDates(dto[i]);
-                }
-            }
-            else if (___namespace.isPlainObject(dto)) {
-                try {
-                    for (var _b = __values(Object.entries(dto)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                        var _d = __read(_c.value, 2), key = _d[0], value = _d[1];
-                        dto[key] = this.parseDates(value);
-                    }
-                }
-                catch (e_1_1) { e_1 = { error: e_1_1 }; }
-                finally {
-                    try {
-                        if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                    }
-                    finally { if (e_1) throw e_1.error; }
-                }
-            }
-            return dto;
-        };
-        return Resource;
-    }());
-    Resource._iso8601RegEx = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*))(?:Z|(\+|-)([\d|:]*))?$/;
-
     var HalClient = /** @class */ (function () {
         function HalClient(_httpClient) {
             this._httpClient = _httpClient;
@@ -589,7 +481,7 @@
             };
         };
         HalClient.convertResponse = function (TResource, response) {
-            var resource = Resource.fromDto(response.body || new TResource(), TResource);
+            var resource = new TResource(response.body);
             var resourceResponse = response.clone({ body: resource });
             return resourceResponse;
         };
@@ -630,18 +522,238 @@
                     }]
             }] });
 
-    var ListResource = /** @class */ (function (_super) {
-        __extends(ListResource, _super);
-        function ListResource() {
-            return _super !== null && _super.apply(this, arguments) || this;
+    /**
+     *  A Link Object represents a hyperlink from the containing resource to a URI.
+     */
+    var Link = /** @class */ (function () {
+        function Link() {
         }
-        ListResource.fromDto = function (dto) {
-            var resource = Resource.fromDto(dto);
-            if (!ListResource.isListResource(resource)) {
-                throw new TypeError("The resource " + resource + " is not a ListResource.");
+        Link.prototype.fillTemplate = function (parameters) {
+            return utpl__namespace(this.href).fill(parameters);
+        };
+        Link.fromDto = function (dto) {
+            var link = Object.assign(new Link(), dto);
+            return link;
+        };
+        Link.fromDtos = function (dtos) {
+            if (!dtos)
+                return [];
+            var links = dtos
+                .filter(function (dto) { return !!(dto === null || dto === void 0 ? void 0 : dto.href); })
+                .map(function (dto) { return Link.fromDto(dto); });
+            return links;
+        };
+        return Link;
+    }());
+
+    /**
+     *  A Resource Object represents a resource.
+     *  It has two reserved properties:
+     *  (1)  "_links": contains links to other resources.
+     *  (2)  "_embedded": contains embedded resources.
+     */
+    var Resource = /** @class */ (function () {
+        function Resource(dto) {
+            var links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(function (_b) {
+                var _c = __read(_b, 2), rel = _c[0], links = _c[1];
+                return [rel, Link.fromDtos(links)];
+            }));
+            if (!links['self'])
+                throw new Error("The self link is missing in the given ResourceDto: " + JSON.stringify(dto));
+            var embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(function (_b) {
+                var _c = __read(_b, 2), rel = _c[0], resources = _c[1];
+                return [rel, Resource.fromDtos(resources)];
+            }));
+            var dtoWithParsedDates = Resource.parseDates(dto);
+            Object.assign(this, dtoWithParsedDates);
+            // We ensured that it has a self property
+            this._links = links;
+            this._embedded = embedded;
+        }
+        Resource.prototype.findLinks = function (rel) {
+            var linksWithRel = this._links[rel];
+            if (!linksWithRel)
+                return [];
+            return linksWithRel;
+        };
+        Resource.prototype.findLink = function (rel, name) {
+            var linksWithRel = this.findLinks(rel);
+            if (linksWithRel.length === 0)
+                return undefined;
+            if (name)
+                return linksWithRel.find(function (link) { return link.name === name; });
+            return linksWithRel[0];
+        };
+        Resource.prototype.findEmbedded = function (rel) {
+            var embeddedWithRel = this._embedded[rel];
+            if (!embeddedWithRel)
+                return [];
+            return embeddedWithRel;
+        };
+        Resource.prototype.getFormLinkHrefs = function () {
+            var allLinks = this._links;
+            if (!allLinks)
+                return [];
+            return Object.keys(allLinks)
+                .filter(function (key) { return Resource.isUrl(key); });
+        };
+        Resource.isUrl = function (possibleUrl) {
+            try {
+                new URL(possibleUrl);
+                return true;
             }
+            catch (_a) {
+                return false;
+            }
+        };
+        //public static fromDto(dto: ResourceDto): Resource;
+        //public static fromDto<TResource extends Resource>(dto: ResourceDto, TResource: { new(dto: ResourceDto): TResource }): TResource;
+        Resource.fromDto = function (dto, TResource) {
+            var links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(function (_b) {
+                var _c = __read(_b, 2), rel = _c[0], links = _c[1];
+                return [rel, Link.fromDtos(links)];
+            }));
+            var embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(function (_b) {
+                var _c = __read(_b, 2), rel = _c[0], embeddedResourceDtos = _c[1];
+                return [rel, Resource.fromDtos(embeddedResourceDtos, TResource)];
+            }));
+            var dtoWithParsedDates = Resource.parseDates(dto);
+            var resource = Object.assign(TResource ? new TResource(dto) : new Resource(dto), dtoWithParsedDates, { _embedded: embedded, _links: links });
             return resource;
         };
+        Resource.fromDtos = function (dtos, TResource) {
+            if (!dtos)
+                return [];
+            var resources = dtos
+                .filter(function (dto) { return !!dto; })
+                .map(function (dto) { return Resource.fromDto(dto, TResource); });
+            return resources;
+        };
+        Resource.parseDates = function (dto) {
+            var e_1, _b;
+            if (dto === null || dto === undefined)
+                return dto;
+            if (___namespace.isString(dto)) {
+                if (this._iso8601RegEx.test(dto))
+                    return new Date(dto);
+            }
+            else if (___namespace.isArray(dto)) {
+                for (var i = 0; i < dto.length; i++) {
+                    dto[i] = this.parseDates(dto[i]);
+                }
+            }
+            else if (___namespace.isPlainObject(dto)) {
+                try {
+                    for (var _c = __values(Object.entries(dto)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                        var _e = __read(_d.value, 2), key = _e[0], value = _e[1];
+                        dto[key] = this.parseDates(value);
+                    }
+                }
+                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                finally {
+                    try {
+                        if (_d && !_d.done && (_b = _c.return)) _b.call(_c);
+                    }
+                    finally { if (e_1) throw e_1.error; }
+                }
+            }
+            return dto;
+        };
+        return Resource;
+    }());
+    Resource._iso8601RegEx = /^([+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([.,]\d+(?!:))?)?(\17[0-5]\d([.,]\d+)?)?([zZ]|([+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;
+
+    ;
+    exports.PropertyType = void 0;
+    (function (PropertyType) {
+        PropertyType["Hidden"] = "hidden";
+        PropertyType["Text"] = "text";
+        PropertyType["Textarea"] = "textarea";
+        PropertyType["Search"] = "search";
+        PropertyType["Tel"] = "tel";
+        PropertyType["Url"] = "url";
+        PropertyType["Email"] = "email";
+        PropertyType["Password"] = "password";
+        PropertyType["Date"] = "date";
+        PropertyType["Month"] = "month";
+        PropertyType["Week"] = "week";
+        PropertyType["Time"] = "time";
+        PropertyType["DatetimeLocal"] = "datetime-local";
+        PropertyType["Number"] = "number";
+        PropertyType["Range"] = "range";
+        PropertyType["Color"] = "color";
+        PropertyType["Bool"] = "bool";
+        PropertyType["DatetimeOffset"] = "datetime-offset";
+        PropertyType["Duration"] = "duration";
+        PropertyType["Image"] = "image";
+        PropertyType["File"] = "file";
+        PropertyType["Collection"] = "collection";
+        PropertyType["Object"] = "object";
+    })(exports.PropertyType || (exports.PropertyType = {}));
+    var Options = /** @class */ (function () {
+        function Options(dto) {
+            this.inline = [];
+            Object.assign(this, dto);
+            if (!this.inline)
+                this.inline = [];
+        }
+        return Options;
+    }());
+    var Property = /** @class */ (function () {
+        function Property(dto) {
+            Object.assign(this, dto);
+            this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(function (_a) {
+                var _b = __read(_a, 2), rel = _b[0], templateDto = _b[1];
+                return [rel, new Template(templateDto)];
+            }));
+            if (this.options)
+                this.options = new Options(dto === null || dto === void 0 ? void 0 : dto.options);
+        }
+        return Property;
+    }());
+    ;
+    var Template = /** @class */ (function () {
+        function Template(dto) {
+            Object.assign(this, dto);
+            this.properties = !(dto === null || dto === void 0 ? void 0 : dto.properties) ? [] : dto.properties.map(function (propertyDto) { return new Property(propertyDto); });
+        }
+        Object.defineProperty(Template.prototype, "values", {
+            get: function () {
+                return !this.properties ? {} : Object.fromEntries(this.properties.map(function (property) { return [property.name, property.value]; }));
+            },
+            enumerable: false,
+            configurable: true
+        });
+        return Template;
+    }());
+    var FormsResource = /** @class */ (function (_super) {
+        __extends(FormsResource, _super);
+        function FormsResource(dto) {
+            var _this = _super.call(this, dto) || this;
+            _this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(function (_a) {
+                var _b = __read(_a, 2), rel = _b[0], templateDto = _b[1];
+                return [rel, new Template(templateDto)];
+            }));
+            return _this;
+        }
+        FormsResource.prototype.getTemplate = function (name) {
+            var templateNames = Object.getOwnPropertyNames(this._templates);
+            if (!templateNames.includes(name))
+                throw new Error("The form " + this + " does not have a _template with the name '" + name + "'. It only has " + templateNames + ".");
+            var template = this._templates[name];
+            return template;
+        };
+        return FormsResource;
+    }(Resource));
+
+    var ListResource = /** @class */ (function (_super) {
+        __extends(ListResource, _super);
+        function ListResource(dto) {
+            var _this = _super.call(this, dto) || this;
+            if (!ListResource.isListResource(_this))
+                throw new TypeError("The resource " + dto + " is not a ListResource.");
+            return _this;
+        }
         ListResource.isListResource = function (resource) {
             var _a, _b;
             return !!((_b = (_a = resource) === null || _a === void 0 ? void 0 : _a._embedded) === null || _b === void 0 ? void 0 : _b.items);
@@ -651,13 +763,9 @@
 
     var PagedListResource = /** @class */ (function (_super) {
         __extends(PagedListResource, _super);
-        function PagedListResource() {
-            return _super !== null && _super.apply(this, arguments) || this;
+        function PagedListResource(dto) {
+            return _super.call(this, dto) || this;
         }
-        PagedListResource.fromDto = function (dto) {
-            var resource = ListResource.fromDto(dto);
-            return resource;
-        };
         return PagedListResource;
     }(ListResource));
 
@@ -669,12 +777,16 @@
      * Generated bundle index. Do not edit.
      */
 
+    exports.FormsResource = FormsResource;
     exports.HalClient = HalClient;
     exports.HalClientModule = HalClientModule;
     exports.Link = Link;
     exports.ListResource = ListResource;
+    exports.Options = Options;
     exports.PagedListResource = PagedListResource;
+    exports.Property = Property;
     exports.Resource = Resource;
+    exports.Template = Template;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

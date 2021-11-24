@@ -9,12 +9,12 @@ export declare class HalClient {
     }, TError: {
         new (): TError;
     }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>>;
-    post<TResource extends Resource, TError extends Resource>(uri: string, body: Resource, TResource: {
+    post<TResource extends Resource, TError extends Resource>(uri: string, body: unknown, TResource: {
         new (): TResource;
     }, TError: {
         new (): TError;
     }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>>;
-    put<TResource extends Resource, TError extends Resource>(uri: string, body: Resource, TResource: {
+    put<TResource extends Resource, TError extends Resource>(uri: string, body: unknown, TResource: {
         new (): TResource;
     }, TError: {
         new (): TError;
@@ -24,7 +24,7 @@ export declare class HalClient {
     }, headers?: HttpHeaders): Promise<HttpResponse<void | TError>>;
     private static createOptions;
     static convertResponse<TResource extends Resource>(TResource: {
-        new (): TResource;
+        new (dto?: ResourceDto | null): TResource;
     }, response: HttpResponse<ResourceDto>): HttpResponse<TResource>;
     private static convertErrorResponse;
     static ɵfac: i0.ɵɵFactoryDeclaration<HalClient, never>;

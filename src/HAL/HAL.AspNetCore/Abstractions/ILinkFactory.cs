@@ -10,6 +10,20 @@ namespace HAL.AspNetCore.Abstractions
     public interface ILinkFactory
     {
         /// <summary>
+        /// Adds a link to a HAL-Form for an existing link to the given resource. The existing link
+        /// will be copied over to a new rel which is created from the given action, controller and routeValues.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <param name="existingRel">The rel of the existing link.</param>
+        /// <param name="existingName">The optional name of the existing link.</param>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="routeValues">The route values.</param>
+        /// <returns></returns>
+        TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string existingName = null, string action = null, string controller = null, object routeValues = null) where TResource : Resource;
+
+        /// <summary>
         /// Adds the "self" link to the given resource.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
@@ -22,11 +36,15 @@ namespace HAL.AspNetCore.Abstractions
             where TResource : Resource;
 
         /// <summary>
-        /// Adds a curie link that uses swagger UI under /swagger/index.html#/{rel} to give information about relations.
+        /// Adds a curie link that uses swagger UI under /swagger/index.html#/{rel} to give
+        /// information about relations.
         /// </summary>
         /// <typeparam name="TResource">The type of the resource.</typeparam>
         /// <param name="resource">The resource.</param>
-        /// <param name="name">The name of the curie. You should prefix all your self defined rels in other links with name: so the user knows where to get information on that relation.</param>
+        /// <param name="name">
+        /// The name of the curie. You should prefix all your self defined rels in other links with
+        /// name: so the user knows where to get information on that relation.
+        /// </param>
         /// <returns></returns>
         TResource AddSwaggerUiCurieLinkTo<TResource>(TResource resource, string name)
             where TResource : Resource;
@@ -72,7 +90,8 @@ namespace HAL.AspNetCore.Abstractions
         Link Create(string name, string href);
 
         /// <summary>
-        /// Creates a link to the specified action in the specified controller with the given name and title.
+        /// Creates a link to the specified action in the specified controller with the given name
+        /// and title.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="title">The title.</param>
@@ -95,16 +114,19 @@ namespace HAL.AspNetCore.Abstractions
         Link Create(string name, string title, string href);
 
         /// <summary>
-        /// Creates all possible links to all controller actions.
-        /// If they have parameters these will appear as templated parameters in the link.
+        /// Creates all possible links to all controller actions. If they have parameters these will
+        /// appear as templated parameters in the link.
         /// </summary>
-        /// <param name="prefix">The prefix to use in all generated rels. This should match the name of a curie.</param>
+        /// <param name="prefix">
+        /// The prefix to use in all generated rels. This should match the name of a curie.
+        /// </param>
         /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
         IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null, ApiVersion version = null);
 
         /// <summary>
-        /// Creates all possible links to all controller actions that do not have any parameters in your application.
+        /// Creates all possible links to all controller actions that do not have any parameters in
+        /// your application.
         /// </summary>
         /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
