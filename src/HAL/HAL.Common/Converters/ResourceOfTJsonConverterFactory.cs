@@ -10,6 +10,8 @@ namespace HAL.Common.Converters
     /// <seealso cref="JsonConverterFactory" />
     public class ResourceOfTJsonConverterFactory : JsonConverterFactory
     {
+        private static readonly Type _converterType = typeof(ResourceJsonConverter<>);
+        private static readonly Type _resourceType = typeof(Resource<>);
         /// <inheritdoc/>
         public override bool CanConvert(Type typeToConvert)
         {
@@ -17,10 +19,7 @@ namespace HAL.Common.Converters
                 return false;
 
             var generic = typeToConvert.GetGenericTypeDefinition();
-            if (generic == typeof(Resource<>) || generic == typeof(Resource<>))
-                return true;
-
-            return false;
+            return generic == _resourceType;
         }
 
         /// <inheritdoc/>
@@ -28,10 +27,10 @@ namespace HAL.Common.Converters
         {
             var stateType = typeToConvert.GetGenericArguments()[0];
 
-            var converter = (JsonConverter)Activator.CreateInstance(
-                typeof(ResourceJsonConverter<>).MakeGenericType(stateType));
+            var converter = (JsonConverter?)Activator.CreateInstance(
+                _converterType.MakeGenericType(stateType));
 
-            return converter;
+            return converter ?? throw new ArgumentException($"{nameof(typeToConvert)} is not of type Resource<T>.", nameof(typeToConvert));
         }
     }
 }

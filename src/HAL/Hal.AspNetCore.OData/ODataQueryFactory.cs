@@ -11,18 +11,18 @@ namespace HAL.AspNetCore.OData
     {
         /// <inheritdoc/>
         public string GenerateQuery(
-            ODataRawQueryOptions rawQueryOptions = null,
-            string applyOverride = null,
-            string countOverride = null,
-            string deltaTokenOverride = null,
-            string expandOverride = null,
-            string filterOverride = null,
-            string formatOverride = null,
-            string orderByOverride = null,
-            string selectOverride = null,
-            string skipOverride = null,
-            string skipTokenOverride = null,
-            string topOverride = null)
+            ODataRawQueryOptions? rawQueryOptions = null,
+            string? applyOverride = null,
+            string? countOverride = null,
+            string? deltaTokenOverride = null,
+            string? expandOverride = null,
+            string? filterOverride = null,
+            string? formatOverride = null,
+            string? orderByOverride = null,
+            string? selectOverride = null,
+            string? skipOverride = null,
+            string? skipTokenOverride = null,
+            string? topOverride = null)
         {
             var sb = new StringBuilder(50);
             AppendParameter(sb, "apply", rawQueryOptions?.Apply, applyOverride);
@@ -37,7 +37,7 @@ namespace HAL.AspNetCore.OData
             AppendParameter(sb, "skiptoken", rawQueryOptions?.SkipToken, skipTokenOverride);
             AppendParameter(sb, "top", rawQueryOptions?.Top, topOverride);
 
-            return Uri.EscapeUriString(sb.ToString());
+            return Uri.EscapeDataString(sb.ToString());
         }
 
         /// <inheritdoc/>
@@ -58,9 +58,9 @@ namespace HAL.AspNetCore.OData
         /// <inheritdoc/>
         public IPageLinks GetListNavigation(long numberOfResourcesOnThisPage, ODataRawQueryOptions rawValues, string baseHref, long skip, long top, long? totalCount)
         {
-            string prevHref = null;
-            string nextHref = null;
-            string lastHref = null;
+            string? prevHref = null;
+            string? nextHref = null;
+            string? lastHref = null;
 
             string firstHref = baseHref + GenerateQuery(rawValues, skipOverride: "0");
 
@@ -98,7 +98,7 @@ namespace HAL.AspNetCore.OData
             return new ODataParsedQueryOptions(skip, top);
         }
 
-        private static void AppendParameter(StringBuilder builder, string key, string value, string overrideValue)
+        private static void AppendParameter(StringBuilder builder, string key, string? value, string? overrideValue)
         {
             if (value is not null || overrideValue is not null)
             {

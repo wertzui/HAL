@@ -14,6 +14,6 @@ namespace HAL.AspNetCore.Forms.Abstractions
         /// <param name="template">The template to fill with values.</param>
         /// <param name="value">The values to fill the template with.</param>
         /// <returns>A copy of the template, filled with values.</returns>
-        FormTemplate FillWith(FormTemplate template, object value);
+        FormTemplate FillWith(FormTemplate template, object? value);
     }
 }

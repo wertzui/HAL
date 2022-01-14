@@ -11,11 +11,11 @@ namespace HAL.Common.Binary
     public class HalFile
     {
         private const string _base64Splitter = ";base64,";
-        private byte[] _content;
-        private bool _hasUri;
-        private string _mimeType;
-        private int _splitStart;
-        private Uri _uri;
+        private readonly byte[]? _content;
+        private readonly bool _hasUri;
+        private readonly string? _mimeType;
+        private readonly int _splitStart;
+        private readonly Uri? _uri;
 
         /// <summary>
         /// Creates a new instance of the <see cref="HalFile"/> class.
@@ -61,20 +61,20 @@ namespace HAL.Common.Binary
         /// Gets the content of the file if this instance has been constructed from a byte[] or a
         /// "data" Uri. Null otherwise.
         /// </summary>
-        public byte[] Content => _hasUri ? (_hasDataUri ? Convert.FromBase64String(_uri.PathAndQuery[_splitEnd..]) : null) : _content;
+        public byte[]? Content => _hasUri ? (HasDataUri ? Convert.FromBase64String(_uri!.PathAndQuery[SplitEnd..]) : null) : _content;
 
         /// <summary>
         /// Gets the mime type of the file if this instance has been constructed from a byte[] or a
         /// "data" Uri. Null otherwise.
         /// </summary>
-        public string MimeType => _hasUri ? (_hasDataUri ? _uri.PathAndQuery[.._splitStart] : null) : _mimeType;
+        public string? MimeType => _hasUri ? (HasDataUri ? _uri?.PathAndQuery[.._splitStart] : null) : _mimeType;
 
         /// <summary>
         /// Gets the URI of the file. May either be a "normal" or a "data" URI.
         /// </summary>
-        public Uri Uri => _hasUri ? _uri : new Uri($"data:{_mimeType}{_base64Splitter}{Convert.ToBase64String(_content)}");
+        public Uri Uri => _hasUri ? _uri! : new Uri($"data:{_mimeType}{_base64Splitter}{Convert.ToBase64String(_content!)}");
 
-        private bool _hasDataUri => _hasUri && _uri.Scheme == "data";
-        private int _splitEnd => _splitStart + _base64Splitter.Length;
+        private bool HasDataUri => _hasUri && _uri!.Scheme == "data";
+        private int SplitEnd => _splitStart + _base64Splitter.Length;
     }
 }

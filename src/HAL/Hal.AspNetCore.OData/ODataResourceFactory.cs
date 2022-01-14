@@ -34,7 +34,7 @@ namespace HAL.AspNetCore.OData
             ODataQueryOptions<TEntity> oDataQueryOptions,
             long maxTop = 50,
             long? totalCount = null,
-            string controller = null,
+            string? controller = null,
             string listGetMethod = "GetList",
             string singleGetMethod = "Get")
         {
@@ -84,7 +84,7 @@ namespace HAL.AspNetCore.OData
             Func<TDto, TId> idAccessor,
             IPageLinks links,
             Page page,
-            string controller = null,
+            string? controller = null,
             string listGetMethod = "GetList",
             string singleGetMethod = "Get")
         {

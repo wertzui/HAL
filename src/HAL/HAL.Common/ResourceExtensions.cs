@@ -31,7 +31,7 @@ namespace HAL.Common
             if (!href.Contains("{rel}"))
                 throw new ArgumentException("A curie must contain a {rel} template.");
 
-            var link = new Link { Name = name, Href = href, Templated = true };
+            var link = new Link(href) { Name = name, Templated = true };
 
             return resource.AddLink(Constants.CuriesLinkRel, link);
         }
@@ -91,7 +91,7 @@ namespace HAL.Common
 
             foreach (var item in source)
             {
-                var key = keySelector(item)?.ToString();
+                var key = keySelector(item)?.ToString() ?? throw new ArgumentException($"{nameof(keySelector)} must not return null, but it did for the item {item}.", nameof(keySelector));
                 var value = embeddedSelector(item);
                 resource.AddEmbedded(key, value);
             }
@@ -114,6 +114,9 @@ namespace HAL.Common
 
             if (link is null)
                 throw new ArgumentNullException(nameof(link));
+
+            if (link.Name is null)
+                throw new ArgumentNullException(nameof(Link.Name));
 
             var key = link.Name;
 
@@ -205,7 +208,7 @@ namespace HAL.Common
 
             foreach (var item in source)
             {
-                var key = relSelector(item)?.ToString();
+                var key = relSelector(item)?.ToString() ?? throw new ArgumentException($"{nameof(relSelector)} must not return null, but it did for the item {item}.", nameof(relSelector));
                 var value = linkSelector(item);
                 resource.AddLink(key, value);
             }
@@ -258,9 +261,13 @@ namespace HAL.Common
 
             foreach (var rel in source)
             {
+                var key = rel.Key?.ToString();
+                if (key is null)
+                    throw new ArgumentException($"One key of the ${nameof(source)} collection is null. The value is ${rel.Value}.", nameof(source));
+
                 foreach (var link in rel.Value)
                 {
-                    resource.AddLink(rel.Key?.ToString(), link);
+                    resource.AddLink(key, link);
                 }
             }
 
@@ -280,10 +287,10 @@ namespace HAL.Common
             if (resource is null)
                 throw new ArgumentNullException(nameof(resource));
 
-            if (string.IsNullOrWhiteSpace(href))
-                throw new ArgumentException($"'{nameof(href)}' cannot be null or whitespace.", nameof(href));
+            if (string.IsNullOrEmpty(href))
+                throw new ArgumentException($"'{nameof(href)}' cannot be null or empty.", nameof(href));
 
-            var link = new Link { Name = Constants.SelfLinkName, Href = href };
+            var link = new Link(href) { Name = Constants.SelfLinkName };
 
             return resource.AddLink(link);
         }
@@ -294,7 +301,7 @@ namespace HAL.Common
         /// </summary>
         /// <typeparam name="TState">The type of the state.</typeparam>
         /// <param name="resource">The resource.</param>
-        public static Resource<TState> CastState<TState>(this Resource resource)
+        public static Resource<TState?> CastState<TState>(this Resource resource)
         {
             if (resource is null)
                 throw new ArgumentNullException(nameof(resource));
@@ -302,9 +309,25 @@ namespace HAL.Common
             var type = resource.GetType();
 
             if (!type.IsGenericType)
-                return resource.ChangeStateTo<TState>(default);
+                return resource.ChangeStateTo<TState?>(default);
 
-            return resource.ChangeStateTo((TState)type.GetProperty(nameof(Resource<object>.State)).GetValue(resource));
+            return resource.ChangeStateTo((TState?)type.GetProperty(nameof(Resource<object>.State))!.GetValue(resource));
+        }
+
+        /// <summary>
+        /// Casts the state to the new type.
+        /// If the <paramref name="resource"/> is <see cref="Resource"/> then the state will be initialized with the default value.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <param name="resource">The resource.</param>
+        public static Resource<TState> CastState<TState>(this Resource<object> resource)
+        {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            var type = resource.GetType();
+
+            return resource.ChangeStateTo((TState)type.GetProperty(nameof(Resource<object>.State))!.GetValue(resource)!);
         }
 
         /// <summary>
@@ -319,7 +342,7 @@ namespace HAL.Common
             if (resource is null)
                 throw new ArgumentNullException(nameof(resource));
 
-            return new Resource<TState> { Embedded = resource.Embedded, Links = resource.Links, State = state };
+            return new Resource<TState> { State = state, Embedded = resource.Embedded, Links = resource.Links };
         }
 
         /// <summary>

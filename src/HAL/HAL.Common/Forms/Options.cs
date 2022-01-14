@@ -4,7 +4,7 @@ namespace HAL.Common.Forms
 {
     /// <summary> The options element contains an enumerated list of possible values for a property.
     /// This can be used to provide a UI similar to HTML controls such as:
-    /// - SELECT & OPTIONS
+    /// - SELECT &amp; OPTIONS
     /// - INPUT.type="radio"
     /// - INPUT.type= "checkbox"
     /// - INPUT.type= "search"(w / type - ahead suggestions)
@@ -26,6 +26,24 @@ namespace HAL.Common.Forms
     public class Options<T>
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="Options{T}"/> class.
+        /// </summary>
+        /// <param name="inline">A collection of inline items.</param>
+        public Options(ICollection<OptionsItem<T>>? inline)
+        {
+            Inline = inline;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Options{T}"/> class.
+        /// </summary>
+        /// <param name="link">A link to point to an endpoint that will return the items.</param>
+        public Options(OptionsLink? link)
+        {
+            Link = link;
+        }
+
+        /// <summary>
         /// The inline attribute is a JSON array that contains the list of possible values. The
         /// inline attribute is OPTIONAL. If the inline attribute is missing or unparseable and the
         /// link (see link) attribute is missing or unparseable, then the options element SHOULD be ignored.
@@ -35,7 +53,7 @@ namespace HAL.Common.Forms
         /// Values). The inline contents can also be an array of unique name-value pairs (see An
         /// Inline Array of Name/Value Pairs).
         /// </summary>
-        public ICollection<OptionsItem<T>> Inline { get; set; }
+        public ICollection<OptionsItem<T>>? Inline { get; }
 
         /// <summary>
         /// The link attribute is a JSON dictionary object that contains an href which points to an
@@ -53,7 +71,7 @@ namespace HAL.Common.Forms
         /// (e.g. more than prompt and value fields). These additional fields SHOULD be ignored by
         /// the client application.
         /// </summary>
-        public OptionsLink Link { get; set; }
+        public OptionsLink? Link { get; }
 
         /// <summary>
         /// Indicates the maximum number of items to return in the selectedValues attribute. The
@@ -81,7 +99,7 @@ namespace HAL.Common.Forms
         ///
         /// See Reference Fields for an example.
         /// </summary>
-        public string PromptField { get; set; }
+        public string? PromptField { get; set; }
 
         /// <summary>
         /// This is a JSON array that holds the set of values selected from the list of possible
@@ -91,7 +109,7 @@ namespace HAL.Common.Forms
         /// This attribute MAY be populated when the HAL-FORMS is first requested.In that case, the
         /// application can use the value of the selectedValues array to pre-populate the user interface.
         /// </summary>
-        public ICollection<T> SelectedValues { get; set; }
+        public ICollection<T>? SelectedValues { get; set; }
 
         /// <summary>
         /// This attribute contains the name of the JSON dictionary element in the array returned
@@ -100,6 +118,6 @@ namespace HAL.Common.Forms
         /// attribute is missing or unparseable the application SHOULD assume the valueField value
         /// is set to "value".
         /// </summary>
-        public string ValueField { get; set; }
+        public string? ValueField { get; set; }
     }
 }

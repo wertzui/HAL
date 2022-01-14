@@ -94,7 +94,7 @@ export class HalClient {
     }
   }
 
-  public static convertResponse<TResource extends Resource>(TResource: { new(dto?: ResourceDto | null): TResource; }, response: HttpResponse<ResourceDto>): HttpResponse<TResource> {
+  public static convertResponse<TResource extends Resource>(TResource: { new(dto?: ResourceDto | null): TResource }, response: HttpResponse<ResourceDto>): HttpResponse<TResource> {
     const resource = new TResource(response.body);
     const resourceResponse = response.clone<TResource>({ body: resource });
     return resourceResponse;

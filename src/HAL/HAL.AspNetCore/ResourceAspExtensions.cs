@@ -18,7 +18,7 @@ namespace HAL.Common
         /// <param name="controller">The controller.</param>
         /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory, string action = null, string controller = null, object routeValues = null)
+        public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory, string? action = null, string? controller = null, object? routeValues = null)
             where TResource : Resource
         {
             if (resource is null)

@@ -3,8 +3,26 @@ using System.Text.Json.Serialization;
 
 namespace HAL.Common.Forms
 {
+    /// <summary>
+    /// A JSON object that describes the details of the state transition element (name, required,
+    /// readOnly, etc.). It appears as an anonymous array of properties as a child of the _templates
+    /// element (See The _templates Element). There is a set of property attributes that are
+    /// considered core attributes.There are is also group of property attributes that are
+    /// considered additional attributes. Any library supporting the HAL-FORMS specification SHOULD
+    /// support all of the core attributes and MAY support some or all of the additional attributes.
+    /// </summary>
+    /// <typeparam name="T">The type of the value of this property.</typeparam>
     public class Property<T>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Property{T}" /> class.
+        /// </summary>
+        /// <param name="name">The name of the property.</param>
+        public Property(string name)
+        {
+            Name = name;
+        }
+
         /// <summary>
         /// The cols attribute specifies the expected maximum number of characters per line to
         /// display when rendering the input box. This attribute applies to the associated property
@@ -49,7 +67,7 @@ namespace HAL.Common.Forms
         /// The property name. This is a valid JSON string. This is a REQUIRED element. If this
         /// attribute is missing or set to empty, the client SHOULD ignore this property object completely.
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; }
 
         /// <summary>
         /// The options element contains a set of possible values accessible either byValue (e.g.
@@ -59,21 +77,21 @@ namespace HAL.Common.Forms
         /// understand or cannot parse the options element, the options element SHOULD be ignored
         /// and the corresponding property SHOULD be treated as a simple text input element.
         /// </summary>
-        public Options<T> Options { get; set; }
+        public Options<T>? Options { get; set; }
 
         /// <summary>
         /// The placeholder attribute specifies a short hint that describes the expected value of an
         /// input field (e.g. a sample value or a short description of the expected format). This is
         /// an OPTIONAL field and MAY be ignored.
         /// </summary>
-        public T Placeholder { get; set; }
+        public T? Placeholder { get; set; }
 
         /// <summary>
         /// The human-readable prompt for the parameter. This is a valid JSON string. This is an
         /// OPTIONAL element. If this element is missing, clients MAY act as if the prompt value is
         /// set to the value in the name attribute.
         /// </summary>
-        public string Prompt { get; set; }
+        public string? Prompt { get; set; }
 
         /// <summary>
         /// Indicates whether the parameter is read-only. This is a valid JSON boolean. This is an
@@ -83,9 +101,10 @@ namespace HAL.Common.Forms
         public bool ReadOnly { get; set; }
 
         /// <summary>
-        ///A regular expression string to be applied to the value of the parameter. Rules for valid values are the same as the HTML5 pattern attribute [HTML5PAT]. This is an OPTIONAL element. If this attribute missing, is set to empty, or is unparseable , it SHOULD be ignored.
+        /// A regular expression string to be applied to the value of the parameter. Rules for valid values are the same as the HTML5 pattern attribute [HTML5PAT].
+        /// This is an OPTIONAL element. If this attribute missing, is set to empty, or is unparseable , it SHOULD be ignored.
         /// </summary>
-        public string Regex { get; set; }
+        public string? Regex { get; set; }
 
         /// <summary>
         /// Indicates whether the parameter is required. This is a valid JSON boolean. This is an
@@ -128,7 +147,7 @@ namespace HAL.Common.Forms
         /// current elements of the collection.
         /// </summary>
         [JsonPropertyName(Constants.FormTemplatesPropertyName)]
-        public IDictionary<string, FormTemplate> Templates { get; set; }
+        public IDictionary<string, FormTemplate>? Templates { get; set; }
 
         /// <summary>
         /// The type attribute controls the data type of the property value. It is an enumerated
@@ -152,7 +171,17 @@ namespace HAL.Common.Forms
         public T? Value { get; set; }
     }
 
-    public class Property : Property<object>
+    /// <summary>
+    /// A Property whose state is of type object?.
+    /// </summary>
+    public class Property : Property<object?>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Property"/> class.
+        /// </summary>
+        /// <param name="name">The name of the property.</param>
+        public Property(string name) : base(name)
+        {
+        }
     }
 }

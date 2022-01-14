@@ -20,7 +20,7 @@ namespace HAL.AspNetCore.Forms
     {
         private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
         private readonly ILinkFactory _linkFactory;
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
 
         /// <summary>
         /// Creates a new instance of the <see cref="FormTemplateFactory"/> class.
@@ -40,23 +40,24 @@ namespace HAL.AspNetCore.Forms
         }
 
         /// <inheritdoc/>
-        public FormTemplate CreateTemplateFor(Type dtoType, string method, string title = null, string contentType = "application/json")
+        public FormTemplate CreateTemplateFor(Type dtoType, string? method, string? title = null, string contentType = "application/json")
         {
             var properties = CreatePropertiesFor(dtoType);
 
             var formTemplate = new FormTemplate
             {
                 ContentType = contentType,
-                Method = method,
                 Properties = properties,
                 Title = title
             };
+            if (!string.IsNullOrWhiteSpace(method))
+                formTemplate.Method = method;
 
             return formTemplate;
         }
 
         /// <inheritdoc/>
-        public FormTemplate CreateTemplateFor<TDto>(string method, string title = null, string contentType = "application/json") => CreateTemplateFor(typeof(TDto), method, title, contentType);
+        public FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = "application/json") => CreateTemplateFor(typeof(TDto), method, title, contentType);
 
         /// <summary>
         /// Applies information to properties if they are decorated with a [DataType] attribute.
@@ -201,9 +202,11 @@ namespace HAL.AspNetCore.Forms
             if (link is null)
                 return;
 
-            template.Options = new Options<object> { Link = link };
-            template.Options.ValueField = FindPrimaryKeyPropertyName(listDtoType);
-            template.Options.PromptField = FindForeignDisplayColumn(listDtoType);
+            template.Options = new Options<object?>(link)
+            {
+                ValueField = FindPrimaryKeyPropertyName(listDtoType),
+                PromptField = FindForeignDisplayColumn(listDtoType)
+            };
         }
 
         /// <summary>
@@ -219,10 +222,10 @@ namespace HAL.AspNetCore.Forms
         /// <param name="referencedType">The type of the referenced entity.</param>
         /// <returns>The name of the property in camel case.</returns>
         /// <exception cref="ArgumentException">If no property could be found.</exception>
-        private string FindForeignDisplayColumn(Type referencedType)
+        private static string FindForeignDisplayColumn(Type referencedType)
         {
             var displayColumnAttribute = referencedType.GetCustomAttribute<DisplayColumnAttribute>(true);
-            string propertyName = null;
+            string? propertyName = null;
 
             if (displayColumnAttribute is not null)
             {
@@ -269,7 +272,7 @@ namespace HAL.AspNetCore.Forms
             if (propertyName is null)
                 throw new ArgumentException($"Unable to determine the display column for {referencedType.Name}. No [DisplayColumn] Attribute was found.", nameof(referencedType));
 
-            return _jsonSerializerOptions.PropertyNamingPolicy.ConvertName(propertyName);
+            return _propertyNamingPolicy.ConvertName(propertyName);
         }
 
         private static string FindPrimaryKeyPropertyName(Type type)
@@ -289,7 +292,7 @@ namespace HAL.AspNetCore.Forms
             if (primaryKeyProperty is null)
                 throw new ArgumentException($"Unable to determine the primary key for {type.Name}. No property with a [Key] Attribute or the name Id was found.", nameof(type));
 
-            return _jsonSerializerOptions.PropertyNamingPolicy.ConvertName(primaryKeyProperty.Name);
+            return _propertyNamingPolicy.ConvertName(primaryKeyProperty.Name);
         }
 
         /// <summary>
@@ -299,7 +302,7 @@ namespace HAL.AspNetCore.Forms
         /// <param name="property">The property for which this template is for.</param>
         private void AddTypeInformation(Property template, PropertyInfo property)
         {
-            var propertyType = property.PropertyType;
+            Type propertyType = property.PropertyType;
             var nullablePropertyType = Nullable.GetUnderlyingType(propertyType);
 
             if (property.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
@@ -315,19 +318,19 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(bool?)))
             {
                 template.Type = PropertyType.Bool;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsEnum || (nullablePropertyType?.IsEnum).GetValueOrDefault())
             {
                 var isFlags = propertyType.IsDefined(typeof(FlagsAttribute), true);
                 var isNullable = nullablePropertyType is not null;
-                var enumType = isNullable ? nullablePropertyType : propertyType;
-                template.Options = new Options<object>
-                {
-                    Inline = Enum.GetValues(enumType)
+                var enumType = isNullable ? nullablePropertyType! : propertyType;
+                template.Options = new Options<object?>
+                    (Enum.GetValues(enumType)
                         .Cast<object>()
-                        .Select(v => new OptionsItem<object> { Prompt = Enum.GetName(enumType, v), Value = v })
-                        .ToList(),
+                        .Select(v => new OptionsItem<object?>(Enum.GetName(enumType, v)!, v))
+                        .ToList())
+                {
                     MaxItems = isFlags ? default : 1,
                     MinItems = isNullable ? 0 : 1
                 };
@@ -335,7 +338,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(byte?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = byte.MinValue;
                 template.Max = byte.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -343,15 +346,22 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(short?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = short.MinValue;
                 template.Max = short.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
             }
+            else if (propertyType.IsAssignableTo(typeof(char?)))
+            {
+                template.Type = PropertyType.Text;
+                template.Required = nullablePropertyType is null;
+                template.MinLength = template.Required ? 1 : 0;
+                template.MaxLength = 1;
+            }
             else if (propertyType.IsAssignableTo(typeof(int?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = int.MinValue;
                 template.Max = int.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -359,7 +369,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(long?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = long.MinValue;
                 template.Max = long.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -367,7 +377,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(float?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = float.MinValue;
                 template.Max = float.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
@@ -375,7 +385,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(double?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = double.MinValue;
                 template.Max = double.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
@@ -383,7 +393,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(ushort?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = ushort.MinValue;
                 template.Max = ushort.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -391,7 +401,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(uint?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = uint.MinValue;
                 template.Max = uint.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -399,7 +409,7 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(ulong?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
                 template.Min = ulong.MinValue;
                 template.Max = ulong.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -407,17 +417,17 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(DateTime?)))
             {
                 template.Type = PropertyType.DatetimeLocal;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(DateTimeOffset?)))
             {
                 template.Type = PropertyType.DatetimeOffset;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(TimeSpan?)))
             {
                 template.Type = PropertyType.Duration;
-                template.Required = nullablePropertyType != null;
+                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(byte[])) && string.Equals(property.Name, "timestamp", StringComparison.OrdinalIgnoreCase))
             {
@@ -427,12 +437,12 @@ namespace HAL.AspNetCore.Forms
             {
                 template.Type = PropertyType.Collection;
                 var collectionDtoType = propertyType.GetGenericArguments()[0];
-                template.Templates = CreateDefaultTemplateFor(collectionDtoType, null, template.Prompt, null);
+                template.Templates = CreateDefaultTemplateFor(collectionDtoType, null, template.Prompt);
             }
             else if (!propertyType.IsAssignableTo(typeof(HalFile)))
             {
                 template.Type = PropertyType.Object;
-                template.Templates = CreateDefaultTemplateFor(propertyType, null, template.Prompt, null);
+                template.Templates = CreateDefaultTemplateFor(propertyType, null, template.Prompt);
             }
         }
 
@@ -444,7 +454,7 @@ namespace HAL.AspNetCore.Forms
         /// <param name="title">A human readable title for the form.</param>
         /// <param name="contentType">The content type that is used when the form is submitted.</param>
         /// <returns>A new dictionary with only a "default" form template.</returns>
-        private IDictionary<string, FormTemplate> CreateDefaultTemplateFor(Type dtoType, string method, string title = null, string contentType = "application/json")
+        private IDictionary<string, FormTemplate> CreateDefaultTemplateFor(Type dtoType, string? method, string? title = null, string contentType = "application/json")
         {
             return new Dictionary<string, FormTemplate> { { "default", CreateTemplateFor(dtoType, method, title, contentType) } };
         }
@@ -460,6 +470,8 @@ namespace HAL.AspNetCore.Forms
                 .Where(IncludePropertyInTemplate)
                 .OrderBy(property => (property.GetCustomAttribute<DisplayAttribute>(true)?.GetOrder()).GetValueOrDefault())
                 .Select(property => CreatePropertyTemplate(property, dtoType))
+                .Where(property => property is not null)
+                .Cast<Property>()
                 .ToList();
             return properties;
         }
@@ -487,11 +499,10 @@ namespace HAL.AspNetCore.Forms
         /// <param name="property">The property to create the template for.</param>
         /// <param name="dtoType">The type containing the property.</param>
         /// <returns>The generated property template.</returns>
-        private Property CreatePropertyTemplate(PropertyInfo property, Type dtoType)
+        private Property? CreatePropertyTemplate(PropertyInfo property, Type dtoType)
         {
-            var template = new Property
+            var template = new Property(_propertyNamingPolicy.ConvertName(property.Name))
             {
-                Name = _jsonSerializerOptions.PropertyNamingPolicy.ConvertName(property.Name),
                 Prompt = property.Name
             };
 

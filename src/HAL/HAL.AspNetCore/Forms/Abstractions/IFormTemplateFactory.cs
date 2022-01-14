@@ -17,7 +17,7 @@ namespace HAL.AspNetCore.Forms.Abstractions
         /// <param name="title">A human readable title for the form.</param>
         /// <param name="contentType">The content type that is used when the form is submitted.</param>
         /// <returns>A HAL form for the given type, but without any values.</returns>
-        FormTemplate CreateTemplateFor(Type dtoType, string method, string title = null, string contentType = "application/json");
+        FormTemplate CreateTemplateFor(Type dtoType, string method, string? title = null, string contentType = "application/json");
 
         /// <summary>
         /// Creates a form for the given type.
@@ -27,6 +27,6 @@ namespace HAL.AspNetCore.Forms.Abstractions
         /// <param name="title">A human readable title for the form.</param>
         /// <param name="contentType">The content type that is used when the form is submitted.</param>
         /// <returns>A HAL form for the given type, but without any values.</returns>
-        FormTemplate CreateTemplateFor<TDto>(string method, string title = null, string contentType = "application/json");
+        FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = "application/json");
     }
 }

@@ -1,7 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Net.Http;
 
 namespace HAL.Common.Forms
 {
+    /// <summary>
+    /// A template of a HAL-Form.
+    /// </summary>
     public class FormTemplate
     {
         /// <summary>
@@ -12,14 +16,14 @@ namespace HAL.Common.Forms
         /// contains an unrecognized value, the client SHOULD act is if the contentType is set to
         /// "application/json". See Encoding Request Bodies for details.
         /// </summary>
-        public string ContentType { get; set; }
+        public string ContentType { get; set; } = "application/json";
 
         /// <summary>
         /// The HTTP method the client SHOULD use when the service request. Any valid HTTP method is
         /// allowed. This is a REQUIRED element. If the value is empty or is not understood by the
         /// client, the value MUST be treated as an HTTP GET.
         /// </summary>
-        public string Method { get; set; }
+        public string Method { get; set; } = HttpMethod.Get.Method;
 
         /// <summary>
         /// An array of one or more anonymous property elements (see The property Element) that each
@@ -28,7 +32,7 @@ namespace HAL.Common.Forms
         /// set of parameters — meaning that the transition is meant to be executed without passing
         /// any parameters.
         /// </summary>
-        public ICollection<Property> Properties { get; set; }
+        public ICollection<Property>? Properties { get; set; }
 
         /// <summary>
         /// Contains the identifier of the target URL for the client to use when submitting the
@@ -41,13 +45,13 @@ namespace HAL.Common.Forms
         /// string value appear in the same message, the _htarget query string SHOULD be used and
         /// the target property SHOULD be ignored.
         /// </summary>
-        public string Target { get; set; }
+        public string? Target { get; set; }
 
         /// <summary>
         /// A human-readable string that can be used to identify this template. This is a valid JSON
         /// string. This is an OPTIONAL element. If it does not exist or is unparsable, consumers
         /// MAY use the key value of the template as the value for title.
         /// </summary>
-        public string Title { get; set; }
+        public string? Title { get; set; }
     }
 }

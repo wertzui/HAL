@@ -30,9 +30,9 @@ namespace HAL.Common.Converters
             }
 
             Resource<T> resource;
-            IDictionary<string, ICollection<Link>> links = default;
-            IDictionary<string, ICollection<Resource>> embedded = default;
-            T state = default;
+            IDictionary<string, ICollection<Link>>? links = default;
+            IDictionary<string, ICollection<Resource>>? embedded = default;
+            T? state = default;
             var stateType = typeof(T);
 
             while (reader.Read())
@@ -52,10 +52,13 @@ namespace HAL.Common.Converters
 
                 if (reader.TokenType != JsonTokenType.PropertyName)
                 {
-                    throw new JsonException();
+                    throw new JsonException($"Mal-formated JSON input. Expected a property name, but got {reader.TokenType}.");
                 }
 
                 var propertyName = reader.GetString();
+                if (propertyName is null)
+                    throw new JsonException("Mal-formated JSON input. Received an empty property name.");
+
                 if (propertyName == Constants.EmbeddedPropertyName)
                 {
                     embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
@@ -82,7 +85,7 @@ namespace HAL.Common.Converters
                 }
             }
 
-            throw new JsonException();
+            throw new JsonException("Mal-formated JSON input. Missing end-object-token '}'.");
         }
 
         /// <inheritdoc/>
@@ -107,7 +110,7 @@ namespace HAL.Common.Converters
             writer.WriteEndObject();
         }
 
-        private static void WriteState(Utf8JsonWriter writer, T state, JsonSerializerOptions options)
+        private static void WriteState(Utf8JsonWriter writer, T? state, JsonSerializerOptions options)
         {
             if (state is null)
                 return;

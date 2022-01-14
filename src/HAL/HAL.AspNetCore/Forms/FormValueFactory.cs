@@ -12,10 +12,9 @@ namespace HAL.AspNetCore.Forms
     public class FormValueFactory : IFormValueFactory
     {
         /// <inheritdoc/>
-        public FormTemplate FillWith(FormTemplate template, object value)
+        public FormTemplate FillWith(FormTemplate template, object? value)
         {
             var filled = new FormTemplate
-
             {
                 ContentType = template.ContentType,
                 Method = template.Method,
@@ -27,8 +26,11 @@ namespace HAL.AspNetCore.Forms
             return filled;
         }
 
-        private static FormTemplate GetDefaultTemplate(IDictionary<string, FormTemplate> templates)
+        private static FormTemplate? GetDefaultTemplate(IDictionary<string, FormTemplate>? templates)
         {
+            if (templates is null)
+                return null;
+
             if (templates.TryGetValue("default", out var defaultTemplate))
                 return defaultTemplate;
 
@@ -38,9 +40,9 @@ namespace HAL.AspNetCore.Forms
             throw new ArgumentOutOfRangeException(nameof(templates), "The templates dictionary must either contain a \"default\", or only one template.");
         }
 
-        private ICollection<Property> Fillproperties(ICollection<Property> properties, object value)
+        private ICollection<Property>? Fillproperties(ICollection<Property>? properties, object? value)
         {
-            if (value is null)
+            if (value is null || properties is null)
                 return properties;
 
             var valueType = value.GetType();
@@ -51,14 +53,13 @@ namespace HAL.AspNetCore.Forms
 
         private Property FillProperty(Property p, object value, Type valueType)
         {
-            var filled = new Property
+            var filled = new Property(p.Name)
             {
                 Cols = p.Cols,
                 Max = p.Max,
                 MaxLength = p.MaxLength,
                 Min = p.Min,
                 MinLength = p.MinLength,
-                Name = p.Name,
                 Options = p.Options,
                 Placeholder = p.Placeholder,
                 Prompt = p.Prompt,
@@ -82,20 +83,26 @@ namespace HAL.AspNetCore.Forms
             else if (filled.Type == PropertyType.Object)
             {
                 var defaultTemplate = GetDefaultTemplate(filled.Templates);
-                var filledTemplate = FillWith(defaultTemplate, filled.Value);
-                filled.Templates = new Dictionary<string, FormTemplate> { { "default", filledTemplate } };
+                if (defaultTemplate is not null && filled.Value is not null)
+                {
+                    var filledTemplate = FillWith(defaultTemplate, filled.Value);
+                    filled.Templates = new Dictionary<string, FormTemplate> { { "default", filledTemplate } };
+                }
                 filled.Value = null;
             }
 
             return filled;
         }
 
-        private IDictionary<string, FormTemplate> FillWith(IDictionary<string, FormTemplate> templates, IEnumerable values)
+        private IDictionary<string, FormTemplate>? FillWith(IDictionary<string, FormTemplate>? templates, IEnumerable? values)
         {
-            if (values is null)
+            if (values is null || templates is null)
                 return templates;
 
             var defaultTemplate = GetDefaultTemplate(templates);
+            if (defaultTemplate is null)
+                return null;
+
             return FillWith(defaultTemplate, values);
         }
 
@@ -109,16 +116,21 @@ namespace HAL.AspNetCore.Forms
             int i = 0;
             foreach (var value in values)
             {
-                templates[i.ToString()] = FillWith(defaultTemplate, value);
+                var filledTemplate = FillWith(defaultTemplate, value);
+                filledTemplate.Title = i.ToString();
+                templates[filledTemplate.Title] = filledTemplate;
                 i++;
             }
 
             return templates;
         }
 
-        private object GetValue<TDto>(Property p, TDto value, Type valueType)
+        private static object? GetValue<TDto>(Property property, TDto value, Type valueType)
         {
-            var propertyInfo = valueType.GetProperty(p.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+            var propertyInfo = valueType.GetProperty(property.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+            if (propertyInfo is null)
+                throw new ArgumentException($"The property {property.Name} does not exist in the value {value}.", nameof(property));
+
             var propertyValue = propertyInfo.GetValue(value);
 
             return propertyValue;

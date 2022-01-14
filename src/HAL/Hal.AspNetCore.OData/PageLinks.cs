@@ -10,13 +10,13 @@ namespace HAL.AspNetCore.OData
         public IEnumerable<Link> GetLinks()
         {
             if (FirstHref is not null)
-                yield return new Link { Name = "first", Href = FirstHref };
+                yield return new Link(FirstHref) { Name = "first" };
             if (PrevHref is not null)
-                yield return new Link { Name = "prev", Href = PrevHref };
+                yield return new Link(PrevHref) { Name = "prev" };
             if (NextHref is not null)
-                yield return new Link { Name = "next", Href = NextHref };
+                yield return new Link(NextHref) { Name = "next" };
             if (LastHref is not null)
-                yield return new Link { Name = "last", Href = LastHref };
+                yield return new Link(LastHref) { Name = "last" };
         }
 
         /// <inheritdoc/>

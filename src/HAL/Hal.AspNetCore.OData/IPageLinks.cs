@@ -11,22 +11,22 @@ namespace HAL.AspNetCore.OData
         /// <summary>
         /// Gets or sets the href to the first page.
         /// </summary>
-        string FirstHref { get; init; }
+        string? FirstHref { get; init; }
 
         /// <summary>
         /// Gets or sets the href to the last page.
         /// </summary>
-        string LastHref { get; init; }
+        string? LastHref { get; init; }
 
         /// <summary>
         /// Gets or sets the href to the next page.
         /// </summary>
-        string NextHref { get; init; }
+        string? NextHref { get; init; }
 
         /// <summary>
         /// Gets or sets the href to the previous page.
         /// </summary>
-        string PrevHref { get; init; }
+        string? PrevHref { get; init; }
 
         /// <summary>
         /// Adds all links which are not null to the resource.

@@ -11,9 +11,14 @@ namespace HAL.Common.Converters
     public class HalFileJsonConverter : JsonConverter<HalFile>
     {
         /// <inheritdoc/>
-        public override HalFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new HalFile(reader.GetString());
+        public override HalFile Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var uri = reader.GetString() ?? "The URI for a HalFile must not be null or white space.";
+            return new HalFile(uri);
+        }
 
         /// <inheritdoc/>
-        public override void Write(Utf8JsonWriter writer, HalFile value, JsonSerializerOptions options) => writer.WriteStringValue(value.Uri.ToString());
+        public override void Write(Utf8JsonWriter writer, HalFile value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.Uri.ToString());
     }
 }

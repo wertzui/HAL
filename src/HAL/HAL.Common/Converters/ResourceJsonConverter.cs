@@ -21,7 +21,7 @@ namespace HAL.Common.Converters
         /// <param name="ignoreCondition">The ignore condition.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
-        public static bool ShouldWriteValue(object value, object defaultValue, JsonIgnoreCondition ignoreCondition)
+        public static bool ShouldWriteValue(object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
         {
             return ignoreCondition switch
             {
@@ -37,24 +37,19 @@ namespace HAL.Common.Converters
         public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
-            {
-                throw new JsonException();
-            }
+                throw new JsonException($"Malformed JSON. Expected start of object '{{', but got {reader.TokenType}.");
 
             Resource resource;
-            IDictionary<string, ICollection<Link>> links = default;
-            IDictionary<string, ICollection<Resource>> embedded = default;
+            IDictionary<string, ICollection<Link>>? links = default;
+            IDictionary<string, ICollection<Resource>>? embedded = default;
             var state = new ExpandoObject();
-            JsonSerializerOptions optionsWithDynamicConverter = default;
+            JsonSerializerOptions? optionsWithDynamicConverter = default;
 
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
-                    if (state.Any())
-                        resource = new Resource<object> { State = state };
-                    else
-                        resource = new Resource();
+                    resource = state.Any() ? new Resource<object> { State = state } : new Resource();
 
                     if (embedded is not null)
                         resource.Embedded = embedded;
@@ -79,12 +74,12 @@ namespace HAL.Common.Converters
                 {
                     links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
                 }
-                else
+                else if (propertyName is not null)
                 {
                     if (optionsWithDynamicConverter is null)
                         optionsWithDynamicConverter = AddDynamicConverter(options);
 
-                    state.TryAdd(propertyName, (object)JsonSerializer.Deserialize<dynamic>(ref reader, optionsWithDynamicConverter));
+                    state.TryAdd(propertyName, (object?)JsonSerializer.Deserialize<dynamic>(ref reader, optionsWithDynamicConverter));
                 }
             }
 
@@ -100,8 +95,14 @@ namespace HAL.Common.Converters
             if (type.IsGenericType)
             {
                 var stateProperty = type.GetProperty(nameof(Resource<object>.State));
-                var state = stateProperty.GetValue(value);
-                WriteState(writer, state, options);
+                if (stateProperty is not null)
+                {
+                    var state = stateProperty.GetValue(value);
+                    if (state is not null)
+                    {
+                        WriteState(writer, state, options);
+                    }
+                }
             }
 
             if (value.Links != null)

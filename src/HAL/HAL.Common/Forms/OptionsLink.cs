@@ -17,10 +17,19 @@
     public class OptionsLink
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="OptionsLink"/> class.
+        /// </summary>
+        /// <param name="href">The URL associated with the key.</param>
+        public OptionsLink(string href)
+        {
+            Href = href;
+        }
+
+        /// <summary>
         /// The URL associated with the key. This is a REQUIRED property. If this is missing, set to
         /// empty or cannot be parsed, the associated link element SHOULD be ignored.
         /// </summary>
-        public string Href { get; set; }
+        public string Href { get; }
 
         /// <summary>
         /// A boolean value that SHOULD be set to true when link.href contains a URI Template
@@ -36,6 +45,6 @@
         /// is missing or unparseable, it SHOULD be assumed to be set to application/json. Client
         /// applications SHOULD use the value of the type attribute to populate the HTTP Accept header.
         /// </summary>
-        public string Type { get; set; }
+        public string? Type { get; set; }
     }
 }

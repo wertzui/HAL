@@ -21,7 +21,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="controller">The controller.</param>
         /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string existingName = null, string action = null, string controller = null, object routeValues = null) where TResource : Resource;
+        TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string? existingName = null, string? action = null, string? controller = null, object? routeValues = null) where TResource : Resource;
 
         /// <summary>
         /// Adds the "self" link to the given resource.
@@ -32,8 +32,17 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="controller">The controller.</param>
         /// <param name="routeValues">The route values.</param>
         /// <returns></returns>
-        TResource AddSelfLinkTo<TResource>(TResource resource, string action = null, string controller = null, object routeValues = null)
+        TResource AddSelfLinkTo<TResource>(TResource resource, string? action = null, string? controller = null, object? routeValues = null)
             where TResource : Resource;
+
+        /// <summary>
+        /// Gets the href value for the "self" link.
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="routeValues">The route values.</param>
+        /// <returns></returns>
+        string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null);
 
         /// <summary>
         /// Adds a curie link that uses swagger UI under /swagger/index.html#/{rel} to give
@@ -59,7 +68,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        Link Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL.
@@ -79,7 +88,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        Link Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string name, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL with the given name.
@@ -102,7 +111,7 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="host">The host.</param>
         /// <param name="fragment">The fragment.</param>
         /// <returns></returns>
-        Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null);
+        Link Create(string name, string title, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
 
         /// <summary>
         /// Creates a link to the specified URL with the given name and title.
@@ -122,7 +131,7 @@ namespace HAL.AspNetCore.Abstractions
         /// </param>
         /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null, ApiVersion version = null);
+        IDictionary<string, ICollection<Link>> CreateAllLinks(string? prefix = null, ApiVersion? version = null);
 
         /// <summary>
         /// Creates all possible links to all controller actions that do not have any parameters in
@@ -130,7 +139,7 @@ namespace HAL.AspNetCore.Abstractions
         /// </summary>
         /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion version = null);
+        ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion? version = null);
 
         /// <summary>
         /// Creates all templated links that match the given controller and action.
@@ -139,6 +148,6 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="controller">The controller.</param>
         /// <param name="version">The version of the API. Default is the latest version.</param>
         /// <returns></returns>
-        ICollection<Link> CreateTemplated(string action, string controller = null, ApiVersion version = null);
+        ICollection<Link> CreateTemplated(string action, string? controller = null, ApiVersion? version = null);
     }
 }

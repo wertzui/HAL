@@ -129,6 +129,7 @@ export class Property {
     Object.assign(this, dto);
 
     this._templates = !(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+
     if (this.options)
       this.options = new Options(dto?.options);
   }
@@ -147,7 +148,7 @@ export class Template {
     this.properties = !(dto?.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
   }
 
-  public get values(): { [name: string]: unknown; } {
+  public get values(): { [name: string]: unknown } {
     return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property.value]));
   }
 

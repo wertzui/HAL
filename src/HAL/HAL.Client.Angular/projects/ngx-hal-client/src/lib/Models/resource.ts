@@ -137,7 +137,7 @@ export class Resource {
     return resource;
   }
 
-  private static fromDtos<TResource extends Resource>(dtos: ResourceDto[] | null | undefined, TResource?: { new(dto: ResourceDto): TResource; }): (TResource | Resource)[] {
+  private static fromDtos<TResource extends Resource>(dtos: ResourceDto[] | null | undefined, TResource?: { new(dto: ResourceDto): TResource }): (TResource | Resource)[] {
     if (!dtos)
       return [];
 

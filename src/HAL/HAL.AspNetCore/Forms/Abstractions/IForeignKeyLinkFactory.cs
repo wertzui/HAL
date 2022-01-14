@@ -20,6 +20,6 @@ namespace HAL.AspNetCore.Forms.Abstractions
         /// </summary>
         /// <param name="listDtoType">The type to create a link to.</param>
         /// <returns>The link to the list endpoint of the given type.</returns>
-        public OptionsLink CreateLink(Type listDtoType);
+        public OptionsLink? CreateLink(Type listDtoType);
     }
 }

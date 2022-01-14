@@ -11,10 +11,10 @@ namespace HAL.Common.Converters
     /// by:tchivs@live.cn
     /// from https://github.com/dotnet/runtime/issues/29690#issuecomment-571969037
     /// </summary>
-    public class DynamicJsonConverter : JsonConverter<dynamic>
+    public class DynamicJsonConverter : JsonConverter<dynamic?>
     {
         /// <inheritdoc/>
-        public override dynamic Read(ref Utf8JsonReader reader,
+        public override dynamic? Read(ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options)
         {
@@ -60,15 +60,15 @@ namespace HAL.Common.Converters
 
         /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer,
-            object value,
+            object? value,
             JsonSerializerOptions options)
         {
             throw new NotSupportedException("This is just a temp workaround for deserializing to a dynamic object");
         }
 
-        private object ReadList(JsonElement jsonElement)
+        private object? ReadList(JsonElement jsonElement)
         {
-            IList<object> list = new List<object>();
+            IList<object?> list = new List<object?>();
             foreach (var item in jsonElement.EnumerateArray())
             {
                 list.Add(ReadValue(item));
@@ -78,7 +78,7 @@ namespace HAL.Common.Converters
 
         private object ReadObject(JsonElement jsonElement)
         {
-            IDictionary<string, object> expandoObject = new ExpandoObject();
+            IDictionary<string, object?> expandoObject = new ExpandoObject();
             foreach (var obj in jsonElement.EnumerateObject())
             {
                 var k = obj.Name;
@@ -88,9 +88,9 @@ namespace HAL.Common.Converters
             return expandoObject;
         }
 
-        private object ReadValue(JsonElement jsonElement)
+        private object? ReadValue(JsonElement jsonElement)
         {
-            object result;
+            object? result;
             switch (jsonElement.ValueKind)
             {
                 case JsonValueKind.Object:

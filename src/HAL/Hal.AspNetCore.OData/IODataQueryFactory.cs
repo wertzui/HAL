@@ -24,7 +24,7 @@ namespace HAL.AspNetCore.OData
         /// <param name="skipTokenOverride">The $skip token override. If it is provided, it will override the value from <paramref name="rawQueryOptions"/>..</param>
         /// <param name="topOverride">The $top override. If it is provided, it will override the value from <paramref name="rawQueryOptions"/>..</param>
         /// <returns>The query part of an URL which uses the given <paramref name="rawQueryOptions"/>.</returns>
-        string GenerateQuery(ODataRawQueryOptions rawQueryOptions = null, string applyOverride = null, string countOverride = null, string deltaTokenOverride = null, string expandOverride = null, string filterOverride = null, string formatOverride = null, string orderByOverride = null, string selectOverride = null, string skipOverride = null, string skipTokenOverride = null, string topOverride = null);
+        string GenerateQuery(ODataRawQueryOptions? rawQueryOptions = null, string? applyOverride = null, string? countOverride = null, string? deltaTokenOverride = null, string? expandOverride = null, string? filterOverride = null, string? formatOverride = null, string? orderByOverride = null, string? selectOverride = null, string? skipOverride = null, string? skipTokenOverride = null, string? topOverride = null);
 
         /// <summary>
         /// Gets the list navigation href values to be used on a list endpoint.

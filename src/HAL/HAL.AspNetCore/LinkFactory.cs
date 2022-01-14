@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace HAL.AspNetCore
 {
@@ -45,35 +46,33 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string existingName = null, string action = null, string controller = null, object routeValues = null)
+        public TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string? existingName = null, string? action = null, string? controller = null, object? routeValues = null)
             where TResource : Resource
         {
             if (resource is null)
                 throw new ArgumentNullException(nameof(resource));
 
-            string path = _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues);
-            QueryString queryString = _actionContextAccessor.ActionContext.HttpContext.Request.QueryString;
+            var selfHref = GetSelfHref(action, controller, routeValues);
 
-            if (!resource.Links.TryGetValue(existingRel, out var links) || links.Count == 0)
+            if (resource.Links is null || !resource.Links.TryGetValue(existingRel, out var links) || links.Count == 0)
                 throw new ArgumentException($"The resource does not contain a link with the rel '{existingRel}'", nameof(existingRel));
 
             var link = links.FirstOrDefault(l => existingName == null || l.Name == existingName);
             if (link is null)
                 throw new ArgumentException($"The resource does not contain links with the rel '{existingRel}', but none with the name '{existingName}'", nameof(existingName));
 
-            return resource.AddLink(path + queryString, link);
+            return resource.AddLink(selfHref, link);
         }
 
         /// <inheritdoc/>
-        public TResource AddSelfLinkTo<TResource>(TResource resource, string action = null, string controller = null, object routeValues = null)
+        public TResource AddSelfLinkTo<TResource>(TResource resource, string? action = null, string? controller = null, object? routeValues = null)
             where TResource : Resource
         {
             if (resource is null)
                 throw new ArgumentNullException(nameof(resource));
 
-            string path = _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, routeValues);
-            QueryString queryString = _actionContextAccessor.ActionContext.HttpContext.Request.QueryString;
-            return resource.AddSelfLink(path + queryString);
+            var selfHref = GetSelfHref(action, controller, routeValues);
+            return resource.AddSelfLink(selfHref);
         }
 
         /// <inheritdoc/>
@@ -85,69 +84,63 @@ namespace HAL.AspNetCore
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
+            return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
         }
 
         /// <inheritdoc/>
-        public Link Create(string href) => new Link { Href = href };
+        public Link Create(string href) => new(href);
 
         /// <inheritdoc/>
-        public Link Create(string name, string href) => new Link { Name = name, Href = href };
+        public Link Create(string? name, string href) => new(href) { Name = name };
 
         /// <inheritdoc/>
-        public Link Create(string name, string title, string href) => new Link { Name = name, Title = title, Href = href };
+        public Link Create(string? name, string? title, string href) => new(href) { Name = name, Title = title };
 
         /// <inheritdoc/>
-        public Link Create(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link Create(string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
             => Create(null, action, controller, values, protocol, host, fragment);
 
         /// <inheritdoc/>
-        public Link Create(string name, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link Create(string? name, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
             => Create(name, null, action, controller, values, protocol, host, fragment);
 
         /// <inheritdoc/>
-        public Link Create(string name, string title, string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
-            => Create(name, title, _linkGenerator.GetUriByAction(_actionContextAccessor.ActionContext.HttpContext, action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)));
+        public Link Create(string? name, string? title, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+            => Create(name, title, _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) ?? throw new InvalidOperationException($"Unable to generate the href value for a link.name: {name}, title: {title}, action: {action}, controller: {controller}, values: {values}, protocol: {protocol}, host: {host}, fragment: {fragment}"));
 
         /// <inheritdoc/>
-        public IDictionary<string, ICollection<Link>> CreateAllLinks(string prefix = null, ApiVersion version = null)
+        public IDictionary<string, ICollection<Link>> CreateAllLinks(string? prefix = null, ApiVersion? version = null)
         {
-            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
             return actionDescriptors
-                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
-                .Where(descriptor =>
-                    descriptor is not null && // only ControllerActionDescriptors
-                    descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
-                .Select(d => (d.ControllerName, CreateTemplated(d)))
+                .Where(descriptor => descriptor != GetActionContext().ActionDescriptor) // without the self link
+                .Select(d => (ControllerName: RemoveVersionFrom(d.ControllerName), CreateTemplated(d)))
                 .GroupBy(p => p.ControllerName)
                 .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
         }
 
         /// <inheritdoc/>
-        public ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion version = null)
+        public ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion? version = null)
         {
-            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
             return actionDescriptors
-                .Select(action => action.ActionDescriptor as ControllerActionDescriptor)
                 .Where(descriptor =>
-                    descriptor is not null && // only ControllerActionDescriptors
                     descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
-                    descriptor != _actionContextAccessor.ActionContext.ActionDescriptor) // without the self link
-                .Select(descriptor => Create(name: $"{descriptor.ControllerName}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
+                    descriptor != GetActionContext().ActionDescriptor) // without the self link
+                .Cast<ControllerActionDescriptor>()
+                .Select(descriptor => Create(name: $"{RemoveVersionFrom(descriptor.ControllerName)}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
                 .ToList();
         }
 
         /// <inheritdoc/>
-        public ICollection<Link> CreateTemplated(string action, string controller = null, ApiVersion version = null)
+        public ICollection<Link> CreateTemplated(string action, string? controller = null, ApiVersion? version = null)
         {
             if (controller is null)
                 controller = GetCurrentControllerName();
 
-            var actionDescriptors = GetActionDescriptorsForVersion(version);
+            var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
             return actionDescriptors
-                .Select(description => description.ActionDescriptor as ControllerActionDescriptor)
                 .Where(descriptor =>
-                    descriptor is not null && // only ControllerActionDescriptors
                     descriptor.ControllerName.Equals(controller, StringComparison.OrdinalIgnoreCase) && // controller must match
                     descriptor.ActionName.Equals(action, StringComparison.OrdinalIgnoreCase)) // action must match
                 .Select(d => CreateTemplated(d))
@@ -155,7 +148,7 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public Link CreateTemplated(string action = null, string controller = null, object values = null, string protocol = null, string host = null, string fragment = null)
+        public Link CreateTemplated(string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
         {
             var link = Create(action, controller, values, protocol, host, fragment);
             if (values == null)
@@ -180,6 +173,10 @@ namespace HAL.AspNetCore
                 var isFirst = true;
                 foreach (var nonTemplatedParameter in parameters.nonTemplated)
                 {
+                    var valueString = nonTemplatedParameter.Value?.ToString();
+                    if (string.IsNullOrEmpty(valueString))
+                        continue;
+
                     if (isFirst)
                         isFirst = false;
                     else
@@ -187,7 +184,7 @@ namespace HAL.AspNetCore
 
                     uriSb.Append(nonTemplatedParameter.Key);
                     uriSb.Append('=');
-                    uriSb.Append(Uri.EscapeDataString(nonTemplatedParameter.Value?.ToString()));
+                    uriSb.Append(Uri.EscapeDataString(valueString));
                 }
             }
 
@@ -225,19 +222,32 @@ namespace HAL.AspNetCore
                 throw new ArgumentNullException(nameof(descriptor));
 
             var hrefBuilder = new StringBuilder();
-            var request = _actionContextAccessor.ActionContext.HttpContext.Request;
-            hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a url like https://localhost:5001/
+            var request = GetHttpContext().Request;
+            hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a URL like https://localhost:5001/
 
             AppendPath(descriptor, hrefBuilder, out var pathIsTemplated);
 
             AppendQuery(descriptor, hrefBuilder, out var queryIsTemplated);
 
-            return new Link
+            return new Link(hrefBuilder.ToString())
             {
                 Name = descriptor.ActionName,
-                Href = hrefBuilder.ToString(),
                 Templated = pathIsTemplated || queryIsTemplated
             };
+        }
+
+        /// <inheritdoc/>
+        public string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null)
+        {
+            var httpContext = GetHttpContext();
+
+            var path = _linkGenerator.GetUriByAction(httpContext, action, controller, routeValues);
+            if (path is null)
+                throw new InvalidOperationException($"Unable to generate the self link. request: {httpContext.Request}, action: {action}, controller: {controller}, routeValues: {routeValues}");
+
+            QueryString queryString = httpContext.Request.QueryString;
+
+            return path + queryString;
         }
 
         private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
@@ -285,34 +295,32 @@ namespace HAL.AspNetCore
 
                     // strip the type part ":long" from "{id:long}"
                     var isInType = false;
-                    using (var templateEnumerator = provider.Template.GetEnumerator())
+                    using var templateEnumerator = provider.Template.GetEnumerator();
+                    char c;
+                    while (templateEnumerator.MoveNext())
                     {
-                        char c;
-                        while (templateEnumerator.MoveNext())
+                        c = templateEnumerator.Current;
+
+                        if (c == '[')
                         {
-                            c = templateEnumerator.Current;
+                            AppendDirectReplaceParameter(descriptor, sb, provider.Template, templateEnumerator);
+                            continue;
+                        }
 
-                            if (c == '[')
-                            {
-                                AppendDirectReplaceParameter(descriptor, sb, provider.Template, templateEnumerator);
-                                continue;
-                            }
-
-                            if (!isInType)
-                            {
-                                if (c == ':')
-                                    isInType = true;
-                                else
-                                    sb.Append(c);
-                            }
+                        if (!isInType)
+                        {
+                            if (c == ':')
+                                isInType = true;
                             else
+                                sb.Append(c);
+                        }
+                        else
+                        {
+                            if (c == '}')
                             {
-                                if (c == '}')
-                                {
-                                    isTemplated = true;
-                                    isInType = false;
-                                    sb.Append(c);
-                                }
+                                isTemplated = true;
+                                isInType = false;
+                                sb.Append(c);
                             }
                         }
                     }
@@ -325,7 +333,7 @@ namespace HAL.AspNetCore
             var queryStarted = false;
             foreach (var parameter in descriptor.Parameters)
             {
-                if (parameter.BindingInfo.BindingSource == BindingSource.Query)
+                if (parameter.BindingInfo?.BindingSource == BindingSource.Query)
                 {
                     if (!queryStarted)
                     {
@@ -365,7 +373,22 @@ namespace HAL.AspNetCore
             return (nonTemplated, templated);
         }
 
-        private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion version)
+        private static string RemoveVersionFrom(string controllerName)
+        {
+            var cleanControllerName = controllerName;
+
+            var match = Regex.Match(controllerName, @"^(?<name>.*?)((?<controller>controller)(?<version>v(er(sion)?)?\d*))?$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+            var groups = match.Groups;
+
+            if (groups.TryGetValue("name", out var nameMatch) && nameMatch.Success)
+                cleanControllerName = nameMatch.Value;
+
+            return cleanControllerName;
+        }
+
+        private ActionContext GetActionContext() => _actionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current HttpContext.");
+
+        private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion? version)
         {
             var descriptorGroups = _apiExplorer.ApiDescriptionGroups.Items;
 
@@ -376,15 +399,26 @@ namespace HAL.AspNetCore
                     .Where(d => d.GetProperty<ApiVersion>() == version);
             }
 
-            return descriptorGroups.Last().Items;
+            return descriptorGroups[^1].Items;
+        }
+
+        private IEnumerable<ControllerActionDescriptor> GetControllerActionDescriptorsForVersion(ApiVersion? version)
+        {
+            var descriptors = GetActionDescriptorsForVersion(version);
+            return descriptors
+                .Select(description => description.ActionDescriptor as ControllerActionDescriptor)
+                .Where(descriptor => descriptor is not null) // only ControllerActionDescriptors
+                .Cast<ControllerActionDescriptor>();
         }
 
         private string GetCurrentControllerName()
         {
-            if (_actionContextAccessor.ActionContext.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
+            if (GetActionContext().ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
                 return controllerActionDescriptor.ControllerName;
 
             throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
         }
+
+        private HttpContext GetHttpContext() => GetActionContext().HttpContext;
     }
 }

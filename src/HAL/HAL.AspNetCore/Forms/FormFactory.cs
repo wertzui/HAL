@@ -4,7 +4,6 @@ using HAL.Common;
 using HAL.Common.Forms;
 using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 
 namespace HAL.AspNetCore.Forms
@@ -40,14 +39,14 @@ namespace HAL.AspNetCore.Forms
         }
 
         /// <inheritdoc/>
-        public FormTemplate CreateForm<T>(T value, string target, string method, string title = null, string contentType = "application/json")
+        public FormTemplate CreateForm<T>(T value, string target, string method, string? title = null, string contentType = "application/json")
         {
             var type = typeof(T);
             var name = type.Name;
 
             // We do not cache method and title so we can reuse the same template for Create (POST)
             // and Edit (PUT) forms.
-            var template = _cache.GetOrCreate(type, entry => _templateFactory.CreateTemplateFor<T>(null, null, contentType));
+            var template = _cache.GetOrCreate(type, entry => _templateFactory.CreateTemplateFor<T>("template_does_not_need_a_method", contentType: contentType));
 
             var filled = _valueFactory.FillWith(template, value);
             filled.Method = method;
@@ -58,17 +57,16 @@ namespace HAL.AspNetCore.Forms
         }
 
         /// <inheritdoc/>
-        public FormsResource CreateResource() => new FormsResource();
+        public FormsResource CreateResource(FormTemplate defaultTemplate) => new(new Dictionary<string, FormTemplate> { { "default", defaultTemplate } });
 
         /// <inheritdoc/>
-        public FormsResource CreateResourceForEndpoint<T>(T value, HttpMethod method, string title, string contentType = "application/json", string action = "Get", string controller = null, object routeValues = null)
+        public FormsResource CreateResourceForEndpoint<T>(T value, HttpMethod method, string title, string contentType = "application/json", string action = "Get", string? controller = null, object? routeValues = null)
         {
-            var resource = CreateResource();
-            _linkFactory.AddSelfLinkTo(resource, action, controller, routeValues);
+            var target = _linkFactory.GetSelfHref(action, controller, routeValues);
+            var template = CreateForm(value, target, method.Method, title, contentType);
 
-            var template = CreateForm(value, resource.Links[Constants.SelfLinkName].First().Href, method.Method, title, contentType);
-
-            resource.Templates = new Dictionary<string, FormTemplate> { { "default", template } };
+            var resource = CreateResource(template)
+                .AddSelfLink(target);
 
             return resource;
         }

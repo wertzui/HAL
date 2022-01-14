@@ -136,7 +136,7 @@ namespace HAL.Tests.Common.Serialization
             {
                 Links = new Dictionary<string, ICollection<Link>>
                 {
-                    { "foo", new List<Link> { new Link { Href = "bar" } } }
+                    { "foo", new List<Link> { new Link("bar") } }
                 }
             };
             var resourceJson = "{\"_links\":{\"foo\":[{\"href\":\"bar\"}]}}";
@@ -156,7 +156,7 @@ namespace HAL.Tests.Common.Serialization
             {
                 Links = new Dictionary<string, ICollection<Link>>
                 {
-                    { "foo", new List<Link> { new Link { Href = "bar" } } }
+                    { "foo", new List<Link> { new Link("bar") } }
                 }
             };
             var expectedResourceJson = "{\"_links\":{\"foo\":[{\"href\":\"bar\"}]}}";
@@ -200,7 +200,7 @@ namespace HAL.Tests.Common.Serialization
             var dynamicResource = actualResource as Resource<dynamic>;
 
             // Assert
-            Assert.AreEqual(expectedResource.State.Foo, dynamicResource.State.foo);
+            Assert.AreEqual(expectedResource.State.Foo, dynamicResource?.State?.foo);
         }
 
         [TestMethod]
@@ -223,7 +223,7 @@ namespace HAL.Tests.Common.Serialization
 
         private record TestState<T>
         {
-            public T Foo { get; set; }
+            public T? Foo { get; set; }
         }
     }
 }

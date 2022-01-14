@@ -9,10 +9,9 @@ namespace HAL.Tests.Common.Converters
     {
         private const string singleLinkJson = "{\"deprecation\":\"Deprecation\",\"href\":\"Href\",\"hreflang\":\"Hreflang\",\"name\":\"Name\",\"profile\":\"Profile\",\"templated\":true,\"title\":\"Title\",\"type\":\"Type\"}";
 
-        private static readonly Link singleLink = new Link
+        private static readonly Link singleLink = new("Href")
         {
             Deprecation = "Deprecation",
-            Href = "Href",
             Hreflang = "Hreflang",
             Name = "Name",
             Profile = "Profile",
