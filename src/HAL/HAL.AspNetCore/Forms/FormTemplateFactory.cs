@@ -335,6 +335,14 @@ namespace HAL.AspNetCore.Forms
                     MinItems = isNullable ? 0 : 1
                 };
             }
+            else if (propertyType.IsAssignableTo(typeof(sbyte?)))
+            {
+                template.Type = PropertyType.Number;
+                template.Required = nullablePropertyType is null;
+                template.Min = sbyte.MinValue;
+                template.Max = sbyte.MaxValue;
+                template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            }
             else if (propertyType.IsAssignableTo(typeof(byte?)))
             {
                 template.Type = PropertyType.Number;
@@ -374,6 +382,14 @@ namespace HAL.AspNetCore.Forms
                 template.Max = long.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
             }
+            else if (propertyType.IsAssignableTo(typeof(nint?)))
+            {
+                template.Type = PropertyType.Number;
+                template.Required = nullablePropertyType is null;
+                template.Min = nint.MinValue;
+                template.Max = nint.MaxValue;
+                template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            }
             else if (propertyType.IsAssignableTo(typeof(float?)))
             {
                 template.Type = PropertyType.Number;
@@ -388,6 +404,14 @@ namespace HAL.AspNetCore.Forms
                 template.Required = nullablePropertyType is null;
                 template.Min = double.MinValue;
                 template.Max = double.MaxValue;
+                template.Regex = $@"^[-+]?\d*\.?\d*$";
+            }
+            else if (propertyType.IsAssignableTo(typeof(decimal?)))
+            {
+                template.Type = PropertyType.Number;
+                template.Required = nullablePropertyType is null;
+                template.Min = (double)decimal.MinValue;
+                template.Max = (double)decimal.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
             }
             else if (propertyType.IsAssignableTo(typeof(ushort?)))
@@ -412,6 +436,14 @@ namespace HAL.AspNetCore.Forms
                 template.Required = nullablePropertyType is null;
                 template.Min = ulong.MinValue;
                 template.Max = ulong.MaxValue;
+                template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
+            }
+            else if (propertyType.IsAssignableTo(typeof(nuint?)))
+            {
+                template.Type = PropertyType.Number;
+                template.Required = nullablePropertyType is null;
+                template.Min = nuint.MinValue;
+                template.Max = nuint.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
             }
             else if (propertyType.IsAssignableTo(typeof(DateTime?)))
