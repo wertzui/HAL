@@ -465,7 +465,15 @@ namespace HAL.AspNetCore.Forms
             {
                 template.Type = PropertyType.Hidden;
             }
-            else if (propertyType.IsGenericType && propertyType.IsAssignableTo(typeof(IEnumerable)))
+            else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition().IsAssignableTo(typeof(IDictionary<,>)))
+            {
+                template.Type = PropertyType.Collection;
+                var collectionKeyType = propertyType.GetGenericArguments()[0];
+                var collectionValueType = propertyType.GetGenericArguments()[1];
+                var kvpType = typeof(KeyValuePair<,>).MakeGenericType(collectionKeyType, collectionValueType);
+                template.Templates = CreateDefaultTemplateFor(kvpType, null, template.Prompt);
+            }
+            else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition().IsAssignableTo(typeof(IEnumerable<>)))
             {
                 template.Type = PropertyType.Collection;
                 var collectionDtoType = propertyType.GetGenericArguments()[0];
