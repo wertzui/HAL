@@ -6033,6 +6033,11 @@
   dependencies:
     "punycode" "^2.1.0"
 
+"uri-templates-es@^1.0.0":
+  "integrity" "sha512-8Ne+rpk5kXmsnvKgcOVu0GLuyiALOP0GmNStRTeROjYMlC/YpFchxbMQneuT8vk0xdZrNETVd9pWLLRIqGN4Tw=="
+  "resolved" "https://registry.npmjs.org/uri-templates-es/-/uri-templates-es-1.0.0.tgz"
+  "version" "1.0.0"
+
 "util-deprecate@^1.0.1", "util-deprecate@^1.0.2", "util-deprecate@~1.0.1":
   "integrity" "sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8="
   "resolved" "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"

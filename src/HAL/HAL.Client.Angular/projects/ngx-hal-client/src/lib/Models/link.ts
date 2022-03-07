@@ -1,4 +1,4 @@
-import * as utpl from 'uri-templates';
+import { UriTemplate } from 'uri-templates-es';
 /**
  *  A Link Object represents a hyperlink from the containing resource to a URI.
  */
@@ -127,7 +127,7 @@ export class Link {
   type?: string;
 
   public fillTemplate(parameters: { [key: string]: string }): string {
-    return utpl(this.href).fill(parameters);
+    return new UriTemplate(this.href).fill(parameters);
   }
 
   public static fromDto(dto: LinkDto | null | undefined): Link {

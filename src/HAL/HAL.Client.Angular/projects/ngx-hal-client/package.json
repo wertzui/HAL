@@ -1,6 +1,6 @@
 {
   "name": "@wertzui/ngx-hal-client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "wertzui",
   "description": "An Angular client to consume a REST service that serves application/hal+json.",
   "publishConfig": {
@@ -23,7 +23,7 @@
   "peerDependencies": {
     "@angular/common": "^13",
     "@angular/core": "^13",
-    "uri-templates": "^0.2",
+    "uri-templates-es": "^1.0.0",
     "lodash": "^4"
   },
   "dependencies": {
@@ -32,6 +32,6 @@
   "devDependencies": {
     "@types/uri-templates": "0.1.31",
     "@types/lodash": "4.14.179",
-    "uri-templates": "0.2.0"
+    "uri-templates-es": "^1.0.0"
   }
 }

@@ -2,7 +2,7 @@ import * as i1 from '@angular/common/http';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import * as i0 from '@angular/core';
 import { Injectable, NgModule } from '@angular/core';
-import * as utpl from 'uri-templates';
+import { UriTemplate } from 'uri-templates-es';
 import * as _ from 'lodash';
 
 class HalClient {
@@ -131,7 +131,7 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.2.5", ngImpor
  */
 class Link {
     fillTemplate(parameters) {
-        return utpl(this.href).fill(parameters);
+        return new UriTemplate(this.href).fill(parameters);
     }
     static fromDto(dto) {
         const link = Object.assign(new Link(), dto);
