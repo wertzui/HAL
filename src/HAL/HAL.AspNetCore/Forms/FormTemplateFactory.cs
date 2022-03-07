@@ -1,5 +1,4 @@
-﻿using HAL.AspNetCore.Abstractions;
-using HAL.AspNetCore.Forms.Abstractions;
+﻿using HAL.AspNetCore.Forms.Abstractions;
 using HAL.Common.Binary;
 using HAL.Common.Forms;
 using System;
@@ -19,23 +18,18 @@ namespace HAL.AspNetCore.Forms
     public class FormTemplateFactory : IFormTemplateFactory
     {
         private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
-        private readonly ILinkFactory _linkFactory;
         private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
 
         /// <summary>
         /// Creates a new instance of the <see cref="FormTemplateFactory"/> class.
         /// </summary>
-        /// <param name="linkFactory">The link factory.</param>
         /// <param name="foreignKeyLinkFactories">
         /// These factories are used to create a link for properties which are decorated with a
         /// [ForeignKey] attribute.
         /// </param>
         /// <exception cref="ArgumentNullException"></exception>
-        public FormTemplateFactory(
-            ILinkFactory linkFactory,
-            IEnumerable<IForeignKeyLinkFactory> foreignKeyLinkFactories)
+        public FormTemplateFactory(IEnumerable<IForeignKeyLinkFactory> foreignKeyLinkFactories)
         {
-            _linkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
             _foreignKeyLinkFactories = foreignKeyLinkFactories ?? throw new ArgumentNullException(nameof(foreignKeyLinkFactories));
         }
 
@@ -473,7 +467,7 @@ namespace HAL.AspNetCore.Forms
                 var kvpType = typeof(KeyValuePair<,>).MakeGenericType(collectionKeyType, collectionValueType);
                 template.Templates = CreateDefaultTemplateFor(kvpType, null, template.Prompt);
             }
-            else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition().IsAssignableTo(typeof(IEnumerable<>)))
+            else if (propertyType.IsGenericType && propertyType.IsAssignableTo(typeof(IEnumerable)))
             {
                 template.Type = PropertyType.Collection;
                 var collectionDtoType = propertyType.GetGenericArguments()[0];
