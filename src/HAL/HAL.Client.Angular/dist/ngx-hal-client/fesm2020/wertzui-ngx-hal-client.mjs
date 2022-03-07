@@ -1,4 +1,3 @@
-import { __awaiter } from 'tslib';
 import * as i1 from '@angular/common/http';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import * as i0 from '@angular/core';
@@ -10,87 +9,79 @@ class HalClient {
     constructor(_httpClient) {
         this._httpClient = _httpClient;
     }
-    get(uri, TResource, TError, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const options = HalClient.createOptions(headers);
-            let dtoResponse;
-            try {
-                dtoResponse = yield this._httpClient.get(uri, options).toPromise();
-            }
-            catch (e) {
-                if (e instanceof HttpErrorResponse)
-                    dtoResponse = HalClient.convertErrorResponse(e);
-                else
-                    throw new Error(`GET ${uri} - options: ${options} failed with error ${e}`);
-            }
-            if (!dtoResponse)
-                throw new Error(`GET ${uri} - options: ${options} did not return a response.`);
-            const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
-            return resourceResponse;
-        });
+    async get(uri, TResource, TError, headers) {
+        const options = HalClient.createOptions(headers);
+        let dtoResponse;
+        try {
+            dtoResponse = await this._httpClient.get(uri, options).toPromise();
+        }
+        catch (e) {
+            if (e instanceof HttpErrorResponse)
+                dtoResponse = HalClient.convertErrorResponse(e);
+            else
+                throw new Error(`GET ${uri} - options: ${options} failed with error ${e}`);
+        }
+        if (!dtoResponse)
+            throw new Error(`GET ${uri} - options: ${options} did not return a response.`);
+        const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
+        return resourceResponse;
     }
-    post(uri, body, TResource, TError, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const options = HalClient.createOptions(headers);
-            let dtoResponse;
-            try {
-                dtoResponse = yield this._httpClient.post(uri, body, options).toPromise();
-            }
-            catch (e) {
-                if (e instanceof HttpErrorResponse)
-                    dtoResponse = HalClient.convertErrorResponse(e);
-                else
-                    throw new Error(`POST ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
-            }
-            if (!dtoResponse)
-                throw new Error(`POST ${uri} - options: ${options} - body: ${body} did not return a response.`);
-            const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
-            return resourceResponse;
-        });
+    async post(uri, body, TResource, TError, headers) {
+        const options = HalClient.createOptions(headers);
+        let dtoResponse;
+        try {
+            dtoResponse = await this._httpClient.post(uri, body, options).toPromise();
+        }
+        catch (e) {
+            if (e instanceof HttpErrorResponse)
+                dtoResponse = HalClient.convertErrorResponse(e);
+            else
+                throw new Error(`POST ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
+        }
+        if (!dtoResponse)
+            throw new Error(`POST ${uri} - options: ${options} - body: ${body} did not return a response.`);
+        const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
+        return resourceResponse;
     }
-    put(uri, body, TResource, TError, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const options = HalClient.createOptions(headers);
-            let dtoResponse;
-            try {
-                dtoResponse = yield this._httpClient.put(uri, body, options).toPromise();
-            }
-            catch (e) {
-                if (e instanceof HttpErrorResponse)
-                    dtoResponse = HalClient.convertErrorResponse(e);
-                else
-                    throw new Error(`PUT ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
-            }
-            if (!dtoResponse)
-                throw new Error(`PUT ${uri} - options: ${options} - body: ${body} did not return a response.`);
-            const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
-            return resourceResponse;
-        });
+    async put(uri, body, TResource, TError, headers) {
+        const options = HalClient.createOptions(headers);
+        let dtoResponse;
+        try {
+            dtoResponse = await this._httpClient.put(uri, body, options).toPromise();
+        }
+        catch (e) {
+            if (e instanceof HttpErrorResponse)
+                dtoResponse = HalClient.convertErrorResponse(e);
+            else
+                throw new Error(`PUT ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
+        }
+        if (!dtoResponse)
+            throw new Error(`PUT ${uri} - options: ${options} - body: ${body} did not return a response.`);
+        const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
+        return resourceResponse;
     }
-    delete(uri, TError, headers) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const options = HalClient.createOptions(headers);
-            let response;
-            try {
-                response = yield this._httpClient.delete(uri, options).toPromise();
-            }
-            catch (e) {
-                if (e instanceof HttpErrorResponse)
-                    response = HalClient.convertErrorResponse(e);
-                else
-                    throw new Error(`DELETE ${uri} - options: ${options} failed with error ${e}`);
-            }
-            if (!response)
-                throw new Error(`DELETE ${uri} - options: ${options} did not return a response.`);
-            if (!response.ok) {
-                const errorResponse = HalClient.convertResponse(TError, response);
-                return errorResponse;
-            }
-            return response;
-        });
+    async delete(uri, TError, headers) {
+        const options = HalClient.createOptions(headers);
+        let response;
+        try {
+            response = await this._httpClient.delete(uri, options).toPromise();
+        }
+        catch (e) {
+            if (e instanceof HttpErrorResponse)
+                response = HalClient.convertErrorResponse(e);
+            else
+                throw new Error(`DELETE ${uri} - options: ${options} failed with error ${e}`);
+        }
+        if (!response)
+            throw new Error(`DELETE ${uri} - options: ${options} did not return a response.`);
+        if (!response.ok) {
+            const errorResponse = HalClient.convertResponse(TError, response);
+            return errorResponse;
+        }
+        return response;
     }
     static createOptions(headers) {
-        headers === null || headers === void 0 ? void 0 : headers.append('Accept', 'application/hal+json');
+        headers?.append('Accept', 'application/hal+json');
         return {
             headers: headers,
             responseType: 'json',
@@ -107,9 +98,9 @@ class HalClient {
         return dtoResponse;
     }
 }
-HalClient.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClient, deps: [{ token: i1.HttpClient }], target: i0.ɵɵFactoryTarget.Injectable });
-HalClient.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClient, providedIn: 'root' });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClient, decorators: [{
+HalClient.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClient, deps: [{ token: i1.HttpClient }], target: i0.ɵɵFactoryTarget.Injectable });
+HalClient.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClient, providedIn: 'root' });
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClient, decorators: [{
             type: Injectable,
             args: [{
                     providedIn: 'root'
@@ -118,12 +109,12 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "12.2.11", ngImpo
 
 class HalClientModule {
 }
-HalClientModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClientModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
-HalClientModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClientModule });
-HalClientModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClientModule, providers: [
+HalClientModule.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClientModule, deps: [], target: i0.ɵɵFactoryTarget.NgModule });
+HalClientModule.ɵmod = i0.ɵɵngDeclareNgModule({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClientModule });
+HalClientModule.ɵinj = i0.ɵɵngDeclareInjector({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClientModule, providers: [
         HalClient
     ], imports: [[]] });
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "12.2.11", ngImport: i0, type: HalClientModule, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "13.2.5", ngImport: i0, type: HalClientModule, decorators: [{
             type: NgModule,
             args: [{
                     declarations: [],
@@ -150,7 +141,7 @@ class Link {
         if (!dtos)
             return [];
         const links = dtos
-            .filter(dto => !!(dto === null || dto === void 0 ? void 0 : dto.href))
+            .filter(dto => !!dto?.href)
             .map(dto => Link.fromDto(dto));
         return links;
     }
@@ -164,10 +155,10 @@ class Link {
  */
 class Resource {
     constructor(dto) {
-        const links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
+        const links = !(dto?._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
         if (!links['self'])
             throw new Error(`The self link is missing in the given ResourceDto: ${JSON.stringify(dto)}`);
-        const embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, resources]) => [rel, Resource.fromDtos(resources)]));
+        const embedded = !(dto?._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, resources]) => [rel, Resource.fromDtos(resources)]));
         const dtoWithParsedDates = Resource.parseDates(dto);
         Object.assign(this, dtoWithParsedDates);
         // We ensured that it has a self property
@@ -206,15 +197,15 @@ class Resource {
             new URL(possibleUrl);
             return true;
         }
-        catch (_a) {
+        catch {
             return false;
         }
     }
     //public static fromDto(dto: ResourceDto): Resource;
     //public static fromDto<TResource extends Resource>(dto: ResourceDto, TResource: { new(dto: ResourceDto): TResource }): TResource;
     static fromDto(dto, TResource) {
-        const links = !(dto === null || dto === void 0 ? void 0 : dto._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
-        const embedded = !(dto === null || dto === void 0 ? void 0 : dto._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, embeddedResourceDtos]) => [rel, Resource.fromDtos(embeddedResourceDtos, TResource)]));
+        const links = !(dto?._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
+        const embedded = !(dto?._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, embeddedResourceDtos]) => [rel, Resource.fromDtos(embeddedResourceDtos, TResource)]));
         const dtoWithParsedDates = Resource.parseDates(dto);
         const resource = Object.assign(TResource ? new TResource(dto) : new Resource(dto), dtoWithParsedDates, { _embedded: embedded, _links: links });
         return resource;
@@ -287,16 +278,16 @@ class Options {
 class Property {
     constructor(dto) {
         Object.assign(this, dto);
-        this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+        this._templates = !(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
         if (this.options)
-            this.options = new Options(dto === null || dto === void 0 ? void 0 : dto.options);
+            this.options = new Options(dto?.options);
     }
 }
 ;
 class Template {
     constructor(dto) {
         Object.assign(this, dto);
-        this.properties = !(dto === null || dto === void 0 ? void 0 : dto.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
+        this.properties = !(dto?.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
     }
     get values() {
         return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property.value]));
@@ -305,7 +296,7 @@ class Template {
 class FormsResource extends Resource {
     constructor(dto) {
         super(dto);
-        this._templates = !(dto === null || dto === void 0 ? void 0 : dto._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+        this._templates = !(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
     }
     getTemplate(name) {
         const templateNames = Object.getOwnPropertyNames(this._templates);
@@ -323,8 +314,7 @@ class ListResource extends Resource {
             throw new TypeError(`The resource ${dto} is not a ListResource.`);
     }
     static isListResource(resource) {
-        var _a, _b;
-        return !!((_b = (_a = resource) === null || _a === void 0 ? void 0 : _a._embedded) === null || _b === void 0 ? void 0 : _b.items);
+        return !!(resource?._embedded?.items);
     }
 }
 
@@ -343,4 +333,4 @@ class PagedListResource extends ListResource {
  */
 
 export { FormsResource, HalClient, HalClientModule, Link, ListResource, Options, PagedListResource, Property, PropertyType, Resource, Template };
-//# sourceMappingURL=wertzui-ngx-hal-client.js.map
+//# sourceMappingURL=wertzui-ngx-hal-client.mjs.map

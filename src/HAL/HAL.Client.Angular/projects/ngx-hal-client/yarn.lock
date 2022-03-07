@@ -2,22 +2,53 @@
 # yarn lockfile v1
 
 
-"@types/lodash@4.14.176":
-  version "4.14.176"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.176.tgz#641150fc1cda36fbfa329de603bbb175d7ee20c0"
-  integrity sha512-xZmuPTa3rlZoIbtDUyJKZQimJV3bxCmzMIO2c9Pz9afyDro6kr7R79GwcB6mRhuoPmV2p1Vb66WOJH7F886WKQ==
+"@angular/common@^13":
+  "integrity" "sha512-px2qZP8Fd2qYbCVWmgLmop2OBQ/LKU2Oq8U/La2EEo8kgVuNWNTxmIh826cgZK/v9VQw8b/EoU7PeEjSWz0Zow=="
+  "resolved" "https://registry.npmjs.org/@angular/common/-/common-13.2.5.tgz"
+  "version" "13.2.5"
+  dependencies:
+    "tslib" "^2.3.0"
+
+"@angular/core@^13", "@angular/core@13.2.5":
+  "integrity" "sha512-4CC69JQbgyETJR6xsQk6hOQqb6fBGZ/Qc333x0hwRDBbGnYE6hQehDibV+Apljea8YjV+NX6VmyOvPvHhtL4PQ=="
+  "resolved" "https://registry.npmjs.org/@angular/core/-/core-13.2.5.tgz"
+  "version" "13.2.5"
+  dependencies:
+    "tslib" "^2.3.0"
+
+"@types/lodash@4.14.179":
+  "integrity" "sha512-uwc1x90yCKqGcIOAT6DwOSuxnrAbpkdPsUOZtwrXb4D/6wZs+6qG7QnIawDuZWg0sWpxl+ltIKCaLoMlna678w=="
+  "resolved" "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.179.tgz"
+  "version" "4.14.179"
 
 "@types/uri-templates@0.1.31":
-  version "0.1.31"
-  resolved "https://registry.yarnpkg.com/@types/uri-templates/-/uri-templates-0.1.31.tgz#ff5b8cb34459177afa45ba9780f530f65a146118"
-  integrity sha512-sCokykpau15/CwBZvZg+HfcDcwre4/J3Zj7XyQgUrLS9OOdExIyK1tQ1tfQtM0P9qGU/U5y50FQOxqDX5rhcrQ==
+  "integrity" "sha512-sCokykpau15/CwBZvZg+HfcDcwre4/J3Zj7XyQgUrLS9OOdExIyK1tQ1tfQtM0P9qGU/U5y50FQOxqDX5rhcrQ=="
+  "resolved" "https://registry.npmjs.org/@types/uri-templates/-/uri-templates-0.1.31.tgz"
+  "version" "0.1.31"
 
-tslib@2.3.1:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.3.1.tgz#e8a335add5ceae51aa261d32a490158ef042ef01"
-  integrity sha512-77EbyPPpMz+FRFRuAFlWMtmgUWGe9UOG2Z25NqCwiIjRhOf5iKGuzSe5P2w1laq+FkRy4p+PCuVkJSGkzTEKVw==
+"lodash@^4":
+  "integrity" "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="
+  "resolved" "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+  "version" "4.17.21"
 
-uri-templates@0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/uri-templates/-/uri-templates-0.2.0.tgz#2b5784511cc909868731e9233c268097d10b499f"
-  integrity sha1-K1eEURzJCYaHMekjPCaAl9ELSZ8=
+"rxjs@^6.5.3 || ^7.4.0":
+  "integrity" "sha512-h5M3Hk78r6wAheJF0a5YahB1yRQKCsZ4MsGdZ5O9ETbVtjPcScGfrMmoOq7EBsCRzd4BDkvDJ7ogP8Sz5tTFiQ=="
+  "resolved" "https://registry.npmjs.org/rxjs/-/rxjs-7.5.4.tgz"
+  "version" "7.5.4"
+  dependencies:
+    "tslib" "^2.1.0"
+
+"tslib@^2", "tslib@^2.1.0", "tslib@^2.3.0":
+  "version" "2.3.1"
+
+"uri-templates@0.2.0":
+  "integrity" "sha1-K1eEURzJCYaHMekjPCaAl9ELSZ8="
+  "resolved" "https://registry.npmjs.org/uri-templates/-/uri-templates-0.2.0.tgz"
+  "version" "0.2.0"
+
+"zone.js@~0.11.4":
+  "integrity" "sha512-D1/7VxEuQ7xk6z/kAROe4SUbd9CzxY4zOwVGnGHerd/SgLIVU5f4esDzQUsOCeArn933BZfWMKydH7l7dPEp0g=="
+  "resolved" "https://registry.npmjs.org/zone.js/-/zone.js-0.11.5.tgz"
+  "version" "0.11.5"
+  dependencies:
+    "tslib" "^2.3.0"
