@@ -37,7 +37,7 @@ namespace HAL.AspNetCore.OData
             AppendParameter(sb, "skiptoken", rawQueryOptions?.SkipToken, skipTokenOverride);
             AppendParameter(sb, "top", rawQueryOptions?.Top, topOverride);
 
-            return Uri.EscapeDataString(sb.ToString());
+            return sb.ToString();
         }
 
         /// <inheritdoc/>
