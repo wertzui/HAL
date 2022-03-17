@@ -148,7 +148,7 @@ export class Resource {
     return resources;
   }
 
-  private static parseDates(dto: any): any {
+  private static parseDates(dto: unknown): unknown {
     if (dto === null || dto === undefined)
       return dto;
 
@@ -164,8 +164,8 @@ export class Resource {
     }
 
     else if (_.isPlainObject(dto)) {
-      for (const [key, value] of Object.entries(dto)) {
-        dto[key] = this.parseDates(value);
+      for (const [key, value] of Object.entries(dto as { [name: string]: unknown })) {
+        (dto as { [name: string]: unknown })[key] = this.parseDates(value);
       }
     }
 
