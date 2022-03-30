@@ -17,8 +17,9 @@ namespace HAL.AspNetCore.Forms
     /// <inheritdoc/>
     public class FormTemplateFactory : IFormTemplateFactory
     {
-        private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
         private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
+        private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
+        private static readonly NullabilityInfoContext _nullabilityInfoContext = new NullabilityInfoContext();
 
         /// <summary>
         /// Creates a new instance of the <see cref="FormTemplateFactory"/> class.
@@ -52,6 +53,26 @@ namespace HAL.AspNetCore.Forms
 
         /// <inheritdoc/>
         public FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = "application/json") => CreateTemplateFor(typeof(TDto), method, title, contentType);
+
+        /// <summary>
+        /// When the user cannot edit a property, that is if it is required and either read-only or
+        /// hidden, the default value is set, so the user can at least post back the form without
+        /// validation triggering. This is mostly used when adding elements to a collection which
+        /// have required and read-only properties, like an ID.
+        /// </summary>
+        /// <param name="template">The property template to set a default value for.</param>
+        /// <param name="property">The property info to get the value for.</param>
+        /// <param name="defaultDto">The object to get the value from.</param>
+        private static void AddDefaultValueIfUserCannotEditProperty(Property template, PropertyInfo property, object? defaultDto)
+        {
+            if (defaultDto is null)
+                return;
+
+            if (template.Required && (template.ReadOnly || template.Type.HasValue && template.Type == PropertyType.Hidden))
+            {
+                template.Value = property.GetValue(defaultDto);
+            }
+        }
 
         /// <summary>
         /// Applies information to properties if they are decorated with a [DataType] attribute.
@@ -142,71 +163,21 @@ namespace HAL.AspNetCore.Forms
             }
         }
 
-        /// <summary>
-        /// Adds options with a link for a property which has been decorated with the [ForgeignKey] attribute.
-        /// </summary>
-        /// <param name="template"></param>
-        /// <param name="foreignKey">The [ForeignKey] attribute.</param>
-        /// <param name="containingDtoType">The type containing the property.</param>
-        private void AddForeignKeyLink(Property template, ForeignKeyAttribute foreignKey, Type containingDtoType)
+        private static object? CreateDefaultDto(Type dtoType)
         {
-            AddForeignKeyLink(template, foreignKey.Name, containingDtoType);
-        }
-
-        /// <summary>
-        /// Adds options with a link for a property which has a name that ends with "id" (Convention).
-        /// </summary>
-        /// <param name="template"></param>
-        /// <param name="property">The property.</param>
-        /// <param name="containingDtoType">The type containing the property.</param>
-        private void AddForeignKeyLink(Property template, PropertyInfo property, Type containingDtoType)
-        {
-            if (property.Name.Length <= 2 || !property.Name.EndsWith("id", StringComparison.OrdinalIgnoreCase))
-                return;
-
-            var foreignKeyName = property.Name[..^2];
-
-            AddForeignKeyLink(template, foreignKeyName, containingDtoType);
-        }
-
-        /// <summary>
-        /// Adds options with a link for a property which has the given name and is IEnumerable{T}.
-        /// </summary>
-        /// <param name="template"></param>
-        /// <param name="foreignKeyName">The name of the foreign key property.</param>
-        /// <param name="containingDtoType">The type containing the property.</param>
-        private void AddForeignKeyLink(Property template, string foreignKeyName, Type containingDtoType)
-        {
-            if (foreignKeyName is null)
-                return;
-
-            var referencedListDtoProperty = containingDtoType.GetProperty(foreignKeyName);
-            if (referencedListDtoProperty is null)
-                return;
-
-            var propertyType = referencedListDtoProperty.PropertyType;
-            var isEnumerable = propertyType.IsGenericType && propertyType.IsAssignableTo(typeof(IEnumerable));
-            var listDtoType = isEnumerable ? propertyType.GetGenericArguments()[0] : propertyType;
-            var link = _foreignKeyLinkFactories
-                .Where(f => f.CanCreateLink(listDtoType))
-                .Take(1)
-                .Select(f => f.CreateLink(listDtoType))
-                .FirstOrDefault();
-
-            if (link is null)
-                return;
-
-            template.Options = new Options<object?>(link)
+            try
             {
-                ValueField = FindPrimaryKeyPropertyName(listDtoType),
-                PromptField = FindForeignDisplayColumn(listDtoType)
-            };
+                return Activator.CreateInstance(dtoType);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
-        /// Tries to get the name of the property to display.
-        /// First looks for a [DisplayColumn] attribute defined on the type of the referenced type.
-        /// Then tries the following:
+        /// Tries to get the name of the property to display. First looks for a [DisplayColumn]
+        /// attribute defined on the type of the referenced type. Then tries the following:
         /// 1. If the type has only one property defined, use it.
         /// 2. If the type has only one string property defined, use it.
         /// 3. If all base types have only one property defined, use it.
@@ -279,7 +250,8 @@ namespace HAL.AspNetCore.Forms
                     OwnKeyAttribute = p.GetCustomAttribute<KeyAttribute>(false)
                 })
                 .Where(p => string.Equals("id", p.Name, StringComparison.OrdinalIgnoreCase) || p.OwnKeyAttribute is not null || p.InheritedKeyAttribute is not null)
-                // First look for a [Key] Attribute defined on the class, then for an inherited [Key] attribute and at last for an Id property.
+                // First look for a [Key] Attribute defined on the class, then for an inherited
+                // [Key] attribute and at last for an Id property.
                 .OrderBy(p => p.OwnKeyAttribute is not null ? 0 : p.InheritedKeyAttribute is not null ? 1 : 2)
                 .FirstOrDefault();
 
@@ -287,6 +259,84 @@ namespace HAL.AspNetCore.Forms
                 throw new ArgumentException($"Unable to determine the primary key for {type.Name}. No property with a [Key] Attribute or the name Id was found.", nameof(type));
 
             return _propertyNamingPolicy.ConvertName(primaryKeyProperty.Name);
+        }
+
+        private static bool IncludePropertyInTemplate(PropertyInfo property)
+        {
+            var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>(true);
+            if (jsonIgnoreAttribute is not null && jsonIgnoreAttribute.Condition == JsonIgnoreCondition.Always)
+                return false;
+
+            var scaffoldAttribute = property.GetCustomAttribute<ScaffoldColumnAttribute>(true);
+            if (scaffoldAttribute is not null && !scaffoldAttribute.Scaffold)
+                return false;
+
+            var ignoreDataMemberAttribute = property.GetCustomAttribute<IgnoreDataMemberAttribute>(true);
+            if (ignoreDataMemberAttribute is not null)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Adds options with a link for a property which has been decorated with the [ForgeignKey] attribute.
+        /// </summary>
+        /// <param name="template"></param>
+        /// <param name="foreignKey">The [ForeignKey] attribute.</param>
+        /// <param name="containingDtoType">The type containing the property.</param>
+        private void AddForeignKeyLink(Property template, ForeignKeyAttribute foreignKey, Type containingDtoType)
+        {
+            AddForeignKeyLink(template, foreignKey.Name, containingDtoType);
+        }
+
+        /// <summary>
+        /// Adds options with a link for a property which has a name that ends with "id" (Convention).
+        /// </summary>
+        /// <param name="template"></param>
+        /// <param name="property">The property.</param>
+        /// <param name="containingDtoType">The type containing the property.</param>
+        private void AddForeignKeyLink(Property template, PropertyInfo property, Type containingDtoType)
+        {
+            if (property.Name.Length <= 2 || !property.Name.EndsWith("id", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var foreignKeyName = property.Name[..^2];
+
+            AddForeignKeyLink(template, foreignKeyName, containingDtoType);
+        }
+
+        /// <summary>
+        /// Adds options with a link for a property which has the given name and is IEnumerable{T}.
+        /// </summary>
+        /// <param name="template"></param>
+        /// <param name="foreignKeyName">The name of the foreign key property.</param>
+        /// <param name="containingDtoType">The type containing the property.</param>
+        private void AddForeignKeyLink(Property template, string foreignKeyName, Type containingDtoType)
+        {
+            if (foreignKeyName is null)
+                return;
+
+            var referencedListDtoProperty = containingDtoType.GetProperty(foreignKeyName);
+            if (referencedListDtoProperty is null)
+                return;
+
+            var propertyType = referencedListDtoProperty.PropertyType;
+            var isEnumerable = propertyType.IsGenericType && propertyType.IsAssignableTo(typeof(IEnumerable));
+            var listDtoType = isEnumerable ? propertyType.GetGenericArguments()[0] : propertyType;
+            var link = _foreignKeyLinkFactories
+                .Where(f => f.CanCreateLink(listDtoType))
+                .Take(1)
+                .Select(f => f.CreateLink(listDtoType))
+                .FirstOrDefault();
+
+            if (link is null)
+                return;
+
+            template.Options = new Options<object?>(link)
+            {
+                ValueField = FindPrimaryKeyPropertyName(listDtoType),
+                PromptField = FindForeignDisplayColumn(listDtoType)
+            };
         }
 
         /// <summary>
@@ -298,11 +348,21 @@ namespace HAL.AspNetCore.Forms
         {
             Type propertyType = property.PropertyType;
             var nullablePropertyType = Nullable.GetUnderlyingType(propertyType);
+            var nullabilityInfo = _nullabilityInfoContext.Create(property);
+            template.Required = nullabilityInfo.WriteState is NullabilityState.NotNull;
+
+            if (property.Name == nameof(KeyValuePair<object, object>.Key) &&
+                property.DeclaringType is not null &&
+                property.DeclaringType.IsGenericType &&
+                property.DeclaringType.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+            {
+                // For whatever reason the key of KeyValueType<object, object> comes out as nullable when using NullabilityInfoContext.
+                template.Required = true;
+            }
 
             if (property.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
             {
                 template.ReadOnly = true;
-                template.Required = true;
             }
 
             if (propertyType.IsAssignableTo(typeof(string)))
@@ -312,7 +372,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(bool?)))
             {
                 template.Type = PropertyType.Bool;
-                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsEnum || (nullablePropertyType?.IsEnum).GetValueOrDefault())
             {
@@ -332,7 +391,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(sbyte?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = sbyte.MinValue;
                 template.Max = sbyte.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -340,7 +398,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(byte?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = byte.MinValue;
                 template.Max = byte.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -348,7 +405,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(short?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = short.MinValue;
                 template.Max = short.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -356,14 +412,12 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(char?)))
             {
                 template.Type = PropertyType.Text;
-                template.Required = nullablePropertyType is null;
                 template.MinLength = template.Required ? 1 : 0;
                 template.MaxLength = 1;
             }
             else if (propertyType.IsAssignableTo(typeof(int?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = int.MinValue;
                 template.Max = int.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -371,7 +425,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(long?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = long.MinValue;
                 template.Max = long.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -379,7 +432,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(nint?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = nint.MinValue;
                 template.Max = nint.MaxValue;
                 template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
@@ -387,7 +439,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(float?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = float.MinValue;
                 template.Max = float.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
@@ -395,7 +446,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(double?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = double.MinValue;
                 template.Max = double.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
@@ -403,7 +453,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(decimal?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = (double)decimal.MinValue;
                 template.Max = (double)decimal.MaxValue;
                 template.Regex = $@"^[-+]?\d*\.?\d*$";
@@ -411,7 +460,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(ushort?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = ushort.MinValue;
                 template.Max = ushort.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -419,7 +467,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(uint?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = uint.MinValue;
                 template.Max = uint.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -427,7 +474,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(ulong?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = ulong.MinValue;
                 template.Max = ulong.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -435,7 +481,6 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(nuint?)))
             {
                 template.Type = PropertyType.Number;
-                template.Required = nullablePropertyType is null;
                 template.Min = nuint.MinValue;
                 template.Max = nuint.MaxValue;
                 template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
@@ -443,17 +488,14 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsAssignableTo(typeof(DateTime?)))
             {
                 template.Type = PropertyType.DatetimeLocal;
-                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(DateTimeOffset?)))
             {
                 template.Type = PropertyType.DatetimeOffset;
-                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(TimeSpan?)))
             {
                 template.Type = PropertyType.Duration;
-                template.Required = nullablePropertyType is null;
             }
             else if (propertyType.IsAssignableTo(typeof(byte[])) && string.Equals(property.Name, "timestamp", StringComparison.OrdinalIgnoreCase))
             {
@@ -500,31 +542,16 @@ namespace HAL.AspNetCore.Forms
         /// <returns>A collection with all the property templates.</returns>
         private ICollection<Property> CreatePropertiesFor(Type dtoType)
         {
+            object? defaultDto = CreateDefaultDto(dtoType);
+
             var properties = dtoType.GetProperties()
                 .Where(IncludePropertyInTemplate)
                 .OrderBy(property => (property.GetCustomAttribute<DisplayAttribute>(true)?.GetOrder()).GetValueOrDefault())
-                .Select(property => CreatePropertyTemplate(property, dtoType))
+                .Select(property => CreatePropertyTemplate(property, dtoType, defaultDto))
                 .Where(property => property is not null)
                 .Cast<Property>()
                 .ToList();
             return properties;
-        }
-
-        private static bool IncludePropertyInTemplate(PropertyInfo property)
-        {
-            var jsonIgnoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>(true);
-            if (jsonIgnoreAttribute is not null && jsonIgnoreAttribute.Condition == JsonIgnoreCondition.Always)
-                return false;
-
-            var scaffoldAttribute = property.GetCustomAttribute<ScaffoldColumnAttribute>(true);
-            if (scaffoldAttribute is not null && !scaffoldAttribute.Scaffold)
-                return false;
-
-            var ignoreDataMemberAttribute = property.GetCustomAttribute<IgnoreDataMemberAttribute>(true);
-            if (ignoreDataMemberAttribute is not null)
-                return false;
-
-            return true;
         }
 
         /// <summary>
@@ -532,8 +559,12 @@ namespace HAL.AspNetCore.Forms
         /// </summary>
         /// <param name="property">The property to create the template for.</param>
         /// <param name="dtoType">The type containing the property.</param>
+        /// <param name="defaultDto">
+        /// A default instance of the DTO which is used to fill properties which cannot be set by
+        /// the user.
+        /// </param>
         /// <returns>The generated property template.</returns>
-        private Property? CreatePropertyTemplate(PropertyInfo property, Type dtoType)
+        private Property? CreatePropertyTemplate(PropertyInfo property, Type dtoType, object? defaultDto)
         {
             var template = new Property(_propertyNamingPolicy.ConvertName(property.Name))
             {
@@ -618,6 +649,8 @@ namespace HAL.AspNetCore.Forms
                         break;
                 }
             }
+
+            AddDefaultValueIfUserCannotEditProperty(template, property, defaultDto);
 
             return template;
         }

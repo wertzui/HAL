@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/wertzui/HAL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/wertzui/HAL</RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <VersionPrefix>6.0.5</VersionPrefix>
+    <VersionPrefix>6.1.0</VersionPrefix>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
