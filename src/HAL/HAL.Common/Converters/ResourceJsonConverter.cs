@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -13,6 +14,23 @@ namespace HAL.Common.Converters
     /// <seealso cref="JsonConverter{Resource}" />
     public class ResourceJsonConverter : JsonConverter<Resource>
     {
+        /// <summary>
+        /// Determines if the given property should be written to the JSON payload based on the ignore condition.
+        /// </summary>
+        /// <param name="property">The property which should be written.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="defaultValue">The default value.</param>
+        /// <param name="ignoreCondition">The ignore condition.</param>
+        /// <returns></returns>
+        public static bool ShouldWriteProperty(PropertyInfo property, object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
+        {
+            var ignoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
+            if (ignoreAttribute is not null)
+                return ShouldWriteValue(value, defaultValue, ignoreAttribute.Condition);
+
+            return ShouldWriteValue(value, defaultValue, ignoreCondition);
+        }
+
         /// <summary>
         /// Determines if the given value should be written to the JSON payload based on the ignore condition.
         /// </summary>
@@ -141,7 +159,7 @@ namespace HAL.Common.Converters
                 var value = property.GetValue(state);
                 var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
-                if (ShouldWriteValue(value, defaultValue, options.DefaultIgnoreCondition))
+                if (ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
                 {
                     writer.WritePropertyName(name);
                     JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);

@@ -1,15 +1,15 @@
 import { Resource, ResourceDto } from "./resource";
+import { ResourceOfDto } from './resourceOf';
 export interface ListResourceDto<TListDto extends ResourceDto> extends ResourceDto {
     _embedded?: {
         [name: string]: ResourceDto[];
         items: TListDto[];
     };
 }
-export declare class ListResource extends Resource {
+export declare class ListResource<TListDto extends ResourceDto> extends Resource {
     _embedded: {
         [name: string]: Resource[];
-        items: Resource[];
+        items: ResourceOfDto<TListDto>[];
     };
-    constructor(dto?: ListResourceDto<any>);
-    static isListResource(resource: ListResource | Resource): resource is ListResource;
+    constructor(dto?: ListResourceDto<TListDto>);
 }

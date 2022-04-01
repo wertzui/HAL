@@ -648,11 +648,29 @@ namespace HAL.AspNetCore.Forms
                     default:
                         break;
                 }
+
+                AddExtensionDataToproperty(template, attribute);
             }
 
             AddDefaultValueIfUserCannotEditProperty(template, property, defaultDto);
 
             return template;
+        }
+
+        private static void AddExtensionDataToproperty(Property template, object attribute)
+        {
+            if (attribute is IPropertyExtensionData)
+            {
+                var type = attribute.GetType();
+                var nameWithSuffix = type.Name;
+                var name = nameWithSuffix.EndsWith(nameof(Attribute)) ? nameWithSuffix[0..^9] : nameWithSuffix;
+                var casedName = _propertyNamingPolicy.ConvertName(name);
+
+                if (template.Extensions is null)
+                    template.Extensions = new Dictionary<string, object>();
+
+                template.Extensions[casedName] = attribute;
+            }
         }
     }
 }

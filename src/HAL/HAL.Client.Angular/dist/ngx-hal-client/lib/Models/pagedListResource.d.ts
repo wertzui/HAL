@@ -12,7 +12,7 @@ export interface PagedListResourceDto<TListDto extends ResourceDto> extends List
         last?: LinkDto[];
     };
 }
-export declare class PagedListResource extends ListResource implements Page {
+export declare class PagedListResource<TListDto extends ResourceDto> extends ListResource<TListDto> implements Page {
     _links: {
         [name: string]: Link[] | undefined;
         self: Link[];
@@ -23,5 +23,5 @@ export declare class PagedListResource extends ListResource implements Page {
     };
     currentPage?: number;
     totalPages?: number;
-    constructor(dto?: PagedListResourceDto<any>);
+    constructor(dto?: PagedListResourceDto<TListDto>);
 }

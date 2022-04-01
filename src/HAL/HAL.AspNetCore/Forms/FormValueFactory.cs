@@ -56,6 +56,7 @@ namespace HAL.AspNetCore.Forms
             var filled = new Property(p.Name)
             {
                 Cols = p.Cols,
+                Extensions = p.Extensions,
                 Max = p.Max,
                 MaxLength = p.MaxLength,
                 Min = p.Min,

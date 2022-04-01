@@ -19,10 +19,10 @@ class HalClient {
             if (e instanceof HttpErrorResponse)
                 dtoResponse = HalClient.convertErrorResponse(e);
             else
-                throw new Error(`GET ${uri} - options: ${options} failed with error ${e}`);
+                throw new Error(`GET ${uri} - options: ${JSON.stringify(options)} failed with error ${e}`);
         }
         if (!dtoResponse)
-            throw new Error(`GET ${uri} - options: ${options} did not return a response.`);
+            throw new Error(`GET ${uri} - options: ${JSON.stringify(options)} did not return a response.`);
         const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
         return resourceResponse;
     }
@@ -36,10 +36,10 @@ class HalClient {
             if (e instanceof HttpErrorResponse)
                 dtoResponse = HalClient.convertErrorResponse(e);
             else
-                throw new Error(`POST ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
+                throw new Error(`POST ${uri} - options: ${JSON.stringify(options)} - body: ${body} failed with error ${e}`);
         }
         if (!dtoResponse)
-            throw new Error(`POST ${uri} - options: ${options} - body: ${body} did not return a response.`);
+            throw new Error(`POST ${uri} - options: ${JSON.stringify(options)} - body: ${body} did not return a response.`);
         const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
         return resourceResponse;
     }
@@ -53,10 +53,10 @@ class HalClient {
             if (e instanceof HttpErrorResponse)
                 dtoResponse = HalClient.convertErrorResponse(e);
             else
-                throw new Error(`PUT ${uri} - options: ${options} - body: ${body} failed with error ${e}`);
+                throw new Error(`PUT ${uri} - options: ${JSON.stringify(options)} - body: ${body} failed with error ${e}`);
         }
         if (!dtoResponse)
-            throw new Error(`PUT ${uri} - options: ${options} - body: ${body} did not return a response.`);
+            throw new Error(`PUT ${uri} - options: ${JSON.stringify(options)} - body: ${body} did not return a response.`);
         const resourceResponse = HalClient.convertResponse(dtoResponse.ok ? TResource : TError, dtoResponse);
         return resourceResponse;
     }
@@ -70,10 +70,10 @@ class HalClient {
             if (e instanceof HttpErrorResponse)
                 response = HalClient.convertErrorResponse(e);
             else
-                throw new Error(`DELETE ${uri} - options: ${options} failed with error ${e}`);
+                throw new Error(`DELETE ${uri} - options: ${JSON.stringify(options)} failed with error ${e}`);
         }
         if (!response)
-            throw new Error(`DELETE ${uri} - options: ${options} did not return a response.`);
+            throw new Error(`DELETE ${uri} - options: ${JSON.stringify(options)} did not return a response.`);
         if (!response.ok) {
             const errorResponse = HalClient.convertResponse(TError, response);
             return errorResponse;
@@ -310,11 +310,11 @@ class FormsResource extends Resource {
 class ListResource extends Resource {
     constructor(dto) {
         super(dto);
-        if (!ListResource.isListResource(this))
-            throw new TypeError(`The resource ${dto} is not a ListResource.`);
-    }
-    static isListResource(resource) {
-        return !!(resource?._embedded?.items);
+        // Ensure that we have a list, even if we got an empty list from our backend.
+        if (!this._embedded)
+            this._embedded = { items: [] };
+        else if (!this._embedded.items)
+            this._embedded.items = [];
     }
 }
 

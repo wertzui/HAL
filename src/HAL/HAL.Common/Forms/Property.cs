@@ -169,6 +169,13 @@ namespace HAL.Common.Forms
         /// SHOULD act as if the value property is set to an empty string.
         /// </summary>
         public T? Value { get; set; }
+
+        /// <summary>
+        /// Additional properties which may be used by clients or not.
+        /// This implementation is using it to add additional information for images.
+        /// </summary>
+        [JsonExtensionData]
+        public IDictionary<string, object> Extensions { get; set; }
     }
 
     /// <summary>
