@@ -1,6 +1,6 @@
 {
   "name": "@wertzui/ngx-hal-client",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "author": "wertzui",
   "description": "An Angular client to consume a REST service that serves application/hal+json.",
   "publishConfig": {
