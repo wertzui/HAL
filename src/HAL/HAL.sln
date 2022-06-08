@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HAL.AspNetCore.OData", "Hal
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "HAL.Client.Angular", "HAL.Client.Angular\HAL.Client.Angular.esproj", "{0F864C29-31F2-4027-9601-08E2717FEEF0}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HAL.Client.Net", "HAL.Client.Net\HAL.Client.Net.csproj", "{6521DE2F-5F38-4C6B-BE52-833CCD93B5F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{0F864C29-31F2-4027-9601-08E2717FEEF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F864C29-31F2-4027-9601-08E2717FEEF0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0F864C29-31F2-4027-9601-08E2717FEEF0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{6521DE2F-5F38-4C6B-BE52-833CCD93B5F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6521DE2F-5F38-4C6B-BE52-833CCD93B5F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6521DE2F-5F38-4C6B-BE52-833CCD93B5F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6521DE2F-5F38-4C6B-BE52-833CCD93B5F2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
