@@ -10,6 +10,7 @@ namespace HAL.Client.Net
     public class HalClient : IHalClient
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly string _name = nameof(HalClient);
 
 
         /// <summary>
@@ -19,6 +20,23 @@ namespace HAL.Client.Net
         public HalClient(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
+        }
+
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HalClient"/> class.
+        /// </summary>
+        /// <param name="httpClientFactory">The factory which is used to create the clients for making the HTTP requests.</param>
+        /// <param name="name">The name that is used to retrieve the HTTPClient from the <paramref name="httpClientFactory"/>.</param>
+        public HalClient(IHttpClientFactory httpClientFactory, string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
+            }
+
+            _httpClientFactory = httpClientFactory;
+            _name = name;
         }
 
         /// <inheritdoc/>
@@ -216,7 +234,7 @@ namespace HAL.Client.Net
 
             AddContentToRequest(method, requestUri, content, request);
 
-            using var client = _httpClientFactory.CreateClient(nameof(HalClient));
+            using var client = _httpClientFactory.CreateClient(_name);
             var response = await client.SendAsync(request, cancellationToken);
 
             return response;
