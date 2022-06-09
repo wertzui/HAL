@@ -1,6 +1,4 @@
-﻿using HAL.Common;
-
-namespace HAL.Client.Net
+﻿namespace HAL.Common
 {
     /// <summary>
     /// Contains extension methods for <see cref="Resource"/>.

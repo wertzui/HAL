@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace HAL.Client.Net
+namespace System
 {
     /// <summary>
     /// Contains extension methods for <see cref="UriBuilder"/>.

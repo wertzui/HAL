@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using HAL.Client.Net;
 
-namespace HAL.Client.Net
+namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
     /// Contains extension methods for <see cref="IServiceCollection"/>.
