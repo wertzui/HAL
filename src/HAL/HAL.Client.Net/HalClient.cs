@@ -157,7 +157,6 @@ namespace HAL.Client.Net
             {
                 if (method == HttpMethod.Post || method == HttpMethod.Put)
                 {
-                    request.Headers.Add(HeaderNames.ContentType, "application/json");
                     request.Content = JsonContent.Create(content);
                 }
                 else
