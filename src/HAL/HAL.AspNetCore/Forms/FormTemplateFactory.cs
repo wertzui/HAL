@@ -593,6 +593,10 @@ namespace HAL.AspNetCore.Forms
                             return null;
                         break;
 
+                    case PromptDisplayTypeAttribute prompDisplayType:
+                        template.PromptDisplay = prompDisplayType.PromptDisplay;
+                        break;
+
                     case EditableAttribute editable:
                         template.ReadOnly = !editable.AllowEdit;
                         break;

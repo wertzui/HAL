@@ -94,6 +94,13 @@ namespace HAL.Common.Forms
         public string? Prompt { get; set; }
 
         /// <summary>
+        /// The display behavior of the prompt. This is an OPTIONAL element. 
+        /// If this element is missing, clients SHOULD act as if the prompt display value is
+        /// set to <see cref="PropertyPromptDisplayType.Visible"/>.
+        /// </summary>
+        public PropertyPromptDisplayType? PromptDisplay { get; set; }
+
+        /// <summary>
         /// Indicates whether the parameter is read-only. This is a valid JSON boolean. This is an
         /// OPTIONAL element. If this element is missing, empty, or set to an unrecognized value, it
         /// SHOULD be treated as if the value of readOnly is set to ‘false’.
