@@ -122,6 +122,7 @@ export class Property {
   options?: Options;
   placeholder?: string;
   prompt?: string;
+  promptDisplay?: PropertyPromptDisplayType;
   readOnly?: boolean;
   regex?: string;
   required?: boolean;
