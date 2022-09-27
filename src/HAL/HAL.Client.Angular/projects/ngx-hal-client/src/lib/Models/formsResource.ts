@@ -26,6 +26,7 @@ export interface PropertyDto {
   options?: OptionsDto;
   placeholder?: string;
   prompt?: string;
+  promptDisplay?: PropertyPromptDisplayType;
   readOnly?: boolean;
   regex?: string;
   required?: boolean;
@@ -56,6 +57,12 @@ export interface OptionsLinkDto {
   href: string;
   templated?: boolean;
   type?: string;
+}
+
+export enum PropertyPromptDisplayType {
+  Visible = 'visible',
+  Hidden = 'hidden',
+  Collapsed = 'collapsed'
 }
 
 export enum PropertyType {
