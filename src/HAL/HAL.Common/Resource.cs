@@ -1,5 +1,7 @@
 ﻿using HAL.Common.Converters;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -12,7 +14,7 @@ namespace HAL.Common
     ///   <para>   (2)  "_embedded": contains embedded resources.</para>
     /// </summary>
     [JsonConverter(typeof(ResourceJsonConverter))]
-    public record Resource
+    public record Resource : IEquatable<Resource>
     {
         /// <summary>
         ///   <para>
@@ -53,6 +55,60 @@ namespace HAL.Common
             }
             sb.Append(" }");
             return sb.ToString();
+        }
+
+        /// <inheritdoc/>
+        public virtual bool Equals(Resource? other)
+        {
+            return other is not null && NestedEquals(Embedded, other.Embedded) && NestedEquals(Links, other.Links);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+
+            NestedHash(Embedded, hash);
+            NestedHash(Links, hash);
+
+            return hash.ToHashCode();
+        }
+
+        private void NestedHash<TKey, TValue>(IDictionary<TKey, ICollection<TValue>>? dictionary, HashCode hash)
+        {
+            if (dictionary is not null)
+            {
+                foreach (var pair in dictionary)
+                {
+                    hash.Add(pair.Key);
+                    if (pair.Value is not null)
+                        foreach (var value in pair.Value)
+                        {
+                            hash.Add(value);
+                        }
+                }
+            }
+        }
+
+        private static bool NestedEquals<TKey, TValue>(IDictionary<TKey, ICollection<TValue>>? dictionary, IDictionary<TKey, ICollection<TValue>>? otherDictionary)
+        {
+            return
+                dictionary == otherDictionary ||
+                (
+                    dictionary is not null &&
+                    otherDictionary is not null &&
+                    dictionary.Count == otherDictionary.Count &&
+                    dictionary.All(p =>
+                        otherDictionary.TryGetValue(p.Key, out var otherValue) &&
+                        (
+                            p.Value == otherValue ||
+                            (
+                                p.Value is not null &&
+                                otherValue is not null &&
+                                p.Value.All(e => otherValue.Contains(e))
+                            )
+                        ))
+                );
         }
     }
 }

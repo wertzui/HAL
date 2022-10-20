@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -106,7 +107,7 @@ namespace HAL.AspNetCore
 
         /// <inheritdoc/>
         public Link Create(string? name, string? title, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
-            => Create(name, title, _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) ?? throw new InvalidOperationException($"Unable to generate the href value for a link.name: {name}, title: {title}, action: {action}, controller: {controller}, values: {values}, protocol: {protocol}, host: {host}, fragment: {fragment}"));
+            => Create(name, title, _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) ?? throw new InvalidOperationException($"Unable to generate the href value for a link. name: \"{name}\", title: \"{title}\", action: \"{action}\", controller: \"{controller}\", values: \"{values}\", protocol: \"{protocol}\", host: \"{host}\", fragment: \"{fragment}\""));
 
         /// <inheritdoc/>
         public IDictionary<string, ICollection<Link>> CreateAllLinks(string? prefix = null, ApiVersion? version = null)
@@ -346,6 +347,10 @@ namespace HAL.AspNetCore
                     }
 
                     sb.Append(parameter.BindingInfo.BinderModelName ?? parameter.Name);
+
+                    var isEnumerable = parameter.ParameterType.IsGenericType && parameter.ParameterType.IsAssignableTo(typeof(IEnumerable));
+                    if (isEnumerable)
+                        sb.Append('*');
                 }
             }
 
@@ -361,16 +366,54 @@ namespace HAL.AspNetCore
             var nonTemplated = new Dictionary<string, object>();
             var templated = new List<string>();
 
+            if (routeValues.Count == 0)
+                return (nonTemplated, templated);
+
+            var valuesType = values.GetType();
+
             foreach (var routeValue in routeValues)
             {
-                // check for reference and value types.
-                if (routeValue.Value == default || routeValue.Value == Activator.CreateInstance(routeValue.Value.GetType()))
-                    templated.Add(routeValue.Key);
+                // Check for reference and value types.
+                var isTemplated = IsTemplated(routeValue);
+                if (isTemplated)
+                {
+                    // Check for collection types and append a '*' to them. This is called an explode modifier.
+                    var propertyType = valuesType.GetProperty(routeValue.Key)?.PropertyType;
+                    if (propertyType is not null && propertyType.IsAssignableTo(typeof(IEnumerable)))
+                        templated.Add(routeValue.Key + '*');
+                    else
+                        templated.Add(routeValue.Key);
+                }
                 else
-                    nonTemplated.Add(routeValue.Key, routeValue.Value);
+                {
+                    nonTemplated.Add(routeValue.Key, routeValue.Value!);
+                }
             }
 
             return (nonTemplated, templated);
+        }
+
+        private static bool IsTemplated(KeyValuePair<string, object?> routeValue)
+        {
+            if (routeValue.Value == default)
+                return true;
+
+            var valueType = routeValue.Value.GetType();
+            if (valueType.IsArray)
+                return false;
+
+            var defaultInstance = Activator.CreateInstance(valueType);
+            if (object.Equals(routeValue.Value, defaultInstance))
+                return true;
+
+            return false;
+        }
+
+        private enum TemplatedType
+        {
+            NotTemplated,
+            SimpleTemplated,
+            ExplodeTemplated
         }
 
         private static string RemoveVersionFrom(string controllerName)
