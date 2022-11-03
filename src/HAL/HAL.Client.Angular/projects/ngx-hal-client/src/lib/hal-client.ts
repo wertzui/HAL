@@ -9,6 +9,8 @@ export class HalClient {
 
   constructor(private _httpClient: HttpClient) { }
 
+  public get HttpClient(): HttpClient { return this._httpClient; }
+
   public async get<TResource extends Resource, TError extends Resource>(uri: string, TResource: { new(): TResource }, TError: { new(): TError }, headers?: HttpHeaders): Promise<HttpResponse<TResource | TError>> {
     const options = HalClient.createOptions(headers);
     let dtoResponse: HttpResponse<ResourceDto> | undefined;
