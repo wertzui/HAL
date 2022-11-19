@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNet.OData.Query;
+﻿using Microsoft.AspNetCore.OData.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;

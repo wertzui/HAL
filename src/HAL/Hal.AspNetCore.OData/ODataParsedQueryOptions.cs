@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNet.OData.Query;
+﻿using Microsoft.AspNetCore.OData.Query;
 
 namespace HAL.AspNetCore.OData
 {
