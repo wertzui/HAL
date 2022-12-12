@@ -8,8 +8,8 @@
     <BuildCommand>ng build</BuildCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <BuildCommand>ng build</BuildCommand>
-    <StartupCommand>ng build &amp;&amp; cd dist/ngx-hal-client &amp;&amp; npm publish</StartupCommand>
+    <BuildCommand>ng build --configuration production</BuildCommand>
+    <StartupCommand>ng build --configuration production &amp;&amp; cd dist/ngx-hal-client &amp;&amp; npm publish</StartupCommand>
   </PropertyGroup>
   <ItemGroup>
     <Script Include="**" Exclude="*.esproj;**\node_modules\**" />

@@ -1,6 +1,6 @@
-﻿using HAL.AspNetCore.Abstractions;
+﻿using Asp.Versioning;
+using HAL.AspNetCore.Abstractions;
 using HAL.Common;
-using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 

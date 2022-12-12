@@ -1,4 +1,5 @@
-﻿using HAL.AspNetCore.Abstractions;
+﻿using Asp.Versioning;
+using HAL.AspNetCore.Abstractions;
 using HAL.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

@@ -1,5 +1,5 @@
-﻿using HAL.Common;
-using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using HAL.Common;
 using System.Collections.Generic;
 
 namespace HAL.AspNetCore.Abstractions

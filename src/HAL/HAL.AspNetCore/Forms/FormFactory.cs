@@ -3,6 +3,7 @@ using HAL.AspNetCore.Forms.Abstractions;
 using HAL.Common;
 using HAL.Common.Forms;
 using Microsoft.Extensions.Caching.Memory;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -47,6 +48,9 @@ namespace HAL.AspNetCore.Forms
             // We do not cache method and title so we can reuse the same template for Create (POST)
             // and Edit (PUT) forms.
             var template = _cache.GetOrCreate(type, entry => _templateFactory.CreateTemplateFor<T>("template_does_not_need_a_method", contentType: contentType));
+
+            if (template is null)
+                throw new InvalidOperationException($"A form template for the type {type.Name} exists in the cache but is null.");
 
             var filled = _valueFactory.FillWith(template, value);
             filled.Method = method;

@@ -180,8 +180,12 @@ namespace HAL.Client.Net
 
         private static void AddHeadersToRequest(IDictionary<string, IEnumerable<string>>? headers, string? version, HttpRequestMessage request)
         {
-            request.Headers.Add(HeaderNames.Accept, "application/hal+json");
-            request.Headers.Add(HeaderNames.Accept, "application/json");
+            if (headers is null || !headers.ContainsKey(HeaderNames.Accept))
+            {
+                request.Headers.Add(HeaderNames.Accept, "application/hal+json");
+                request.Headers.Add(HeaderNames.Accept, "application/json");
+            }
+
             if (version is not null)
                 request.Headers.Add(HeaderNames.Accept, $"v={version}");
 

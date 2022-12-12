@@ -1,6 +1,6 @@
 {
   "name": "@wertzui/ngx-hal-client",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "author": "wertzui",
   "description": "An Angular client to consume a REST service that serves application/hal+json an/or application/hal-forms+json.",
   "publishConfig": {
@@ -22,18 +22,17 @@
   ],
   "license": "Unlicense",
   "readme": "https://github.com/wertzui/HAL/blob/main/README.md",
-  "peerDependencies": {
-    "@angular/common": "^14",
-    "@angular/core": "^14",
-    "uri-templates-es": "^1.0.0",
-    "lodash": "^4"
-  },
   "dependencies": {
     "tslib": "^2"
   },
+  "peerDependencies": {
+    "@angular/common": "^15",
+    "@angular/core": "^15",
+    "uri-templates-es": "^1",
+    "lodash": "^4"
+  },
   "devDependencies": {
     "@types/uri-templates": "0.1.31",
-    "@types/lodash": "^4.14.187",
-    "uri-templates-es": "^1.0.0"
+    "@types/lodash": "4.14.191"
   }
 }

@@ -94,7 +94,7 @@ namespace HAL.Common.Forms
         public string? Prompt { get; set; }
 
         /// <summary>
-        /// The display behavior of the prompt. This is an OPTIONAL element. 
+        /// The display behavior of the prompt. This is an OPTIONAL element.
         /// If this element is missing, clients SHOULD act as if the prompt display value is
         /// set to <see cref="PropertyPromptDisplayType.Visible"/>.
         /// </summary>
@@ -182,7 +182,7 @@ namespace HAL.Common.Forms
         /// This implementation is using it to add additional information for images.
         /// </summary>
         [JsonExtensionData]
-        public IDictionary<string, object> Extensions { get; set; }
+        public IDictionary<string, object>? Extensions { get; set; }
     }
 
     /// <summary>
