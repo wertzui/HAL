@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HAL.Common
 {
@@ -293,6 +294,24 @@ namespace HAL.Common
             var link = new Link(href) { Name = Constants.SelfLinkName };
 
             return resource.AddLink(link);
+        }
+
+        /// <summary>
+        /// Gets the first "self" link.
+        /// </summary>
+        /// <typeparam name="TResource">The type of the resource.</typeparam>
+        /// <param name="resource">The resource.</param>
+        /// <returns>The URL to the resource itself.</returns>
+        public static Link GetSelfLink<TResource>(this TResource resource)
+            where TResource : Resource
+        {
+            if (resource is null)
+                throw new ArgumentNullException(nameof(resource));
+
+            var link = resource.Links?[Constants.SelfLinkName]?.FirstOrDefault() ??
+                throw new ArgumentException($"The resource does not have a {Constants.SelfLinkName} link.", nameof(resource));
+
+            return link;
         }
 
         /// <summary>

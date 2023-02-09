@@ -27,7 +27,7 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(
+        public Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(
             IEnumerable<TDto> resources,
             Func<TDto, TKey> keyAccessor,
             Func<TDto, TId> idAccessor,
@@ -72,13 +72,13 @@ namespace HAL.AspNetCore.OData
 
             var links = GetListNavigation(resources, rawValues, skip, top, totalCount);
 
-            var resource = CreateForOdataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
+            var resource = CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
 
             return resource;
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForOdataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(
+        public Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(
             IEnumerable<TDto> resources,
             Func<TDto, TKey> keyAccessor,
             Func<TDto, TId> idAccessor,

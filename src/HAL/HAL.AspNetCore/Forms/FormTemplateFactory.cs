@@ -1,6 +1,7 @@
 ﻿using HAL.AspNetCore.Forms.Abstractions;
 using HAL.Common.Binary;
 using HAL.Common.Forms;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace HAL.AspNetCore.Forms
     {
         private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
         private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
+        private readonly IMemoryCache _memoryCache;
         private static readonly NullabilityInfoContext _nullabilityInfoContext = new NullabilityInfoContext();
 
         /// <summary>
@@ -28,10 +30,12 @@ namespace HAL.AspNetCore.Forms
         /// These factories are used to create a link for properties which are decorated with a
         /// [ForeignKey] attribute.
         /// </param>
+        /// <param name="memoryCache">A cache where templates will be cached.</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public FormTemplateFactory(IEnumerable<IForeignKeyLinkFactory> foreignKeyLinkFactories)
+        public FormTemplateFactory(IEnumerable<IForeignKeyLinkFactory> foreignKeyLinkFactories, IMemoryCache memoryCache)
         {
             _foreignKeyLinkFactories = foreignKeyLinkFactories ?? throw new ArgumentNullException(nameof(foreignKeyLinkFactories));
+            _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
 
         /// <inheritdoc/>
@@ -542,6 +546,9 @@ namespace HAL.AspNetCore.Forms
         /// <returns>A collection with all the property templates.</returns>
         private ICollection<Property> CreatePropertiesFor(Type dtoType)
         {
+            if (_memoryCache.TryGetValue<ICollection<Property>>(dtoType, out var cachedProperties) && cachedProperties is not null)
+                return cachedProperties;
+
             object? defaultDto = CreateDefaultDto(dtoType);
 
             var properties = dtoType.GetProperties()

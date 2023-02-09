@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HAL.Common.Forms;
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,6 +13,8 @@ namespace HAL.Common.Converters
     {
         private static readonly Type _converterType = typeof(ResourceJsonConverter<>);
         private static readonly Type _resourceType = typeof(Resource<>);
+        private static readonly Type _formsResourceType = typeof(FormsResource<>);
+
         /// <inheritdoc/>
         public override bool CanConvert(Type typeToConvert)
         {
@@ -19,7 +22,8 @@ namespace HAL.Common.Converters
                 return false;
 
             var generic = typeToConvert.GetGenericTypeDefinition();
-            return generic == _resourceType;
+
+            return generic == _resourceType || generic == _formsResourceType;
         }
 
         /// <inheritdoc/>

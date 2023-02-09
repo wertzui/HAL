@@ -17,7 +17,6 @@ namespace HAL.Common.Converters
         public override bool CanConvert(Type typeToConvert)
         {
             return
-                typeToConvert == typeof(Resource) ||
                 typeToConvert == typeof(Resource);
         }
 

@@ -1,12 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using HAL.Common.Converters;
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Forms
 {
     /// <summary>
+    /// <para>
     /// A HAL-Forms document is the same as a normal HAL resource, but also has a _templates property.
+    /// </para>
+    /// <para>In addition this resource also has a state.</para>
     /// </summary>
-    public record FormsResource : Resource
+    [JsonConverter(typeof(ResourceOfTJsonConverterFactory))]
+    public record FormsResource<T> : Resource<T>
     {
         /// <summary>
         /// The _templates collection describes the available state transition details including the
@@ -23,10 +29,19 @@ namespace HAL.Common.Forms
         /// <summary>
         /// Initializes a new instance of the <see cref="FormsResource"/> class.
         /// </summary>
-        /// <param name="templates"></param>
+        /// <param name="templates">The form templates for this resource.</param>
         public FormsResource(IDictionary<string, FormTemplate> templates)
         {
             Templates = templates;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormsResource"/> class.
+        /// </summary>
+        /// <param name="template">The form template for this resource.</param>
+        public FormsResource(FormTemplate template)
+            : this(new Dictionary<string, FormTemplate>() { { template.Title ?? throw new ArgumentException($"The {nameof(template.Title)} of the {nameof(template)} must not be null.", nameof(template)), template } })
+        {
         }
     }
 }

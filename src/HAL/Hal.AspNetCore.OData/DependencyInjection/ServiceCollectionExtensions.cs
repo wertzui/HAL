@@ -26,6 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var services = builder.Services;
             services.AddSingleton<IODataQueryFactory, ODataQueryFactory>();
             services.AddScoped<IODataResourceFactory, ODataResourceFactory>();
+            services.AddScoped<IODataFormFactory, ODataFormFactory>();
 
             return builder;
         }
