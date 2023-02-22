@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,9 +13,10 @@ namespace HAL.Common.Converters
     /// A converter that can read and write <see cref="Resource{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of the state of the resource.</typeparam>
-    /// <seealso cref="JsonConverter{T}" />
+    /// <seealso cref="JsonConverter{T}"/>
     public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     {
+
         /// <inheritdoc/>
         public override bool CanConvert(Type typeToConvert)
         {
@@ -29,15 +33,17 @@ namespace HAL.Common.Converters
             }
 
             Resource<T> resource;
+            var stateType = typeof(T);
             IDictionary<string, ICollection<Link>>? links = default;
             IDictionary<string, ICollection<Resource>>? embedded = default;
-            T? state = default;
-            var stateType = typeof(T);
+            var stateProperties = new Dictionary<string, object?>();
+            var stateConstructorArguments = new Dictionary<string, object?>();
 
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
                 {
+                    var state = CreateState(stateProperties, stateConstructorArguments);
                     resource = new Resource<T> { State = state };
 
                     if (embedded is not null)
@@ -54,10 +60,7 @@ namespace HAL.Common.Converters
                     throw new JsonException($"Mal-formated JSON input. Expected a property name, but got {reader.TokenType}.");
                 }
 
-                var propertyName = reader.GetString();
-                if (propertyName is null)
-                    throw new JsonException("Mal-formated JSON input. Received an empty property name.");
-
+                var propertyName = reader.GetString() ?? throw new JsonException("Mal-formated JSON input. Received an empty property name.");
                 if (propertyName == Constants.EmbeddedPropertyName)
                 {
                     embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
@@ -68,19 +71,23 @@ namespace HAL.Common.Converters
                 }
                 else
                 {
-                    var property = stateType.GetProperty(propertyName);
-                    if (property == null && options.PropertyNameCaseInsensitive)
+                    // Try to map by constructor parameter
+                    var lowerPropertyName = propertyName.ToLowerInvariant();
+                    if (TryGetConstructorParameter(stateType, lowerPropertyName, out var constructorParameter))
                     {
-                        property = stateType.GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        stateConstructorArguments[constructorParameter.Name!] = JsonSerializer.Deserialize(ref reader, constructorParameter.ParameterType, options);
+                        continue;
                     }
 
-                    if (property != null)
+                    // Try to map by property
+                    if (ResourceJsonConverterCache.TryGetProperty(stateType, propertyName, out var property))
                     {
-                        if (state is null)
-                            state = Activator.CreateInstance<T>();
-
-                        property.SetValue(state, JsonSerializer.Deserialize(ref reader, property.PropertyType, options));
+                        stateProperties[property.Name] = JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
+                        continue;
                     }
+
+                    // Otherwise ignore it
+                    reader.Skip();
                 }
             }
 
@@ -109,6 +116,84 @@ namespace HAL.Common.Converters
             writer.WriteEndObject();
         }
 
+        private static T CreateState(
+            IDictionary<string, object?> stateproperties,
+            IDictionary<string, object?> stateConstructorArguments)
+        {
+            T state = default!;
+            var stateType = typeof(T);
+            var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
+
+            // Create an instance
+            if (stateConstructorArguments.Count == 0 && stateConstructors.Count > 0)
+            {
+                state = Activator.CreateInstance<T>();
+            }
+            else
+            {
+                // Try to bind constructors, starting with the constructor with the most parameters
+                foreach (var pair in stateConstructors.OrderByDescending(c => c.Value.Count))
+                {
+                    var constructor = pair.Key;
+                    var parameters = pair.Value;
+
+                    var parameterValues = parameters
+                        .Select(p => stateConstructorArguments.TryGetValue(p.Key, out var parameterValue) ? parameterValue : null)
+                        .ToArray();
+
+                    try
+                    {
+                        state = (T)constructor.Invoke(parameterValues);
+                        break;
+                    }
+                    catch
+                    {
+                        // If we cannot create an instance, we simply try the next constructor
+                    }
+                }
+            }
+
+
+            if (state is null)
+            {
+                if (!ResourceJsonConverterCache.StateCanBeNull<T>())
+                    throw new JsonException($"Unable to deserialize the state of the resource, because the state could not be created and cannot be null. Unable to find a matching constructor for the possible arguments {JsonSerializer.Serialize(stateConstructors)}");
+                else
+                    return state;
+            }
+
+            // Set property values
+            foreach (var pair in ResourceJsonConverterCache.GetProperties(stateType).PropertiesWithCorrectCasing)
+            {
+                var propertyName = pair.Key;
+                var property = pair.Value;
+                if (stateproperties.TryGetValue(propertyName, out var propertyValue))
+                {
+                    property.SetValue(state, propertyValue);
+                    continue;
+                }
+
+                var lowerPropertyName = property.Name.ToLowerInvariant();
+                if (stateConstructorArguments.TryGetValue(property.Name, out var parameterValue))
+                {
+                    property.SetValue(state, parameterValue);
+                }
+            }
+
+            return state;
+        }
+
+        private static bool TryGetConstructorParameter(Type stateType, string lowerPropertyName, [NotNullWhen(true)] out ParameterInfo? parameter)
+        {
+            var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
+
+            parameter = stateConstructors
+                .Select(c => c.Value.TryGetValue(lowerPropertyName, out var parameter) ? parameter : null)
+                .FirstOrDefault(p => p is not null);
+
+            return parameter is not null;
+        }
+
         private static void WriteState(Utf8JsonWriter writer, T? state, JsonSerializerOptions options)
         {
             if (state is null)
@@ -129,6 +214,81 @@ namespace HAL.Common.Converters
                     JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Caches reflection related information to be used by the <see cref="ResourceJsonConverter{T}"/> class.
+    /// </summary>
+    public static class ResourceJsonConverterCache
+    {
+        private static readonly ConcurrentDictionary<Type, IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>>> _constructorCache = new();
+        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithCorrectCasing = new();
+        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithLowerCasing = new();
+        private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
+        private static readonly ConcurrentDictionary<Type, bool> _stateCanBeNullCache = new();
+
+        /// <summary>
+        /// Returns if the <see cref="Resource{TState}.State" /> property can be null for the given <typeparamref name="TState"/>.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <returns>Whether the state can be null or not.</returns>
+        public static bool StateCanBeNull<TState>()
+        {
+            var resourceType = typeof(Resource<TState>);
+
+            return _stateCanBeNullCache.GetOrAdd(resourceType, t =>
+            {
+                var stateProperty = t.GetProperty(nameof(Resource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
+                var nullabilityInfo = _nullabilityInfoContext.Create(stateProperty);
+                var stateMustNotBeNull = nullabilityInfo.WriteState is NullabilityState.NotNull;
+                return stateMustNotBeNull;
+            });
+        }
+
+        /// <summary>
+        /// Gets all constructors and their parameters by their lower cased names.
+        /// </summary>
+        /// <param name="stateType">The type to get constructors for.</param>
+        public static IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>> GetConstructors(Type stateType)
+        {
+            return _constructorCache.GetOrAdd(
+                stateType,
+                t => t
+                    .GetConstructors()
+                    .ToDictionary(c => c, c => c.GetParameters().ToDictionary(p => p.Name!.ToLowerInvariant())));
+        }
+
+        /// <summary>
+        /// Gets all properties by their correct cased and their lower cased names.
+        /// If two properties share the same lower cased name, only one of them will be returned and it is not determined which one.
+        /// </summary>
+        /// <param name="stateType">The type to get properties for.</param>
+        public static (IDictionary<string, PropertyInfo> PropertiesWithCorrectCasing, IDictionary<string, PropertyInfo> PropertiesWithLowerCasing) GetProperties(Type stateType)
+        {
+            var propertiesWithCorrectCasing = _propertyCacheWithCorrectCasing.GetOrAdd(
+                stateType,
+                t => t.GetProperties().ToDictionary(p => p.Name));
+            var propertiesWithLowerCasing = _propertyCacheWithLowerCasing.GetOrAdd(
+                stateType,
+                _ => propertiesWithCorrectCasing.Select(p => new { Key = p.Key.ToLowerInvariant(), p.Value }).DistinctBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value));
+
+            return (propertiesWithCorrectCasing, propertiesWithLowerCasing);
+        }
+
+        /// <summary>
+        /// Gets a property by its name. First try to get it with correct casing and if none is found, it tries to get it by ignoring the case.
+        /// </summary>
+        /// <param name="stateType">The type to get the property for.</param>
+        /// <param name="propertyName">The name of the property in correct casing.</param>
+        /// <param name="property">The property if found</param>
+        /// <returns>Whether the property has been found or not.</returns>
+        public static bool TryGetProperty(Type stateType, string propertyName, [MaybeNullWhen(false)] out PropertyInfo property)
+        {
+            var (propertiesWithCorrectCasing, propertiesWithLowerCasing) = GetProperties(stateType);
+
+            return propertiesWithCorrectCasing.TryGetValue(propertyName, out property) ||
+                propertiesWithLowerCasing.TryGetValue(propertyName.ToLowerInvariant(), out property);
         }
     }
 }

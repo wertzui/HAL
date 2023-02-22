@@ -221,9 +221,115 @@ namespace HAL.Tests.Common.Serialization
             Assert.AreEqual(expectedResourceJson, actualResourceJson);
         }
 
+        [TestMethod]
+        public void Resource_with_immutable_state_can_be_deserialized()
+        {
+            // Arrange
+            var expectedResource = new Resource<ImmutableState>
+            {
+                State = new ImmutableState("Bar")
+            };
+            var resourceJson = JsonSerializer.Serialize(expectedResource, Constants.DefaultSerializerOptions);
+
+            // Act
+            var actualResource = JsonSerializer.Deserialize<Resource<ImmutableState>>(resourceJson, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.IsNotNull(actualResource);
+            Assert.AreEqual(expectedResource.State, actualResource!.State);
+        }
+
+        [TestMethod]
+        public void Resource_with_a_state_where_constructor_parameter_and_property_have_the_same_name_with_different_casing_can_be_deserialized()
+        {
+            // Arrange
+            var expectedResource = new Resource<ConstructorAndPropertyStateWithDifferentCasing>
+            {
+                State = new ConstructorAndPropertyStateWithDifferentCasing("Bar")
+            };
+            var resourceJson = JsonSerializer.Serialize(expectedResource, Constants.DefaultSerializerOptions);
+
+            // Act
+            var actualResource = JsonSerializer.Deserialize<Resource<ConstructorAndPropertyStateWithDifferentCasing>>(resourceJson, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.IsNotNull(actualResource);
+            Assert.AreEqual(expectedResource.State, actualResource!.State);
+        }
+
+        [TestMethod]
+        public void Resource_with_a_state_with_one_unusable_constructor_can_be_deserialized()
+        {
+            // Arrange
+            var expectedResource = new Resource<OptionalConstructorState>
+            {
+                State = new OptionalConstructorState()
+            };
+            var resourceJson = JsonSerializer.Serialize(expectedResource, Constants.DefaultSerializerOptions);
+
+            // Act
+            var actualResource = JsonSerializer.Deserialize<Resource<OptionalConstructorState>>(resourceJson, Constants.DefaultSerializerOptions);
+
+            // Assert
+            Assert.IsNotNull(actualResource);
+            Assert.AreEqual(expectedResource.State, actualResource!.State);
+        }
+
+        [TestMethod]
+        public void Resource_with_a_state_with_private_constructor_throws_a_meaningfull_exception()
+        {
+            // Arrange
+            var expectedResource = new Resource<StateWithPrivateConstructor>
+            {
+                State = StateWithPrivateConstructor.Create()
+            };
+            var resourceJson = JsonSerializer.Serialize(expectedResource, Constants.DefaultSerializerOptions);
+
+            // Act
+            // Assert
+            Assert.ThrowsException<JsonException>(() => JsonSerializer.Deserialize<Resource<StateWithPrivateConstructor>>(resourceJson, Constants.DefaultSerializerOptions));
+        }
+
         private record TestState<T>
         {
             public T? Foo { get; set; }
+        }
+
+        private record ImmutableState(string Foo);
+
+        private record ConstructorAndPropertyStateWithDifferentCasing
+        {
+            public ConstructorAndPropertyStateWithDifferentCasing(string foo)
+            {
+                Foo = foo;
+            }
+
+            public string Foo { get; }
+        }
+
+        private record OptionalConstructorState
+        {
+            public OptionalConstructorState(string? foo)
+            {
+                Foo = foo ?? "Invalid";
+            }
+
+            public OptionalConstructorState()
+            {
+                Foo = "Valid";
+            }
+
+            public string Foo { get; }
+        }
+
+        private class StateWithPrivateConstructor
+        {
+            private StateWithPrivateConstructor()
+            {
+
+            }
+
+            public static StateWithPrivateConstructor Create() => new StateWithPrivateConstructor();
         }
     }
 }

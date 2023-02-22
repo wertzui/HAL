@@ -30,7 +30,7 @@ namespace HAL.Tests.Common.Converters
 
             // Assert
             Assert.IsNotNull(actualLink);
-            Assert.AreEqual(singleLink.Deprecation, actualLink.Deprecation);
+            Assert.AreEqual(singleLink.Deprecation, actualLink!.Deprecation);
             Assert.AreEqual(singleLink.Href, actualLink.Href);
             Assert.AreEqual(singleLink.Hreflang, actualLink.Hreflang);
             Assert.AreEqual(singleLink.Name, actualLink.Name);
