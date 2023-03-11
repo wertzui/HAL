@@ -10,13 +10,90 @@ using System.Text.Json.Serialization;
 namespace HAL.Common.Converters
 {
     /// <summary>
+    /// Caches reflection related information to be used by the
+    /// <see cref="ResourceJsonConverter{T}"/> class.
+    /// </summary>
+    public static class ResourceJsonConverterCache
+    {
+        private static readonly ConcurrentDictionary<Type, IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>>> _constructorCache = new();
+        private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
+        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithCorrectCasing = new();
+        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithLowerCasing = new();
+        private static readonly ConcurrentDictionary<Type, bool> _stateCanBeNullCache = new();
+
+        /// <summary>
+        /// Gets all constructors and their parameters by their lower cased names.
+        /// </summary>
+        /// <param name="stateType">The type to get constructors for.</param>
+        public static IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>> GetConstructors(Type stateType)
+        {
+            return _constructorCache.GetOrAdd(
+                stateType,
+                t => t
+                    .GetConstructors()
+                    .ToDictionary(c => c, c => c.GetParameters().ToDictionary(p => p.Name!.ToLowerInvariant())));
+        }
+
+        /// <summary>
+        /// Gets all properties by their correct cased and their lower cased names. If two
+        /// properties share the same lower cased name, only one of them will be returned and it is
+        /// not determined which one.
+        /// </summary>
+        /// <param name="stateType">The type to get properties for.</param>
+        public static (IDictionary<string, PropertyInfo> PropertiesWithCorrectCasing, IDictionary<string, PropertyInfo> PropertiesWithLowerCasing) GetProperties(Type stateType)
+        {
+            var propertiesWithCorrectCasing = _propertyCacheWithCorrectCasing.GetOrAdd(
+                stateType,
+                t => t.GetProperties().ToDictionary(p => p.Name));
+            var propertiesWithLowerCasing = _propertyCacheWithLowerCasing.GetOrAdd(
+                stateType,
+                _ => propertiesWithCorrectCasing.Select(p => new { Key = p.Key.ToLowerInvariant(), p.Value }).DistinctBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value));
+
+            return (propertiesWithCorrectCasing, propertiesWithLowerCasing);
+        }
+
+        /// <summary>
+        /// Returns if the <see cref="Resource{TState}.State"/> property can be null for the given <typeparamref name="TState"/>.
+        /// </summary>
+        /// <typeparam name="TState">The type of the state.</typeparam>
+        /// <returns>Whether the state can be null or not.</returns>
+        public static bool StateCanBeNull<TState>()
+        {
+            var resourceType = typeof(Resource<TState>);
+
+            return _stateCanBeNullCache.GetOrAdd(resourceType, t =>
+            {
+                var stateProperty = t.GetProperty(nameof(Resource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
+                var nullabilityInfo = _nullabilityInfoContext.Create(stateProperty);
+                var stateMustNotBeNull = nullabilityInfo.WriteState is NullabilityState.NotNull;
+                return stateMustNotBeNull;
+            });
+        }
+
+        /// <summary>
+        /// Gets a property by its name. First try to get it with correct casing and if none is
+        /// found, it tries to get it by ignoring the case.
+        /// </summary>
+        /// <param name="stateType">The type to get the property for.</param>
+        /// <param name="propertyName">The name of the property in correct casing.</param>
+        /// <param name="property">The property if found</param>
+        /// <returns>Whether the property has been found or not.</returns>
+        public static bool TryGetProperty(Type stateType, string propertyName, [MaybeNullWhen(false)] out PropertyInfo property)
+        {
+            var (propertiesWithCorrectCasing, propertiesWithLowerCasing) = GetProperties(stateType);
+
+            return propertiesWithCorrectCasing.TryGetValue(propertyName, out property) ||
+                propertiesWithLowerCasing.TryGetValue(propertyName.ToLowerInvariant(), out property);
+        }
+    }
+
+    /// <summary>
     /// A converter that can read and write <see cref="Resource{T}"/>.
     /// </summary>
     /// <typeparam name="T">The type of the state of the resource.</typeparam>
     /// <seealso cref="JsonConverter{T}"/>
     public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     {
-
         /// <inheritdoc/>
         public override bool CanConvert(Type typeToConvert)
         {
@@ -99,19 +176,11 @@ namespace HAL.Common.Converters
         {
             writer.WriteStartObject();
 
-            WriteState(writer, value.State, options);
+            // Write the state
+            WriteAllProperties(writer, value.State, value.State?.GetType().GetProperties(), options);
 
-            if (value.Links != null)
-            {
-                writer.WritePropertyName(Constants.LinksPropertyName);
-                JsonSerializer.Serialize(writer, value.Links, options);
-            }
-
-            if (value.Embedded != null)
-            {
-                writer.WritePropertyName(Constants.EmbeddedPropertyName);
-                JsonSerializer.Serialize(writer, value.Embedded, options);
-            }
+            // Write all other properties
+            WriteAllProperties(writer, value, value.GetType().GetProperties().Where(p => p.Name != nameof(value.State)), options);
 
             writer.WriteEndObject();
         }
@@ -153,7 +222,6 @@ namespace HAL.Common.Converters
                 }
             }
 
-
             if (state is null)
             {
                 if (!ResourceJsonConverterCache.StateCanBeNull<T>())
@@ -183,6 +251,18 @@ namespace HAL.Common.Converters
             return state;
         }
 
+        private static string GetPropertyName(PropertyInfo property, JsonNamingPolicy? propertyNamingPolicy)
+        {
+            var attribute = property.GetCustomAttribute<JsonPropertyNameAttribute>(true);
+            if (attribute is not null)
+                return attribute.Name;
+
+            if (propertyNamingPolicy is not null)
+                return propertyNamingPolicy.ConvertName(property.Name);
+
+            return property.Name;
+        }
+
         private static bool TryGetConstructorParameter(Type stateType, string lowerPropertyName, [NotNullWhen(true)] out ParameterInfo? parameter)
         {
             var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
@@ -194,101 +274,28 @@ namespace HAL.Common.Converters
             return parameter is not null;
         }
 
-        private static void WriteState(Utf8JsonWriter writer, T? state, JsonSerializerOptions options)
+        private static void WriteAllProperties<TState>(Utf8JsonWriter writer, TState state, IEnumerable<PropertyInfo>? properties, JsonSerializerOptions options)
         {
-            if (state is null)
+            if (state is null || properties is null)
                 return;
 
-            var type = typeof(T);
-            var properties = type.GetProperties();
             foreach (var property in properties)
             {
-                var originalName = property.Name;
-                var name = options.PropertyNamingPolicy?.ConvertName(originalName) ?? originalName;
-                var value = property.GetValue(state);
-                var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
-
-                if (ResourceJsonConverter.ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
-                {
-                    writer.WritePropertyName(name);
-                    JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
-                }
+                WritePropertyNameAndValue(writer, state, options, property);
             }
         }
-    }
 
-    /// <summary>
-    /// Caches reflection related information to be used by the <see cref="ResourceJsonConverter{T}"/> class.
-    /// </summary>
-    public static class ResourceJsonConverterCache
-    {
-        private static readonly ConcurrentDictionary<Type, IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>>> _constructorCache = new();
-        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithCorrectCasing = new();
-        private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithLowerCasing = new();
-        private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
-        private static readonly ConcurrentDictionary<Type, bool> _stateCanBeNullCache = new();
-
-        /// <summary>
-        /// Returns if the <see cref="Resource{TState}.State" /> property can be null for the given <typeparamref name="TState"/>.
-        /// </summary>
-        /// <typeparam name="TState">The type of the state.</typeparam>
-        /// <returns>Whether the state can be null or not.</returns>
-        public static bool StateCanBeNull<TState>()
+        private static void WritePropertyNameAndValue<TState>(Utf8JsonWriter writer, TState? state, JsonSerializerOptions options, PropertyInfo property)
         {
-            var resourceType = typeof(Resource<TState>);
+            var name = GetPropertyName(property, options.PropertyNamingPolicy);
+            var value = property.GetValue(state);
+            var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
-            return _stateCanBeNullCache.GetOrAdd(resourceType, t =>
+            if (ResourceJsonConverter.ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
             {
-                var stateProperty = t.GetProperty(nameof(Resource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
-                var nullabilityInfo = _nullabilityInfoContext.Create(stateProperty);
-                var stateMustNotBeNull = nullabilityInfo.WriteState is NullabilityState.NotNull;
-                return stateMustNotBeNull;
-            });
-        }
-
-        /// <summary>
-        /// Gets all constructors and their parameters by their lower cased names.
-        /// </summary>
-        /// <param name="stateType">The type to get constructors for.</param>
-        public static IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>> GetConstructors(Type stateType)
-        {
-            return _constructorCache.GetOrAdd(
-                stateType,
-                t => t
-                    .GetConstructors()
-                    .ToDictionary(c => c, c => c.GetParameters().ToDictionary(p => p.Name!.ToLowerInvariant())));
-        }
-
-        /// <summary>
-        /// Gets all properties by their correct cased and their lower cased names.
-        /// If two properties share the same lower cased name, only one of them will be returned and it is not determined which one.
-        /// </summary>
-        /// <param name="stateType">The type to get properties for.</param>
-        public static (IDictionary<string, PropertyInfo> PropertiesWithCorrectCasing, IDictionary<string, PropertyInfo> PropertiesWithLowerCasing) GetProperties(Type stateType)
-        {
-            var propertiesWithCorrectCasing = _propertyCacheWithCorrectCasing.GetOrAdd(
-                stateType,
-                t => t.GetProperties().ToDictionary(p => p.Name));
-            var propertiesWithLowerCasing = _propertyCacheWithLowerCasing.GetOrAdd(
-                stateType,
-                _ => propertiesWithCorrectCasing.Select(p => new { Key = p.Key.ToLowerInvariant(), p.Value }).DistinctBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value));
-
-            return (propertiesWithCorrectCasing, propertiesWithLowerCasing);
-        }
-
-        /// <summary>
-        /// Gets a property by its name. First try to get it with correct casing and if none is found, it tries to get it by ignoring the case.
-        /// </summary>
-        /// <param name="stateType">The type to get the property for.</param>
-        /// <param name="propertyName">The name of the property in correct casing.</param>
-        /// <param name="property">The property if found</param>
-        /// <returns>Whether the property has been found or not.</returns>
-        public static bool TryGetProperty(Type stateType, string propertyName, [MaybeNullWhen(false)] out PropertyInfo property)
-        {
-            var (propertiesWithCorrectCasing, propertiesWithLowerCasing) = GetProperties(stateType);
-
-            return propertiesWithCorrectCasing.TryGetValue(propertyName, out property) ||
-                propertiesWithLowerCasing.TryGetValue(propertyName.ToLowerInvariant(), out property);
+                writer.WritePropertyName(name);
+                JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
+            }
         }
     }
 }

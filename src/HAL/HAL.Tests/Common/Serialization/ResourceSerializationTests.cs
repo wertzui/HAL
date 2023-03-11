@@ -56,7 +56,7 @@ namespace HAL.Tests.Common.Serialization
             };
             var expectedResourceJson = ignoreCondition switch
             {
-                JsonIgnoreCondition.Never => "{\"foo\":0}",
+                JsonIgnoreCondition.Never => "{\"foo\":0,\"_embedded\":null,\"_links\":null}",
                 JsonIgnoreCondition.WhenWritingDefault => "{}",
                 JsonIgnoreCondition.WhenWritingNull => "{\"foo\":0}",
                 _ => throw new System.Exception("Unhandled condition.")
