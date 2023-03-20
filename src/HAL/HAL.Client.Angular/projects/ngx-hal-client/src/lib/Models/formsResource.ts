@@ -162,6 +162,29 @@ export class Template {
 
 }
 
+export class NumberTemplate implements Omit<Template, "title">{
+  contentType?: string;
+  method?: string;
+  properties: Property[];
+  target?: string;
+  title: number;
+
+  constructor(dto?: TemplateDto) {
+    Object.assign(this, dto);
+
+    if(!Number.isInteger(dto?.title))
+      throw new Error(`Expected ${dto?.title} to be an integer.`);
+      
+    this.title = Number.parseInt(dto!.title!);
+
+    this.properties = !(dto?.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
+  }
+
+  public get values(): { [name: string]: unknown } {
+    return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property.value]));
+  }
+}
+
 export class FormsResource extends Resource {
   public _templates!: Templates;
 
