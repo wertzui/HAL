@@ -172,10 +172,10 @@ export class NumberTemplate implements Omit<Template, "title">{
   constructor(dto?: TemplateDto) {
     Object.assign(this, dto);
 
-    if(!Number.isInteger(dto?.title))
-      throw new Error(`Expected ${dto?.title} to be an integer.`);
-      
     this.title = Number.parseInt(dto!.title!);
+
+    if (!Number.isInteger(this.title))
+      throw new Error(`Expected ${dto?.title} to be an integer, but parsing resulted in ${this.title}.`);
 
     this.properties = !(dto?.properties) ? [] : dto.properties.map(propertyDto => new Property(propertyDto));
   }
