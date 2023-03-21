@@ -203,4 +203,18 @@ export class FormsResource extends Resource {
 
     return template;
   }
+
+  public getTemplateByTitle(title: string): Template {
+    const template = Object.entries(this._templates)
+      .map(([, t]) => t)
+      .find(t => t.title === title);
+
+      if (template === undefined) {
+        const templateTitles = Object.entries(this._templates)
+          .map(([, t]) => t.title);
+        throw new Error(`The form ${this} does not have a _template with the title '${title}'. It only has ${templateTitles}.`);
+      }
+
+      return template;
+  }
 }
