@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.OData.Query;
+﻿using HAL.AspNetCore.Abstractions;
+using HAL.AspNetCore.OData.Abstractions;
+using Microsoft.AspNetCore.OData.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;

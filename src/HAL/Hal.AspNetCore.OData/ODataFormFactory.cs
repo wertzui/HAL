@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 
 namespace HAL.AspNetCore.OData
@@ -38,30 +39,58 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataQueryOptions<TEntity> oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+        public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
         {
             var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
 
-            var searchForm = CreateSearchForm<TDto>(resource.GetSelfLink().Href);
+            var searchForm = CreateSearchForm<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
 
             var formResource = new FormsResource<Page>(searchForm) { Embedded = resource.Embedded, Links = resource.Links, State = resource.State };
 
             return formResource;
         }
 
-        /// <inheritdoc/>
-        public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, IPageLinks links, Page page, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+        private FormTemplate CreateSearchForm<TDto>(string listGetMethod, ODataRawQueryOptions queryOptions)
         {
-            var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
+            var cacheKey = typeof(TDto) + "_List";
+            var template = Cache.GetOrCreate(cacheKey, entry => CreateSearchFormTemplate<TDto>(listGetMethod)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
 
-            var searchForm = CreateSearchForm<TDto>(resource.GetSelfLink().Href);
+            var searchForm = new FormTemplate
+            {
+                ContentType = template.ContentType,
+                Method = template.Method,
+                Properties = template.Properties
+                    ?.Select(p => new Property(p.Name)
+                    {
+                        Cols = p.Cols,
+                        Extensions = p.Extensions,
+                        Max = p.Max,
+                        MaxLength = p.MaxLength,
+                        Min = p.Min,
+                        MinLength = p.MinLength,
+                        Options = p.Options,
+                        Placeholder = p.Placeholder,
+                        Prompt = p.Prompt,
+                        PromptDisplay = p.PromptDisplay,
+                        ReadOnly = p.ReadOnly,
+                        Regex = p.Regex,
+                        Required = p.Required,
+                        Rows = p.Rows,
+                        Step = p.Step,
+                        Templated = p.Templated,
+                        Templates = p.Templates,
+                        Type = p.Type,
+                        Value = p.Name == "$orderby" ? queryOptions.OrderBy : p.Value
+                    })
+                    .ToList(),
+                Target = template.Target,
+                Title = template.Title,
+            };
 
-            var formResource = new FormsResource<Page>(searchForm) { Embedded = resource.Embedded, Links = resource.Links, State = resource.State };
-
-            return formResource;
+            return searchForm;
         }
 
-        private FormTemplate CreateSearchForm<TDto>(string listGetMethod)
+        private FormTemplate CreateSearchFormTemplate<TDto>(string listGetMethod)
         {
             var searchForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Get.ToString(), "Search", "application/x-www-form-urlencoded");
             searchForm.Target = listGetMethod;
@@ -75,6 +104,9 @@ namespace HAL.AspNetCore.OData
                     property.Value = null;
                 }
             }
+
+            searchForm.Properties ??= new List<Property>();
+            searchForm.Properties.Add(new Property("$orderby") { Type = PropertyType.Hidden });
 
             return searchForm;
         }

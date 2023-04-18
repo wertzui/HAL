@@ -27,11 +27,11 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TEntity, TKey, TId>(
+        public Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(
             IEnumerable<TDto> resources,
             Func<TDto, TKey> keyAccessor,
             Func<TDto, TId> idAccessor,
-            ODataQueryOptions<TEntity> oDataQueryOptions,
+            ODataRawQueryOptions oDataQueryOptions,
             long maxTop = 50,
             long? totalCount = null,
             string? controller = null,
@@ -62,64 +62,17 @@ namespace HAL.AspNetCore.OData
             if (string.IsNullOrWhiteSpace(singleGetMethod))
                 throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or whitespace.", nameof(singleGetMethod));
 
-            var rawValues = oDataQueryOptions.RawValues;
-
-            (long skip, long top) = _oDataQueryFactory.GetSkipAndTop(maxTop, rawValues);
+            (long skip, long top) = _oDataQueryFactory.GetSkipAndTop(maxTop, oDataQueryOptions);
 
             var currentPage = (skip == 0 ? 0 : skip / top) + 1;
             var totalPages = totalCount.HasValue ? (long)Math.Ceiling((double)totalCount / top) : default;
             var page = new Page { CurrentPage = currentPage, TotalPages = totalPages };
 
-            var links = GetListNavigation(resources, rawValues, skip, top, totalCount);
+            var links = _oDataQueryFactory.GetListNavigation(resources, oDataQueryOptions, LinkFactory.Create(action: listGetMethod, controller: controller).Href, skip, top, totalCount);
 
-            var resource = CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
+            var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
 
             return resource;
-        }
-
-        /// <inheritdoc/>
-        public Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(
-            IEnumerable<TDto> resources,
-            Func<TDto, TKey> keyAccessor,
-            Func<TDto, TId> idAccessor,
-            IPageLinks links,
-            Page page,
-            string? controller = null,
-            string listGetMethod = "GetList",
-            string singleGetMethod = "Get")
-        {
-            if (resources is null)
-                throw new ArgumentNullException(nameof(resources));
-
-            if (keyAccessor is null)
-                throw new ArgumentNullException(nameof(keyAccessor));
-
-            if (idAccessor is null)
-                throw new ArgumentNullException(nameof(idAccessor));
-
-            if (links is null)
-                throw new ArgumentNullException(nameof(links));
-
-            if (page is null)
-                throw new ArgumentNullException(nameof(page));
-
-            if (string.IsNullOrWhiteSpace(listGetMethod))
-                throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or whitespace.", nameof(listGetMethod));
-
-            if (string.IsNullOrWhiteSpace(singleGetMethod))
-                throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or whitespace.", nameof(singleGetMethod));
-
-            return CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links.FirstHref, links.PrevHref, links.NextHref, links.LastHref, page, controller, listGetMethod, singleGetMethod);
-        }
-
-        private IPageLinks GetListNavigation<TDto>(
-            IEnumerable<TDto> resources,
-            ODataRawQueryOptions rawValues,
-            long skip,
-            long top,
-            long? totalCount)
-        {
-            return _oDataQueryFactory.GetListNavigation(resources, rawValues, LinkFactory.Create().Href, skip, top, totalCount);
         }
     }
 }

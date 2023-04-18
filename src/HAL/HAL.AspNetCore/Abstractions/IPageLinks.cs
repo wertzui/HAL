@@ -1,7 +1,7 @@
 ﻿using HAL.Common;
 using System.Collections.Generic;
 
-namespace HAL.AspNetCore.OData
+namespace HAL.AspNetCore.Abstractions
 {
     /// <summary>
     /// The links for navigating through a paged list.

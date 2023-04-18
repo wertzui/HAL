@@ -90,7 +90,7 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? firstHref = null, string? prevHref = null, string? nextHref = null, string? lastHref = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+        public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
         {
             if (resources is null)
                 throw new ArgumentNullException(nameof(resources));
@@ -111,17 +111,7 @@ namespace HAL.AspNetCore
 
             AddSelfAndEmbedded(resources, keyAccessor, idAccessor, controller, listGetMethod, singleGetMethod, resource);
 
-            if (!string.IsNullOrWhiteSpace(firstHref))
-                resource.AddLink(new Link(firstHref) { Name = "first" });
-
-            if (!string.IsNullOrWhiteSpace(prevHref))
-                resource.AddLink(new Link(prevHref) { Name = "prev" });
-
-            if (!string.IsNullOrWhiteSpace(nextHref))
-                resource.AddLink(new Link(nextHref) { Name = "next" });
-
-            if (!string.IsNullOrWhiteSpace(lastHref))
-                resource.AddLink(new Link(lastHref) { Name = "last" });
+            links?.AddTo(resource);
 
             return resource;
         }

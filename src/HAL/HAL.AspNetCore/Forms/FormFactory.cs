@@ -12,7 +12,10 @@ namespace HAL.AspNetCore.Forms
     /// <inheritdoc/>
     public class FormFactory : IFormFactory
     {
-        private readonly IMemoryCache _cache;
+        /// <summary>
+        /// A memory cache.
+        /// </summary>
+        protected IMemoryCache Cache { get; }
 
         /// <summary>
         /// Creates a new instance of the <see cref="FormFactory"/> class.
@@ -23,17 +26,17 @@ namespace HAL.AspNetCore.Forms
         /// <param name="valueFactory">The factory that is used to fill the templates with values.</param>
         /// <param name="linkFactory">The link factory.</param>
         /// <param name="cache">The cache to hold the empty templates.</param>
-        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
         public FormFactory(
             IFormTemplateFactory templateFactory,
             IFormValueFactory valueFactory,
             ILinkFactory linkFactory,
             IMemoryCache cache)
         {
-            TemplateFactory = templateFactory ?? throw new System.ArgumentNullException(nameof(templateFactory));
-            ValueFactory = valueFactory ?? throw new System.ArgumentNullException(nameof(valueFactory));
-            LinkFactory = linkFactory ?? throw new System.ArgumentNullException(nameof(linkFactory));
-            _cache = cache ?? throw new System.ArgumentNullException(nameof(cache));
+            TemplateFactory = templateFactory ?? throw new ArgumentNullException(nameof(templateFactory));
+            ValueFactory = valueFactory ?? throw new ArgumentNullException(nameof(valueFactory));
+            LinkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
+            Cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         /// <summary>
@@ -59,11 +62,7 @@ namespace HAL.AspNetCore.Forms
 
             // We do not cache method and title so we can reuse the same template for Create (POST)
             // and Edit (PUT) forms.
-            var template = _cache.GetOrCreate(type, entry => TemplateFactory.CreateTemplateFor<T>("template_does_not_need_a_method", contentType: contentType));
-
-            if (template is null)
-                throw new InvalidOperationException($"A form template for the type {type.Name} exists in the cache but is null.");
-
+            var template = Cache.GetOrCreate(type, entry => TemplateFactory.CreateTemplateFor<T>("template_does_not_need_a_method", contentType: contentType)) ?? throw new InvalidOperationException($"A form template for the type {type.Name} exists in the cache but is null.");
             var filled = ValueFactory.FillWith(template, value);
             filled.Method = method;
             filled.Title = title;

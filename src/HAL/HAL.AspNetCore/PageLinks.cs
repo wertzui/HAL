@@ -1,7 +1,8 @@
-﻿using HAL.Common;
+﻿using HAL.AspNetCore.Abstractions;
+using HAL.Common;
 using System.Collections.Generic;
 
-namespace HAL.AspNetCore.OData
+namespace HAL.AspNetCore
 {
     /// <inheritdoc/>
     public record PageLinks(string? FirstHref = null, string? PrevHref = null, string? NextHref = null, string? LastHref = null) : IPageLinks

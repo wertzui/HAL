@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.OData.Query;
+﻿using HAL.AspNetCore.Abstractions;
+using Microsoft.AspNetCore.OData.Query;
 using System.Collections.Generic;
 
-namespace HAL.AspNetCore.OData
+namespace HAL.AspNetCore.OData.Abstractions
 {
     /// <summary>
     /// A factory to generate links using OData syntax. Mostly for navigating through paged lists.

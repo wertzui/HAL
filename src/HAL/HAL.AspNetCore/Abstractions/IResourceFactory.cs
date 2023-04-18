@@ -126,10 +126,7 @@ namespace HAL.AspNetCore.Abstractions
         /// you do not specify a constant value, you will have multiple collections in the _embedded object.
         /// </param>
         /// <param name="idAccessor">The identifier accessor.</param>
-        /// <param name="firstHref">The href to the first page (optional).</param>
-        /// <param name="prevHref">The href to the previous page (optional).</param>
-        /// <param name="nextHref">The href to the next page (optional).</param>
-        /// <param name="lastHref">The href to the last page (optional).</param>
+        /// <param name="links">Links to other pages (optional)</param>
         /// <param name="state">
         /// The state with paging information (optional if the endpoint supports it).
         /// </param>
@@ -141,6 +138,6 @@ namespace HAL.AspNetCore.Abstractions
         /// The name of the get method for the get-single endpoint. Default is "Get".
         /// </param>
         /// <returns></returns>
-        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? firstHref = null, string? prevHref = null, string? nextHref = null, string? lastHref = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
+        Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
     }
 }
