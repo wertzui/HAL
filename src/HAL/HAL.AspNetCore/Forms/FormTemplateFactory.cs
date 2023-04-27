@@ -497,9 +497,17 @@ namespace HAL.AspNetCore.Forms
             {
                 template.Type = PropertyType.DatetimeOffset;
             }
+            else if (propertyType.IsAssignableTo(typeof(DateOnly?)))
+            {
+                template.Type = PropertyType.Date;
+            }
             else if (propertyType.IsAssignableTo(typeof(TimeSpan?)))
             {
                 template.Type = PropertyType.Duration;
+            }
+            else if (propertyType.IsAssignableTo(typeof(TimeOnly?)))
+            {
+                template.Type = PropertyType.Time;
             }
             else if (propertyType.IsAssignableTo(typeof(byte[])) && string.Equals(property.Name, "timestamp", StringComparison.OrdinalIgnoreCase))
             {
