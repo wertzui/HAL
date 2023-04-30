@@ -22,7 +22,7 @@ export interface PropertyDto {
   maxLength?: number;
   min?: number;
   minLength?: number;
-  name?: string;
+  name: string;
   options?: OptionsDto;
   placeholder?: string;
   prompt?: string;
@@ -118,7 +118,7 @@ export class Property {
   maxLength?: number;
   min?: number;
   minLength?: number;
-  name?: string;
+  name!: string;
   options?: Options;
   placeholder?: string;
   prompt?: string;
