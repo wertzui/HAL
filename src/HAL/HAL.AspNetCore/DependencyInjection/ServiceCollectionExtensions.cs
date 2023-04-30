@@ -2,8 +2,10 @@
 using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Forms;
 using HAL.AspNetCore.Forms.Abstractions;
+using HAL.Common.Converters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -36,9 +38,16 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddMemoryCache();
 
-            // This is needed for Action Link generation.
-            // See https://github.com/dotnet/aspnetcore/issues/14606
-            builder.AddMvcOptions(o => o.SuppressAsyncSuffixInActionNames = true);
+            builder
+                // This is needed for Action Link generation.
+                // See https://github.com/dotnet/aspnetcore/issues/14606
+                .AddMvcOptions(o => o.SuppressAsyncSuffixInActionNames = true)
+                .AddJsonOptions(o =>
+                {
+                    o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
+                    o.JsonSerializerOptions.Converters.Insert(0, new DateOnlyJsonConverter());
+                    o.JsonSerializerOptions.Converters.Insert(1, new TimeOnlyJsonConverter());
+                });
 
             return builder;
         }
