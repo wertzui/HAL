@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -286,11 +287,12 @@ namespace HAL.AspNetCore.Forms
         /// Adds options with a link for a property which has been decorated with the [ForgeignKey] attribute.
         /// </summary>
         /// <param name="template"></param>
+        /// <param name="property">The property.</param>
         /// <param name="foreignKey">The [ForeignKey] attribute.</param>
         /// <param name="containingDtoType">The type containing the property.</param>
-        private void AddForeignKeyLink(Property template, ForeignKeyAttribute foreignKey, Type containingDtoType)
+        private void AddForeignKeyLink(Property template, PropertyInfo property, ForeignKeyAttribute foreignKey, Type containingDtoType)
         {
-            AddForeignKeyLink(template, foreignKey.Name, containingDtoType);
+            AddForeignKeyLink(template, foreignKey.Name, property, containingDtoType);
         }
 
         /// <summary>
@@ -306,7 +308,7 @@ namespace HAL.AspNetCore.Forms
 
             var foreignKeyName = property.Name[..^2];
 
-            AddForeignKeyLink(template, foreignKeyName, containingDtoType);
+            AddForeignKeyLink(template, foreignKeyName, property, containingDtoType);
         }
 
         /// <summary>
@@ -314,8 +316,9 @@ namespace HAL.AspNetCore.Forms
         /// </summary>
         /// <param name="template"></param>
         /// <param name="foreignKeyName">The name of the foreign key property.</param>
+        /// <param name="property">The property.</param>
         /// <param name="containingDtoType">The type containing the property.</param>
-        private void AddForeignKeyLink(Property template, string foreignKeyName, Type containingDtoType)
+        private void AddForeignKeyLink(Property template, string foreignKeyName, PropertyInfo property, Type containingDtoType)
         {
             if (foreignKeyName is null)
                 return;
@@ -336,10 +339,16 @@ namespace HAL.AspNetCore.Forms
             if (link is null)
                 return;
 
+            bool isMultiSelect = property.PropertyType.IsAssignableTo(typeof(IEnumerable));
+            bool isNullable = Nullable.GetUnderlyingType(property.PropertyType) is not null;
+
+            template.Type = null; // Either type or options can be set, but not both.
             template.Options = new Options<object?>(link)
             {
                 ValueField = FindPrimaryKeyPropertyName(listDtoType),
-                PromptField = FindForeignDisplayColumn(listDtoType)
+                PromptField = FindForeignDisplayColumn(listDtoType),
+                MinItems = isNullable ? 0 : 1,
+                MaxItems = isMultiSelect ? long.MaxValue : 1,
             };
         }
 
@@ -388,7 +397,7 @@ namespace HAL.AspNetCore.Forms
                         .Select(v => new OptionsItem<object?>(Enum.GetName(enumType, v)!, v))
                         .ToList())
                 {
-                    MaxItems = isFlags ? default : 1,
+                    MaxItems = isFlags ? long.MaxValue : 1,
                     MinItems = isNullable ? 0 : 1
                 };
             }
@@ -524,8 +533,13 @@ namespace HAL.AspNetCore.Forms
             else if (propertyType.IsGenericType && propertyType.IsAssignableTo(typeof(IEnumerable)))
             {
                 template.Type = PropertyType.Collection;
-                var collectionDtoType = propertyType.GetGenericArguments()[0];
-                template.Templates = CreateDefaultTemplateFor(collectionDtoType, null, template.Prompt);
+
+                // If a collection has a foreign key, it is a multi select input and we do not want templates for those.
+                if (property.GetCustomAttribute<ForeignKeyAttribute>() is null)
+                {
+                    var collectionDtoType = propertyType.GetGenericArguments()[0];
+                    template.Templates = CreateDefaultTemplateFor(collectionDtoType, null, template.Prompt);
+                }
             }
             else if (!propertyType.IsAssignableTo(typeof(HalFile)))
             {
@@ -608,6 +622,10 @@ namespace HAL.AspNetCore.Forms
                             return null;
                         break;
 
+                    case DisplayNameAttribute displayName:
+                        template.Prompt = displayName.DisplayName;
+                        break;
+
                     case PromptDisplayTypeAttribute prompDisplayType:
                         template.PromptDisplay = prompDisplayType.PromptDisplay;
                         break;
@@ -617,7 +635,7 @@ namespace HAL.AspNetCore.Forms
                         break;
 
                     case ForeignKeyAttribute foreignKey:
-                        AddForeignKeyLink(template, foreignKey, dtoType);
+                        AddForeignKeyLink(template, property, foreignKey, dtoType);
                         break;
 
                     case KeyAttribute:

@@ -75,6 +75,17 @@ namespace HAL.AspNetCore.Forms
                 Value = GetValue(p, value, valueType)
             };
 
+            // options are handled through their SelectedValues property.
+            if (filled.Options is not null)
+            {
+                if (filled.Value is IEnumerable enumerable)
+                    filled.Options.SelectedValues = new HashSet<object?>(enumerable.Cast<object>());
+                else
+                    filled.Options.SelectedValues = new HashSet<object?> { filled.Value };
+
+                filled.Value = null;
+            }
+
             // collection and object types are handled through their templates.
             if (filled.Type == PropertyType.Collection)
             {
