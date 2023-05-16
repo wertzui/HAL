@@ -340,14 +340,13 @@ namespace HAL.AspNetCore.Forms
                 return;
 
             bool isMultiSelect = property.PropertyType.IsAssignableTo(typeof(IEnumerable));
-            bool isNullable = Nullable.GetUnderlyingType(property.PropertyType) is not null;
 
             template.Type = null; // Either type or options can be set, but not both.
             template.Options = new Options<object?>(link)
             {
                 ValueField = FindPrimaryKeyPropertyName(listDtoType),
                 PromptField = FindForeignDisplayColumn(listDtoType),
-                MinItems = isNullable ? 0 : 1,
+                MinItems = template.Required ? 1 : 0,
                 MaxItems = isMultiSelect ? long.MaxValue : 1,
             };
         }

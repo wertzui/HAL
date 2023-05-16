@@ -47,7 +47,7 @@ namespace HAL.Client.Net
             IDictionary<string, IEnumerable<string>>? headers = default,
             string? version = default,
             CancellationToken cancellationToken = default)
-            => SendAsync<object, TResponse>(HttpMethod.Delete, requestUri, null, uriParameters, AddEtag(headers, eTag), version, cancellationToken);
+            => SendAsync<object, TResponse>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
 
         /// <inheritdoc/>
         public Task<HalResponse> DeleteAsync(
@@ -57,7 +57,7 @@ namespace HAL.Client.Net
             IDictionary<string, IEnumerable<string>>? headers = default,
             string? version = default,
             CancellationToken cancellationToken = default)
-            => SendAsync<object>(HttpMethod.Delete, requestUri, null, uriParameters, AddEtag(headers, eTag), version, cancellationToken);
+            => SendAsync<object>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
 
         /// <inheritdoc/>
         public Task<HalResponse<TResponse>> GetAsync<TResponse>(
@@ -168,7 +168,7 @@ namespace HAL.Client.Net
             }
         }
 
-        private static IDictionary<string, IEnumerable<string>>? AddEtag(IDictionary<string, IEnumerable<string>>? headers, string? eTag)
+        private static IDictionary<string, IEnumerable<string>>? AddETag(IDictionary<string, IEnumerable<string>>? headers, string? eTag)
         {
             if (headers is not null && eTag is not null)
             {
