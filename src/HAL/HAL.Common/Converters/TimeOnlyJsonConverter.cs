@@ -7,7 +7,8 @@ namespace HAL.Common.Converters
 {
     /// <summary>
     /// Converts a <see cref="TimeOnly"/> to and from JSON.
-    /// Can also convert the string representation of a <see cref="DateTime"/> from JSON to a <see cref="TimeOnly"/> instance.
+    /// Can also convert the string representation of a <see cref="DateTime"/> and <see cref="DateTimeOffset"/> from JSON to a <see cref="TimeOnly"/> instance.
+    /// Note that any timezone information is ignored.
     /// </summary>
     public class TimeOnlyJsonConverter : JsonConverter<TimeOnly>
     {
@@ -21,6 +22,9 @@ namespace HAL.Common.Converters
 
             if (TimeOnly.TryParse(timeString, out var time))
                 return time;
+
+            if (DateTimeOffset.TryParse(timeString, out var dateTimeOffset))
+                return TimeOnly.FromDateTime(dateTimeOffset.DateTime);
 
             if (DateTime.TryParse(timeString, out var dateTime))
                 return TimeOnly.FromDateTime(dateTime);

@@ -7,7 +7,8 @@ namespace HAL.Common.Converters
 {
     /// <summary>
     /// Converts a <see cref="DateOnly"/> to and from JSON.
-    /// Can also convert the string representation of a <see cref="DateTime"/> from JSON to a <see cref="DateOnly"/> instance.
+    /// Can also convert the string representation of a <see cref="DateTime"/> and <see cref="DateTimeOffset"/> from JSON to a <see cref="DateOnly"/> instance.
+    /// Note that any time(zone) information is ignored.
     /// </summary>
     public class DateOnlyJsonConverter : JsonConverter<DateOnly>
     {
@@ -21,8 +22,11 @@ namespace HAL.Common.Converters
             if (DateOnly.TryParse(dateString, out var date))
                 return date;
 
+            if (DateTimeOffset.TryParse(dateString, out var dateTimeOffset))
+                return DateOnly.FromDateTime(dateTimeOffset.Date);
+
             if (DateTime.TryParse(dateString, out var dateTime))
-                return DateOnly.FromDateTime(dateTime);
+                return DateOnly.FromDateTime(dateTime.Date);
 
             throw new FormatException($"The given date '{dateString}' cannot be parsed.");
         }
