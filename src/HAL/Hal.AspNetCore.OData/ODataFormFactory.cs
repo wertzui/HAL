@@ -39,22 +39,36 @@ namespace HAL.AspNetCore.OData
         }
 
         /// <inheritdoc/>
-        public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+        public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
         {
             var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
 
-            var searchForm = CreateSearchForm<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
+            var searchForm = CreateListSearchForm<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
+            var editForm = CreateListEditForm<TDto>(listPutMethod);
+            var forms = new Dictionary<string, FormTemplate>
+            {
+                { searchForm.Title!, searchForm },
+                { editForm.Title!, editForm }
+            };
 
-            var formResource = new FormsResource<Page>(searchForm) { Embedded = resource.Embedded, Links = resource.Links, State = resource.State };
+            var formResource = new FormsResource<Page>(forms) { Embedded = resource.Embedded, Links = resource.Links, State = resource.State };
 
             return formResource;
         }
 
-        private FormTemplate CreateSearchForm<TDto>(string listGetMethod, ODataRawQueryOptions queryOptions)
+        private FormTemplate CreateListEditForm<TDto>(string listPutMethod)
         {
-            var cacheKey = typeof(TDto) + "_List";
+            var cacheKey = typeof(TDto) + "_ListEdit";
+            var template = Cache.GetOrCreate(cacheKey, entry => CreateEditFormTemplate<TDto>(listPutMethod)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
+            return template;
+        }
+
+        private FormTemplate CreateListSearchForm<TDto>(string listGetMethod, ODataRawQueryOptions queryOptions)
+        {
+            var cacheKey = typeof(TDto) + "_ListSearch";
             var template = Cache.GetOrCreate(cacheKey, entry => CreateSearchFormTemplate<TDto>(listGetMethod)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
 
+            // A new template needs to be created here to add the $orderby property value.
             var searchForm = new FormTemplate
             {
                 ContentType = template.ContentType,
@@ -86,6 +100,16 @@ namespace HAL.AspNetCore.OData
                 Target = template.Target,
                 Title = template.Title,
             };
+
+            return searchForm;
+        }
+
+        private FormTemplate CreateEditFormTemplate<TDto>(string listPutMethod)
+        {
+            var searchForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Search", "application/x-www-form-urlencoded");
+            searchForm.Target = listPutMethod;
+
+            searchForm.Properties ??= new List<Property>();
 
             return searchForm;
         }

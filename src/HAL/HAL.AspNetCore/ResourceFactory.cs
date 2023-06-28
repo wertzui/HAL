@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using HAL.AspNetCore.Abstractions;
+using HAL.AspNetCore.Utils;
 using HAL.Common;
 using System;
 using System.Collections.Generic;
@@ -116,8 +117,6 @@ namespace HAL.AspNetCore
             return resource;
         }
 
-        private static string StripAsyncSuffix(string actionMethod) => actionMethod.EndsWith("Async") ? actionMethod[0..^5] : actionMethod;
-
         private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller, string listGetMethod, string singleGetMethod, Resource resource)
         {
             if (resources is null)
@@ -136,7 +135,7 @@ namespace HAL.AspNetCore
                 throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or white space.", nameof(singleGetMethod));
 
             resource
-                .AddSelfLink(LinkFactory, StripAsyncSuffix(listGetMethod), controller)
+                .AddSelfLink(LinkFactory, ActionHelper.StripAsyncSuffix(listGetMethod), controller)
                 .AddEmbedded(
                 resources,
                 keyAccessor,
@@ -144,7 +143,7 @@ namespace HAL.AspNetCore
                 {
                     var embeddedResource =
                         Create(r)
-                        .AddLinks(LinkFactory.CreateTemplated(StripAsyncSuffix(singleGetMethod), controller), _ => Constants.SelfLinkName, l => l);
+                        .AddLinks(LinkFactory.CreateTemplated(ActionHelper.StripAsyncSuffix(singleGetMethod), controller), _ => Constants.SelfLinkName, l => l);
 
                     if (embeddedResource.Links is not null && embeddedResource.Links.TryGetValue(Constants.SelfLinkName, out var selfLinks))
                     {

@@ -22,7 +22,7 @@ namespace HAL.AspNetCore.Forms
         private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
         private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
         private readonly IMemoryCache _memoryCache;
-        private static readonly NullabilityInfoContext _nullabilityInfoContext = new NullabilityInfoContext();
+        private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
 
         /// <summary>
         /// Creates a new instance of the <see cref="FormTemplateFactory"/> class.
@@ -50,6 +50,7 @@ namespace HAL.AspNetCore.Forms
                 Properties = properties,
                 Title = title
             };
+
             if (!string.IsNullOrWhiteSpace(method))
                 formTemplate.Method = method;
 
