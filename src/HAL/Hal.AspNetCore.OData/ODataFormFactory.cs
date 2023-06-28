@@ -106,7 +106,7 @@ namespace HAL.AspNetCore.OData
 
         private FormTemplate CreateEditFormTemplate<TDto>(string listPutMethod)
         {
-            var searchForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Search", "application/x-www-form-urlencoded");
+            var searchForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Edit");
             searchForm.Target = listPutMethod;
 
             searchForm.Properties ??= new List<Property>();
