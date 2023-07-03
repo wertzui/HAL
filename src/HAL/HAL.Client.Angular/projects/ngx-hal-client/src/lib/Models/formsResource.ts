@@ -88,7 +88,9 @@ export enum PropertyType {
   Image = 'image',
   File = 'file',
   Collection = 'collection',
-  Object = 'object'
+  Object = 'object',
+  Percent = "percent",
+  Currency = "currency"
 }
 
 export interface Templates {

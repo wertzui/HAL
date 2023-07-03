@@ -114,7 +114,7 @@ namespace HAL.AspNetCore.Forms
                     break;
 
                 case DataType.Currency:
-                    template.Type = PropertyType.Number;
+                    template.Type = PropertyType.Currency;
                     break;
 
                 case DataType.Text:

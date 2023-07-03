@@ -17,6 +17,7 @@ namespace HAL.Common.Forms
     public enum PropertyType
     {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        // The following are according to the HAL-Forms spec
         Hidden,
         Text,
         Textarea,
@@ -29,23 +30,22 @@ namespace HAL.Common.Forms
         Month,
         Week,
         Time,
-
         [EnumMember(Value = "datetime-local")]
         DatetimeLocal,
-
         Number,
         Range,
         Color,
+        // From here on, these are not in the HAL-Forms spec, but are custom additions
         Bool,
-
         [EnumMember(Value = "datetime-offset")]
         DatetimeOffset,
-
         Duration,
         Image,
         File,
         Collection,
-        Object
+        Object,
+        Percent,
+        Currency
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }
