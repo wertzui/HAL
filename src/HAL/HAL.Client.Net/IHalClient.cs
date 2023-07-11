@@ -168,9 +168,10 @@
         /// <param name="version">
         /// An optional version which is appended to the Accept header as v={version}.
         /// </param>
+        /// <param name="completionOption">When the operation should complete (as soon as a response is available or after reading the whole response content).</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response received after making the HTTP request.</returns>
-        Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(HttpMethod method, Uri requestUri, TRequest? content = default, IDictionary<string, object>? uriParameters = null, IDictionary<string, IEnumerable<string>>? headers = null, string? version = null, CancellationToken cancellationToken = default);
+        Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(HttpMethod method, Uri requestUri, TRequest? content = default, IDictionary<string, object>? uriParameters = null, IDictionary<string, IEnumerable<string>>? headers = null, string? version = null, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends the given <paramref name="request"/>.
@@ -183,8 +184,9 @@
         /// <param name="version">
         /// An optional version which is appended to the Accept header as v={version}.
         /// </param>
+        /// <param name="completionOption">When the operation should complete (as soon as a response is available or after reading the whole response content).</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response received after making the HTTP request.</returns>
-        Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(HttpRequestMessage request, TRequest? content = default, IDictionary<string, object>? uriParameters = null, IDictionary<string, IEnumerable<string>>? headers = null, string? version = null, CancellationToken cancellationToken = default);
+        Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(HttpRequestMessage request, TRequest? content = default, IDictionary<string, object>? uriParameters = null, IDictionary<string, IEnumerable<string>>? headers = null, string? version = null, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead, CancellationToken cancellationToken = default);
     }
 }

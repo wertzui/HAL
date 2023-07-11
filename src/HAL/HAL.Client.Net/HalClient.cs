@@ -129,7 +129,7 @@ namespace HAL.Client.Net
             string? version = default,
             CancellationToken cancellationToken = default)
         {
-            using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, cancellationToken);
+            using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
 
             var halResponse = await HalResponse.FromHttpResponse<TResponse>(response, cancellationToken);
 
@@ -146,7 +146,7 @@ namespace HAL.Client.Net
             string? version = default,
             CancellationToken cancellationToken = default)
         {
-            using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, cancellationToken);
+            using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
 
             var halResponse = await HalResponse.FromHttpResponse(response, cancellationToken);
 
@@ -161,10 +161,11 @@ namespace HAL.Client.Net
             IDictionary<string, object>? uriParameters = default,
             IDictionary<string, IEnumerable<string>>? headers = default,
             string? version = default,
+            HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
             CancellationToken cancellationToken = default)
         {
             using var request = new HttpRequestMessage(method, requestUri);
-            var response = await SendHttpRequestAsync(request, content, uriParameters, headers, version, cancellationToken);
+            var response = await SendHttpRequestAsync(request, content, uriParameters, headers, version, completionOption, cancellationToken);
 
             return response;
         }
@@ -176,6 +177,7 @@ namespace HAL.Client.Net
             IDictionary<string, object>? uriParameters = default,
             IDictionary<string, IEnumerable<string>>? headers = default,
             string? version = default,
+            HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
             CancellationToken cancellationToken = default)
         {
             if (request.RequestUri is null)
@@ -188,7 +190,7 @@ namespace HAL.Client.Net
             AddContentToRequest(request.Method, request.RequestUri, content, request);
 
             using var client = _httpClientFactory.CreateClient(_name);
-            var response = await client.SendAsync(request, cancellationToken);
+            var response = await client.SendAsync(request, completionOption, cancellationToken);
 
             return response;
         }
