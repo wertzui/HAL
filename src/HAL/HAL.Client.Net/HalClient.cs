@@ -12,21 +12,23 @@ namespace HAL.Client.Net
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _name = nameof(HalClient);
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="HalClient"/> class.
         /// </summary>
-        /// <param name="httpClientFactory">The factory which is used to create the clients for making the HTTP requests.</param>
+        /// <param name="httpClientFactory">
+        /// The factory which is used to create the clients for making the HTTP requests.
+        /// </param>
         public HalClient(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
         }
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="HalClient"/> class.
         /// </summary>
-        /// <param name="httpClientFactory">The factory which is used to create the clients for making the HTTP requests.</param>
+        /// <param name="httpClientFactory">
+        /// The factory which is used to create the clients for making the HTTP requests.
+        /// </param>
         /// <param name="name">The name that is used to retrieve the HTTPClient from the <paramref name="httpClientFactory"/>.</param>
         public HalClient(IHttpClientFactory httpClientFactory, string name)
         {
@@ -151,6 +153,46 @@ namespace HAL.Client.Net
             return halResponse;
         }
 
+        /// <inheritdoc/>
+        public async Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(
+            HttpMethod method,
+            Uri requestUri,
+            TRequest? content = default,
+            IDictionary<string, object>? uriParameters = default,
+            IDictionary<string, IEnumerable<string>>? headers = default,
+            string? version = default,
+            CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(method, requestUri);
+            var response = await SendHttpRequestAsync(request, content, uriParameters, headers, version, cancellationToken);
+
+            return response;
+        }
+
+        /// <inheritdoc/>
+        public async Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(
+            HttpRequestMessage request,
+            TRequest? content = default,
+            IDictionary<string, object>? uriParameters = default,
+            IDictionary<string, IEnumerable<string>>? headers = default,
+            string? version = default,
+            CancellationToken cancellationToken = default)
+        {
+            if (request.RequestUri is null)
+                throw new ArgumentException("The request must have a RequestUri.", nameof(request));
+
+            AddHeadersToRequest(headers, version, request);
+
+            AddParametersToRequest(request.RequestUri, uriParameters, request);
+
+            AddContentToRequest(request.Method, request.RequestUri, content, request);
+
+            using var client = _httpClientFactory.CreateClient(_name);
+            var response = await client.SendAsync(request, cancellationToken);
+
+            return response;
+        }
+
         private static void AddContentToRequest<TRequest>(HttpMethod method, Uri requestUri, TRequest? content, HttpRequestMessage request)
         {
             if (content is not null)
@@ -200,10 +242,8 @@ namespace HAL.Client.Net
 
         private static void AddParametersToRequest(Uri requestUri, IDictionary<string, object>? uriParameters, HttpRequestMessage request)
         {
-
-            // The library does not correctly ignore the $ sign, but treats it in a special way.
-            // As a workaround, we replace all $ signs.
-            // See https://github.com/tavis-software/Tavis.UriTemplates/issues/74
+            // The library does not correctly ignore the $ sign, but treats it in a special way. As
+            // a workaround, we replace all $ signs. See https://github.com/tavis-software/Tavis.UriTemplates/issues/74
 
             var template = new UriTemplate(requestUri.ToString().Replace("$", "__DOLLAR__"));
             if (uriParameters is not null && uriParameters.Count > 0)
@@ -218,29 +258,6 @@ namespace HAL.Client.Net
             var resolvedUri = new Uri(resolvedString);
 
             request.RequestUri = resolvedUri;
-        }
-
-        private async Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(
-            HttpMethod method,
-            Uri requestUri,
-            TRequest? content = default,
-            IDictionary<string, object>? uriParameters = default,
-            IDictionary<string, IEnumerable<string>>? headers = default,
-            string? version = default,
-            CancellationToken cancellationToken = default)
-        {
-            using var request = new HttpRequestMessage(method, requestUri);
-
-            AddHeadersToRequest(headers, version, request);
-
-            AddParametersToRequest(requestUri, uriParameters, request);
-
-            AddContentToRequest(method, requestUri, content, request);
-
-            using var client = _httpClientFactory.CreateClient(_name);
-            var response = await client.SendAsync(request, cancellationToken);
-
-            return response;
         }
     }
 }
