@@ -150,7 +150,7 @@ namespace HAL.AspNetCore
                         foreach (var link in selfLinks)
                         {
                             link.Href = link.Href.Replace("{id}", idAccessor(r)?.ToString());
-                            link.Templated = false;
+                            link.Templated = link.Href.Contains('{');
                         }
                     }
 

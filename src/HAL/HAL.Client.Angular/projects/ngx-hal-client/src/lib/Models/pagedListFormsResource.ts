@@ -17,17 +17,6 @@ export interface PagedListFormsResourceDto<TListDto extends ResourceDto> extends
 }
 
 export class PagedListFormsResource<TListDto extends ResourceDto> extends PagedListResource<TListDto> implements Page {
-  _links!: {
-    [name: string]: Link[] | undefined;
-    self: Link[];
-    first?: Link[];
-    prev?: Link[];
-    next?: Link[];
-    last?: Link[];
-  };
-
-  currentPage?: number;
-  totalPages?: number;
   public _templates!: Templates;
 
   public constructor(dto?: PagedListFormsResourceDto<TListDto>) {

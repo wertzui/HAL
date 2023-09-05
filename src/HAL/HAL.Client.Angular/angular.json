@@ -35,7 +35,6 @@
       }
     }
   },
-  "defaultProject": "ngx-hal-client",
   "cli": {
     "analytics": false
   }

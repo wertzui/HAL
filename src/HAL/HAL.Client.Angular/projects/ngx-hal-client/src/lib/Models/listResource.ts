@@ -9,7 +9,7 @@ export interface ListResourceDto<TListDto extends ResourceDto> extends ResourceD
 }
 
 export class ListResource<TListDto extends ResourceDto> extends Resource {
-  _embedded!: {
+  declare _embedded: {
     [name: string]: Resource[];
     items: ResourceOfDto<TListDto>[];
   };
