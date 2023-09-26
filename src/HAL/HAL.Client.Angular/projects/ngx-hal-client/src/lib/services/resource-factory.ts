@@ -2,6 +2,8 @@ import { Resource, ResourceDto } from "../models/resource";
 import { FormsResource, FormsResourceDto } from "../models/formsResource";
 import { ProblemDetails, ProblemDetailsDto } from "../models/problem-details";
 import { ListResource, ListResourceDto } from "../models/listResource";
+import { PagedListResource, PagedListResourceDto } from "../models/pagedListResource";
+import { PagedListFormsResource, PagedListFormsResourceDto } from "../models/pagedListFormsResource";
 
 /**
  * A factory class for creating various types of resources.
@@ -54,5 +56,31 @@ export class ResourceFactory {
         const resource = new ListResource(dto);
 
         return resource as ListResource<TList> & TState;
+    }
+
+    /**
+     * Creates a new PagedListResource instance with the given state.
+     * @param dto The DTO for the PagedListResource.
+     * @returns A new PagedListResource instance with the provided DTO and state.
+     * @template TList The type of the list items.
+     * @template TState The type of the state to include in the PagedListResource. Note that this is not the type of the list items, but the type of the state that is included in the ListResource itself.
+     */
+    public static createPagedListResource<TList, TState = void>(dto: PagedListResourceDto<TList & ResourceDto> & TState): PagedListResource<TList> & TState {
+        const resource = new PagedListResource(dto);
+
+        return resource as PagedListResource<TList> & TState;
+    }
+
+    /**
+     * Creates a new PagedListFormsResource instance with the given state.
+     * @param dto The DTO for the PagedListFormsResource.
+     * @returns A new PagedListFormsResource instance with the provided DTO and state.
+     * @template TList The type of the list items.
+     * @template TState The type of the state to include in the PagedListFormsResource. Note that this is not the type of the list items, but the type of the state that is included in the ListResource itself.
+     */
+    public static createPagedListFormsResource<TList, TState = void>(dto: PagedListFormsResourceDto<TList & ResourceDto> & TState): PagedListFormsResource<TList> & TState {
+        const resource = new PagedListFormsResource(dto);
+
+        return resource as PagedListFormsResource<TList> & TState;
     }
 }
