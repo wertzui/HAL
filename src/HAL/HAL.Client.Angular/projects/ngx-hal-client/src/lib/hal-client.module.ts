@@ -1,8 +1,13 @@
 import { NgModule } from '@angular/core';
-import { HalClient } from './hal-client';
+import { HalClient } from './services/hal-client';
+import { FormService } from '../public-api';
 
 
 
+/**
+ * A module that provides the HalClient and FormService as injectable services.
+ * It also ensures that the JSON representation of dates preserves the timezone information.
+ */
 @NgModule({
   declarations: [
   ],
@@ -11,7 +16,8 @@ import { HalClient } from './hal-client';
   exports: [
   ],
   providers: [
-    HalClient
+    HalClient,
+    FormService
   ]
 })
 export class HalClientModule { 
@@ -21,7 +27,12 @@ export class HalClientModule {
     HalClientModule.EnsureJsonPreservesTimeZoneInformation();
   }
 
-  public static EnsureJsonPreservesTimeZoneInformation() {
+  /**
+   * Ensures that the JSON representation of dates preserves the timezone information.
+   * Overrides the toJSON method of the Date prototype.
+   * This method is automatically called in the constructor of this module.
+   */
+  public static EnsureJsonPreservesTimeZoneInformation(): void {
     Date.prototype.toJSON = function () {
       let offSetMins = this.getTimezoneOffset();
       const msInMin = 6e4;
@@ -39,7 +50,11 @@ export class HalClientModule {
     }
   }
 
-  public static RestoreDefaultToJson() {
+  /**
+   * Restores the default toJSON method of the Date prototype.
+   * Normally this is not needed, but you can use it if you want to revert the changes made by `EnsureJsonPreservesTimeZoneInformation`.
+   */
+  public static RestoreDefaultToJson(): void {
     Date.prototype.toJSON = HalClientModule._defaultToJson;
   }
 }

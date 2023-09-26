@@ -59,7 +59,12 @@ export class Resource {
     self: Link[];
   };
 
-  public constructor(dto?: ResourceDto) {
+  /**
+   * Creates a new Resource instance from the given ResourceDto.
+   * @param dto The ResourceDto to create the Resource instance from.
+   * @throws An error if the self link is missing in the given ResourceDto.
+   */
+  public constructor(dto: ResourceDto) {
     const links = !(dto?._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
     if (!links['self'])
       throw new Error(`The self link is missing in the given ResourceDto: ${JSON.stringify(dto)}`);
@@ -77,6 +82,11 @@ export class Resource {
     this._embedded = embedded;
   }
 
+  /**
+   * Finds all links with the given relation type.
+   * @param rel The relation type to search for.
+   * @returns An array of links with the given relation type, or an empty array if none are found.
+   */
   public findLinks(rel: string): Link[] {
     const linksWithRel = this._links[rel];
 
@@ -86,6 +96,12 @@ export class Resource {
     return linksWithRel;
   }
 
+  /**
+   * Finds a link with the specified relationship and optional name.
+   * @param rel The relationship of the link to find.
+   * @param name (Optional) The name of the link to find.
+   * @returns The link with the specified relationship and name, or undefined if not found.
+   */
   public findLink(rel: string, name?: string): Link | undefined {
     const linksWithRel = this.findLinks(rel);
 
@@ -98,6 +114,11 @@ export class Resource {
     return linksWithRel[0];
   }
 
+  /**
+   * Finds and returns an array of embedded resources with the specified relation type.
+   * @param rel The relation type to search for.
+   * @returns An array of embedded resources with the specified relation type, or an empty array if none are found.
+   */
   public findEmbedded(rel: string): Resource[] {
     const embeddedWithRel = this._embedded[rel];
 
@@ -107,6 +128,11 @@ export class Resource {
     return embeddedWithRel;
   }
 
+  /**
+   * Returns an array of hrefs for all form links in the resource.
+   * Form links are links where the relation is a valid URL.
+   * @returns An array of hrefs for all form links in the resource.
+   */
   public getFormLinkHrefs(): string[] {
     const allLinks = this._links;
 
@@ -127,8 +153,6 @@ export class Resource {
     }
   }
 
-  //public static fromDto(dto: ResourceDto): Resource;
-  //public static fromDto<TResource extends Resource>(dto: ResourceDto, TResource: { new(dto: ResourceDto): TResource }): TResource;
   private static fromDto<TResource extends Resource>(dto: ResourceDto, TResource?: { new(dto: ResourceDto): TResource }): TResource | Resource {
     const links = !(dto?._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
     const embedded = !(dto?._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, embeddedResourceDtos]) => [rel, Resource.fromDtos(embeddedResourceDtos, TResource)]));
@@ -150,7 +174,7 @@ export class Resource {
     return resources;
   }
 
-  private static parseDates(dto: unknown): unknown {
+  private static parseDates<T>(dto: T): T | Date {
     if (dto === null || dto === undefined)
       return dto;
 

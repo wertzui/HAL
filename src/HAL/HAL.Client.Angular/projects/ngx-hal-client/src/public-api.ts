@@ -2,13 +2,18 @@
  * Public API Surface of ngx-hal-client
  */
 
-export * from './lib/hal-client';
+export * from './lib/models/formsResource';
+export * from './lib/models/link';
+export * from './lib/models/listResource';
+export * from './lib/models/page';
+export * from './lib/models/pagedListFormsResource';
+export * from './lib/models/pagedListResource';
+export * from './lib/models/problem-details';
+export * from './lib/models/resource';
+export * from './lib/models/resourceOf';
+
+export * from './lib/services/form.service';
+export * from './lib/services/hal-client';
+export * from './lib/services/resource-factory';
+
 export * from './lib/hal-client.module';
-export * from './lib/Models/formsResource';
-export * from './lib/Models/link';
-export * from './lib/Models/page';
-export * from './lib/Models/resource';
-export * from './lib/Models/listResource';
-export * from './lib/Models/pagedListFormsResource';
-export * from './lib/Models/pagedListResource';
-export * from './lib/Models/resourceOf';

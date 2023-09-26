@@ -2,7 +2,8 @@
 
 namespace HAL.Common.Forms
 {
-    /// <summary> The options element contains an enumerated list of possible values for a property.
+    /// <summary>
+    /// The options element contains an enumerated list of possible values for a property.
     /// This can be used to provide a UI similar to HTML controls such as:
     /// - SELECT &amp; OPTIONS
     /// - INPUT.type="radio"
@@ -22,7 +23,9 @@ namespace HAL.Common.Forms
     /// array attribute.When sending the results of the completed HAL-FORMS to the server, content
     /// property.options.selectedValues is serialized in a manner compliant with the media type
     /// value in the contentType attribute (e.g.appilcation/json, application/x-www-form-urlencded,
-    /// etc.). </summary> <typeparam name="T">The type of the value(s) for this element.</typeparam>
+    /// etc.).
+    /// </summary>
+    /// <typeparam name="T">The type of the value(s) for this element.</typeparam>
     public class Options<T>
     {
         /// <summary>

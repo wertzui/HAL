@@ -126,6 +126,11 @@ export class Link {
    */
   type?: string;
 
+  /**
+   * Fills the @see href of the link with the given parameters.
+   * @param parameters An object containing key-value pairs to replace in the URI template.
+   * @returns The filled URI template as a string.
+   */
   public fillTemplate(parameters: { [key: string]: string }): string {
     return new UriTemplate(this.href).fill(parameters);
   }

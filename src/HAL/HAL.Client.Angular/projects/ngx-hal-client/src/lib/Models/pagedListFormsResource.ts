@@ -1,28 +1,29 @@
-import { Template, TemplateDtos, Templates } from "./formsResource"
+import { FormsResourceDto, Template, TemplateDtos, Templates } from "./formsResource"
 import { Link, LinkDto } from "./link";
 import { Page } from "./page";
 import { PagedListResourceDto, PagedListResource } from "./pagedListResource"
 import { ResourceDto } from "./resource";
 
-export interface PagedListFormsResourceDto<TListDto extends ResourceDto> extends PagedListResourceDto<TListDto> {
-  _links?: {
-    [name: string]: LinkDto[] | null | undefined;
-    self: LinkDto[];
-    first?: LinkDto[];
-    prev?: LinkDto[];
-    next?: LinkDto[];
-    last?: LinkDto[];
-  };
-  _templates?: TemplateDtos;
+/**
+ * A PagedListFormsResourceDto is a @see PagedListResourceDto which is also a @see FormsResourceDto.
+ * It is normally used to give search end edit templates in conjunction with a paged list of resources.
+ * @template TListDto The type of the resource in the list.
+ */
+export interface PagedListFormsResourceDto<TListDto> extends PagedListResourceDto<TListDto>, Omit<Omit<FormsResourceDto, "_links">, "_embedded"> {
 }
 
-export class PagedListFormsResource<TListDto extends ResourceDto> extends PagedListResource<TListDto> implements Page {
+/**
+ * A PagedListFormsResourceDto is a @see PagedListResource which is also a @see FormsResource.
+ * It is normally used to give search end edit templates in conjunction with a paged list of resources.
+ * @template TListDto The type of the resource in the list.
+ */
+export class PagedListFormsResource<TListDto> extends PagedListResource<TListDto> implements Page {
   public _templates!: Templates;
 
-  public constructor(dto?: PagedListFormsResourceDto<TListDto>) {
+  public constructor(dto: PagedListFormsResourceDto<TListDto>) {
     super(dto);
 
-    this._templates = !(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]));
+    this._templates = (!(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]))) as Templates;
   }
 
   public getTemplate(name: string) {

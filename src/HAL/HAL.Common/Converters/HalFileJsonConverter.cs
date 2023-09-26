@@ -19,6 +19,6 @@ namespace HAL.Common.Converters
 
         /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer, HalFile value, JsonSerializerOptions options)
-            => writer.WriteStringValue(value.Uri.ToString());
+            => writer.WriteStringValue(value.Uri);
     }
 }
