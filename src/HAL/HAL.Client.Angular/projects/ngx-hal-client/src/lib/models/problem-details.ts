@@ -33,4 +33,8 @@ export class ProblemDetails extends Resource implements ResourceOfDto<ProblemDet
   public static containsProblemDetailsInformation(resource: unknown) {
     return resource && (resource instanceof ProblemDetails || (resource instanceof Resource && 'status' in resource && _.isNumber(resource['status']) && resource['status'] >= 100 && resource['status'] < 600));
   }
+
+  public static isProblemDetailsDto(dto: unknown): dto is ProblemDetailsDto {
+    return _.isObject(dto) && 'status' in dto && _.isNumber(dto['status']) && dto['status'] >= 100 && dto['status'] < 600;
+  }
 }

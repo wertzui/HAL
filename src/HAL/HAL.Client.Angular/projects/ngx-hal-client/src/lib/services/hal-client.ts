@@ -298,13 +298,20 @@ export class HalClient {
   private static convertErrorResponse(response: HttpResponse<ProblemDetailsDto> | HttpErrorResponse): HttpResponse<ProblemDetails> {
     // HttpErrorResponse
     if (response instanceof HttpErrorResponse) {
-      const dto: ResourceDto & ProblemDetailsDto = {
-        _links: { self: [{ href: response.url ?? "" }] },
-        title: response.statusText,
-        status: response.status,
-        detail: response.message,
-        instance: response.url ?? ""
-      };
+      let dto: ResourceDto & ProblemDetailsDto;
+
+      if(ProblemDetails.isProblemDetailsDto(response.error)) {
+        dto = response.error;
+      }
+      else {
+        dto = {
+          _links: { self: [{ href: response.url ?? "" }] },
+          title: response.statusText,
+          status: response.status,
+          detail: response.message,
+          instance: response.url ?? ""
+        };
+      }
 
       const resource = ResourceFactory.createProblemDetails(dto);
       const resourceResponse = new HttpResponse<ProblemDetails>({
