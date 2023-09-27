@@ -11,12 +11,7 @@
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
-    "paths": {
-      "ngx-hal-client": [
-        "dist/ngx-hal-client/ngx-hal-client",
-        "dist/ngx-hal-client"
-      ]
-    },
+    "useDefineForClassFields": false,
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "importHelpers": true,
@@ -25,7 +20,13 @@
     "lib": [
       "ES2023",
       "DOM"
-    ]
+    ],
+    "paths": {
+      "ngx-hal-client": [
+        "dist/ngx-hal-client/ngx-hal-client",
+        "dist/ngx-hal-client"
+      ]
+    },
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
