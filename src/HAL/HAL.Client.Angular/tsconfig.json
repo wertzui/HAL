@@ -11,7 +11,7 @@
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
-    "useDefineForClassFields": false,
+    "useDefineForClassFields": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "importHelpers": true,

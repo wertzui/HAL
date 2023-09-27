@@ -14,13 +14,12 @@ export interface ProblemDetailsDto {
 }
 
 export class ProblemDetails extends Resource implements ResourceOfDto<ProblemDetailsDto> {
-  public type?: string;
-  public title?: string;
-  public status?: number;
-  public detail?: string;
-  public instance?: string;
+  public declare type?: string;
+  public declare title?: string;
+  public declare status?: number;
+  public declare detail?: string;
+  public declare instance?: string;
   [key: string]: unknown;
-
 
   public constructor(dto: ProblemDetailsDto & ResourceDto) {
     super(dto);
