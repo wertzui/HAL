@@ -1,8 +1,10 @@
 ﻿using HAL.Common;
+using HAL.Common.Converters;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace HAL.Client.Net
 {
@@ -11,7 +13,14 @@ namespace HAL.Client.Net
     /// </summary>
     public class HalResponse
     {
-        private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        private static readonly JsonSerializerOptions _jsonSerializerOptions;
+
+        static HalResponse()
+        {
+            _jsonSerializerOptions = new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault };
+            _jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            _jsonSerializerOptions.Converters.Add(new ExceptionJsonConverterFactory());
+        }
 
         /// <summary>
         /// Creates a new instance of <see cref="HalResponse"/> using the given resource.

@@ -5,6 +5,7 @@ using HAL.AspNetCore.Forms.Abstractions;
 using HAL.Common.Converters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection
@@ -47,6 +48,8 @@ namespace Microsoft.Extensions.DependencyInjection
                     o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
                     o.JsonSerializerOptions.Converters.Insert(0, new DateOnlyJsonConverter());
                     o.JsonSerializerOptions.Converters.Insert(1, new TimeOnlyJsonConverter());
+                    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                    o.JsonSerializerOptions.Converters.Add(new ExceptionJsonConverterFactory());
                 });
 
             return builder;
