@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using HAL.Common;
+using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 
 namespace HAL.AspNetCore.Abstractions
@@ -41,8 +42,9 @@ namespace HAL.AspNetCore.Abstractions
         /// <param name="action">The action.</param>
         /// <param name="controller">The controller.</param>
         /// <param name="routeValues">The route values.</param>
+        /// <param name="queryString">Allows to override the query string. In case of null, the query string from the current HTTP context is used.</param>
         /// <returns></returns>
-        string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null);
+        string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null, QueryString? queryString = null);
 
         /// <summary>
         /// Adds a curie link that uses swagger UI under /swagger/index.html#/{rel} to give

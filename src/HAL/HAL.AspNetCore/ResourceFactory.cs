@@ -135,7 +135,7 @@ namespace HAL.AspNetCore
                 throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or white space.", nameof(singleGetMethod));
 
             resource
-                .AddSelfLink(LinkFactory, ActionHelper.StripAsyncSuffix(listGetMethod), controller)
+                .AddSelfLink(LinkFactory, ActionHelper.StripAsyncSuffix(listGetMethod), ActionHelper.StripControllerSuffix(controller))
                 .AddEmbedded(
                 resources,
                 keyAccessor,
@@ -143,7 +143,7 @@ namespace HAL.AspNetCore
                 {
                     var embeddedResource =
                         Create(r)
-                        .AddLinks(LinkFactory.CreateTemplated(ActionHelper.StripAsyncSuffix(singleGetMethod), controller), _ => Constants.SelfLinkName, l => l);
+                        .AddLinks(LinkFactory.CreateTemplated(ActionHelper.StripAsyncSuffix(singleGetMethod), ActionHelper.StripControllerSuffix(controller)), _ => Constants.SelfLinkName, l => l);
 
                     if (embeddedResource.Links is not null && embeddedResource.Links.TryGetValue(Constants.SelfLinkName, out var selfLinks))
                     {

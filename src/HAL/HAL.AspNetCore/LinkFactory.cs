@@ -239,7 +239,7 @@ namespace HAL.AspNetCore
         }
 
         /// <inheritdoc/>
-        public string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null)
+        public string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null, QueryString? queryString = null)
         {
             var httpContext = GetHttpContext();
 
@@ -247,7 +247,7 @@ namespace HAL.AspNetCore
             if (path is null)
                 throw new InvalidOperationException($"Unable to generate the self link. request: {httpContext.Request}, action: {action}, controller: {controller}, routeValues: {routeValues}");
 
-            QueryString queryString = httpContext.Request.QueryString;
+            queryString ??= httpContext.Request.QueryString;
 
             return path + queryString;
         }

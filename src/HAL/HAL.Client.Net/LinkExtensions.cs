@@ -23,7 +23,7 @@ namespace HAL.Common
         /// </param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response received after making the HTTP request.</returns>
-        public static Task<HalResponse<TResponse>> Follow<TRequest, TResponse>(
+        public static Task<HalResponse<TResponse>> FollowAsync<TRequest, TResponse>(
             this Link link,
             IHalClient client,
             HttpMethod method,
@@ -49,7 +49,7 @@ namespace HAL.Common
         /// </param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The response received after making the HTTP request.</returns>
-        public static Task<HalResponse> Follow<TRequest>(
+        public static Task<HalResponse> FollowAsync<TRequest>(
             this Link link,
             IHalClient client,
             HttpMethod method,

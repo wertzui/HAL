@@ -1,5 +1,6 @@
 ﻿using HAL.Common;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
 
@@ -11,16 +12,19 @@ namespace HAL.Client.Net
     public class HalResponse
     {
         private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
         /// <summary>
         /// Creates a new instance of <see cref="HalResponse"/> using the given resource.
         /// </summary>
         /// <param name="resource">The resource to construct this response from.</param>
         /// <param name="statusCode">The HTTP status code of the response.</param>
-        public HalResponse(Resource? resource, HttpStatusCode statusCode)
+        public HalResponse(Resource resource, HttpStatusCode statusCode)
         {
-            Succeeded = true;
-            Resource = resource;
+            Resource = resource ?? throw new ArgumentNullException(nameof(resource), "You must provide a resource. If the request failed, provide problem details instead.");
             StatusCode = statusCode;
+
+            if (!Succeeded)
+                throw new InvalidOperationException($"When providing a resource, the status code must indicate a success. The given status code was {statusCode}.");
         }
 
         /// <summary>
@@ -30,8 +34,11 @@ namespace HAL.Client.Net
         /// <param name="statusCode">The HTTP status code of the response.</param>
         public HalResponse(ProblemDetails problemDetails, HttpStatusCode statusCode)
         {
-            ProblemDetails = problemDetails;
+            ProblemDetails = problemDetails ?? throw new ArgumentNullException(nameof(problemDetails), "You must provide problem details. If the request was successful, provide a resource instead.");
             StatusCode = statusCode;
+
+            if (Succeeded)
+                throw new InvalidOperationException($"When providing problem details, the status code must not indicate a success. The given status code was {statusCode}.");
         }
 
         /// <summary>
@@ -53,7 +60,20 @@ namespace HAL.Client.Net
         /// <summary>
         /// Whether the request succeeded or not.
         /// </summary>
-        public bool Succeeded { get; }
+        [MemberNotNullWhen(true, nameof(Resource))]
+        [MemberNotNullWhen(false, nameof(ProblemDetails))]
+        public bool Succeeded => (int)StatusCode >= 200 && (int)StatusCode < 300;
+
+        /// <summary>
+        /// Throws an <see cref="HttpRequestException"/> if the request was not successful.
+        /// </summary>
+        /// <exception cref="HttpRequestException"></exception>
+        [MemberNotNull(nameof(Resource))]
+        public void EnsureSuccessStatusCode()
+        {
+            if (!Succeeded)
+                throw new HttpRequestException($"{StatusCode} - ProblemDetails: {JsonSerializer.Serialize(ProblemDetails)}", null, StatusCode);
+        }
 
         /// <summary>
         /// Creates a <see cref="HalResponse{TState}"/> from the given
@@ -106,6 +126,18 @@ namespace HAL.Client.Net
                     try
                     {
                         var resource = JsonSerializer.Deserialize<Resource<TState>>(content, _jsonSerializerOptions);
+
+                        if (resource is null)
+                        {
+                            var problemDetails = new ProblemDetails
+                            {
+                                Status = (int)httpResponse.StatusCode,
+                                Title = "The response did not contain a resource although it was successful. See the detail for the string representation.",
+                                Detail = content
+                            };
+                            return new HalResponse<TState>(problemDetails, httpResponse.StatusCode);
+                        }
+
                         return new HalResponse<TState>(resource, httpResponse.StatusCode);
                     }
                     catch (Exception e)
@@ -180,6 +212,18 @@ namespace HAL.Client.Net
                     try
                     {
                         var resource = JsonSerializer.Deserialize<Resource>(content, _jsonSerializerOptions);
+
+                        if (resource is null)
+                        {
+                            var problemDetails = new ProblemDetails
+                            {
+                                Status = (int)httpResponse.StatusCode,
+                                Title = "The response did not contain a resource although it was successful. See the detail for the string representation.",
+                                Detail = content
+                            };
+                            return new HalResponse(problemDetails, httpResponse.StatusCode);
+                        }
+
                         return new HalResponse(resource, httpResponse.StatusCode);
                     }
                     catch (Exception e)
@@ -219,7 +263,7 @@ namespace HAL.Client.Net
         /// </summary>
         /// <param name="resource">The resource to construct this response from.</param>
         /// <param name="statusCode">The HTTP status code of the response.</param>
-        public HalResponse(Resource<TState>? resource, HttpStatusCode statusCode)
+        public HalResponse(Resource<TState> resource, HttpStatusCode statusCode)
             : base(resource, statusCode)
         {
             Resource = resource;
