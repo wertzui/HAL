@@ -179,10 +179,17 @@ export class Resource {
       return dto;
 
     if (_.isString(dto)) {
-      if (this._iso8601RegEx.test(dto))
-        return new Date(dto);
-      else if (this._timeRegEx.test(dto))
-        return new Date("0001-01-01T" + dto);
+      if (this._iso8601RegEx.test(dto)) {
+        var maybeDate = new Date(dto);
+        if (!isNaN(maybeDate.getTime()))
+          return maybeDate;
+      }
+
+      if (this._timeRegEx.test(dto)) {
+        var maybeTime = new Date("0001-01-01T" + dto);
+        if (isNaN(maybeTime.getTime()))
+          return maybeTime;
+      }
     }
 
     else if (_.isArray(dto)) {
