@@ -6,164 +6,163 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HAL.Common.Converters
+namespace HAL.Common.Converters;
+
+/// <summary>
+/// A converter that can read and write <see cref="Resource"/>.
+/// </summary>
+/// <seealso cref="JsonConverter{Resource}" />
+public class ResourceJsonConverter : JsonConverter<Resource>
 {
     /// <summary>
-    /// A converter that can read and write <see cref="Resource"/>.
+    /// Determines if the given property should be written to the JSON payload based on the ignore condition.
     /// </summary>
-    /// <seealso cref="JsonConverter{Resource}" />
-    public class ResourceJsonConverter : JsonConverter<Resource>
+    /// <param name="property">The property which should be written.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="defaultValue">The default value.</param>
+    /// <param name="ignoreCondition">The ignore condition.</param>
+    /// <returns></returns>
+    public static bool ShouldWriteProperty(PropertyInfo property, object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
     {
-        /// <summary>
-        /// Determines if the given property should be written to the JSON payload based on the ignore condition.
-        /// </summary>
-        /// <param name="property">The property which should be written.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="defaultValue">The default value.</param>
-        /// <param name="ignoreCondition">The ignore condition.</param>
-        /// <returns></returns>
-        public static bool ShouldWriteProperty(PropertyInfo property, object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
-        {
-            var ignoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
-            if (ignoreAttribute is not null)
-                return ShouldWriteValue(value, defaultValue, ignoreAttribute.Condition);
+        var ignoreAttribute = property.GetCustomAttribute<JsonIgnoreAttribute>();
+        if (ignoreAttribute is not null)
+            return ShouldWriteValue(value, defaultValue, ignoreAttribute.Condition);
 
-            return ShouldWriteValue(value, defaultValue, ignoreCondition);
-        }
+        return ShouldWriteValue(value, defaultValue, ignoreCondition);
+    }
 
-        /// <summary>
-        /// Determines if the given value should be written to the JSON payload based on the ignore condition.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <param name="defaultValue">The default value.</param>
-        /// <param name="ignoreCondition">The ignore condition.</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
-        public static bool ShouldWriteValue(object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
+    /// <summary>
+    /// Determines if the given value should be written to the JSON payload based on the ignore condition.
+    /// </summary>
+    /// <param name="value">The value.</param>
+    /// <param name="defaultValue">The default value.</param>
+    /// <param name="ignoreCondition">The ignore condition.</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">$"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'.</exception>
+    public static bool ShouldWriteValue(object? value, object? defaultValue, JsonIgnoreCondition ignoreCondition)
+    {
+        return ignoreCondition switch
         {
-            return ignoreCondition switch
+            JsonIgnoreCondition.Never => true,
+            JsonIgnoreCondition.Always => false,
+            JsonIgnoreCondition.WhenWritingDefault => !Equals(value, defaultValue),
+            JsonIgnoreCondition.WhenWritingNull => value is not null,
+            _ => throw new ArgumentOutOfRangeException(nameof(ignoreCondition), $"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'."),
+        };
+    }
+
+    /// <inheritdoc/>
+    public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.StartObject)
+            throw new JsonException($"Malformed JSON. Expected start of object '{{', but got {reader.TokenType}.");
+
+        Resource resource;
+        IDictionary<string, ICollection<Link>>? links = default;
+        IDictionary<string, ICollection<Resource>>? embedded = default;
+        var state = new ExpandoObject();
+        JsonSerializerOptions? optionsWithDynamicConverter = default;
+
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject)
             {
-                JsonIgnoreCondition.Never => true,
-                JsonIgnoreCondition.Always => false,
-                JsonIgnoreCondition.WhenWritingDefault => !Equals(value, defaultValue),
-                JsonIgnoreCondition.WhenWritingNull => value is not null,
-                _ => throw new ArgumentOutOfRangeException(nameof(ignoreCondition), $"Unknown {nameof(JsonIgnoreCondition)}: '{ignoreCondition}'."),
-            };
-        }
+                resource = state.Any() ? new Resource<object> { State = state } : new Resource();
 
-        /// <inheritdoc/>
-        public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            if (reader.TokenType != JsonTokenType.StartObject)
-                throw new JsonException($"Malformed JSON. Expected start of object '{{', but got {reader.TokenType}.");
+                if (embedded is not null)
+                    resource.Embedded = embedded;
 
-            Resource resource;
-            IDictionary<string, ICollection<Link>>? links = default;
-            IDictionary<string, ICollection<Resource>>? embedded = default;
-            var state = new ExpandoObject();
-            JsonSerializerOptions? optionsWithDynamicConverter = default;
+                if (links is not null)
+                    resource.Links = links;
 
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonTokenType.EndObject)
-                {
-                    resource = state.Any() ? new Resource<object> { State = state } : new Resource();
-
-                    if (embedded is not null)
-                        resource.Embedded = embedded;
-
-                    if (links is not null)
-                        resource.Links = links;
-
-                    return resource;
-                }
-
-                if (reader.TokenType != JsonTokenType.PropertyName)
-                {
-                    throw new JsonException();
-                }
-
-                var propertyName = reader.GetString();
-                if (propertyName == Constants.EmbeddedPropertyName)
-                {
-                    embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
-                }
-                else if (propertyName == Constants.LinksPropertyName)
-                {
-                    links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
-                }
-                else if (propertyName is not null)
-                {
-                    if (optionsWithDynamicConverter is null)
-                        optionsWithDynamicConverter = AddDynamicConverter(options);
-
-                    state.TryAdd(propertyName, (object?)JsonSerializer.Deserialize<dynamic>(ref reader, optionsWithDynamicConverter));
-                }
+                return resource;
             }
 
-            throw new JsonException();
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                throw new JsonException();
+            }
+
+            var propertyName = reader.GetString();
+            if (propertyName == Constants.EmbeddedPropertyName)
+            {
+                embedded = JsonSerializer.Deserialize<IDictionary<string, ICollection<Resource>>>(ref reader, options);
+            }
+            else if (propertyName == Constants.LinksPropertyName)
+            {
+                links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
+            }
+            else if (propertyName is not null)
+            {
+                if (optionsWithDynamicConverter is null)
+                    optionsWithDynamicConverter = AddDynamicConverter(options);
+
+                state.TryAdd(propertyName, (object?)JsonSerializer.Deserialize<dynamic>(ref reader, optionsWithDynamicConverter));
+            }
         }
 
-        /// <inheritdoc/>
-        public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
+        throw new JsonException();
+    }
 
-            var type = value.GetType();
-            if (type.IsGenericType)
+    /// <inheritdoc/>
+    public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+
+        var type = value.GetType();
+        if (type.IsGenericType)
+        {
+            var stateProperty = type.GetProperty(nameof(Resource<object>.State));
+            if (stateProperty is not null)
             {
-                var stateProperty = type.GetProperty(nameof(Resource<object>.State));
-                if (stateProperty is not null)
+                var state = stateProperty.GetValue(value);
+                if (state is not null)
                 {
-                    var state = stateProperty.GetValue(value);
-                    if (state is not null)
-                    {
-                        WriteState(writer, state, options);
-                    }
+                    WriteState(writer, state, options);
                 }
             }
-
-            if (value.Links != null)
-            {
-                writer.WritePropertyName(Constants.LinksPropertyName);
-                JsonSerializer.Serialize(writer, value.Links, options);
-            }
-
-            if (value.Embedded != null)
-            {
-                writer.WritePropertyName(Constants.EmbeddedPropertyName);
-                JsonSerializer.Serialize(writer, value.Embedded, options);
-            }
-
-            writer.WriteEndObject();
         }
 
-        private static JsonSerializerOptions AddDynamicConverter(JsonSerializerOptions options)
+        if (value.Links != null)
         {
-            var newOptions = new JsonSerializerOptions(options);
-            newOptions.Converters.Add(new DynamicJsonConverter());
-            return newOptions;
+            writer.WritePropertyName(Constants.LinksPropertyName);
+            JsonSerializer.Serialize(writer, value.Links, options);
         }
 
-        private static void WriteState(Utf8JsonWriter writer, object state, JsonSerializerOptions options)
+        if (value.Embedded != null)
         {
-            if (state is null)
-                return;
+            writer.WritePropertyName(Constants.EmbeddedPropertyName);
+            JsonSerializer.Serialize(writer, value.Embedded, options);
+        }
 
-            var type = state.GetType();
-            var properties = type.GetProperties();
-            foreach (var property in properties)
+        writer.WriteEndObject();
+    }
+
+    private static JsonSerializerOptions AddDynamicConverter(JsonSerializerOptions options)
+    {
+        var newOptions = new JsonSerializerOptions(options);
+        newOptions.Converters.Add(new DynamicJsonConverter());
+        return newOptions;
+    }
+
+    private static void WriteState(Utf8JsonWriter writer, object state, JsonSerializerOptions options)
+    {
+        if (state is null)
+            return;
+
+        var type = state.GetType();
+        var properties = type.GetProperties();
+        foreach (var property in properties)
+        {
+            var originalName = property.Name;
+            var name = options.PropertyNamingPolicy?.ConvertName(originalName) ?? originalName;
+            var value = property.GetValue(state);
+            var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
+
+            if (ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
             {
-                var originalName = property.Name;
-                var name = options.PropertyNamingPolicy?.ConvertName(originalName) ?? originalName;
-                var value = property.GetValue(state);
-                var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
-
-                if (ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
-                {
-                    writer.WritePropertyName(name);
-                    JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
-                }
+                writer.WritePropertyName(name);
+                JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
             }
         }
     }
