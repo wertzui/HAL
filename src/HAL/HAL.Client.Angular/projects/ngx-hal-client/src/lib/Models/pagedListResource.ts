@@ -24,7 +24,7 @@ export interface PagedListResourceDto<TListDto> extends ListResourceDto<TListDto
  * @template TListDto The type of the resource in the list.
  */
 export class PagedListResource<TListDto> extends ListResource<TListDto> implements Page {
-  declare _links: {
+  public declare _links: {
     [name: string]: Link[] | undefined;
     self: Link[];
     first?: Link[];
@@ -33,8 +33,8 @@ export class PagedListResource<TListDto> extends ListResource<TListDto> implemen
     last?: Link[];
   };
 
-  currentPage?: number;
-  totalPages?: number;
+  public declare currentPage?: number;
+  public declare totalPages?: number;
 
   public constructor(dto: PagedListResourceDto<TListDto>) {
     super(dto);
