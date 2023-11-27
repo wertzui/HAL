@@ -19,7 +19,7 @@ export interface ListResourceDto<TListDto> extends ResourceDto {
  * @template TListDto The type of the embedded resource DTOs.
  */
 export class ListResource<TListDto> extends Resource {
-  declare _embedded: {
+  public declare _embedded: {
     [name: string]: Resource[];
     items: ResourceOfDto<TListDto>[];
   };

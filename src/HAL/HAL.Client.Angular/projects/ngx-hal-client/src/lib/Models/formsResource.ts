@@ -445,20 +445,14 @@ export enum PropertyType {
 /**
  * Contains multiple templates.
  */
-export interface Templates extends Record<string, Template> {
+export interface Templates extends Partial<Record<string, Template>> {
 }
 
 /**
  * Contains multiple number templates.
  * This is used in collections where the index in the collection is the key of the template.
  */
-export interface NumberTemplates {
-  /**
-   * The templates which are used for collection types. For a
-   * collection there CAN be templates which have an index as key. These reassemble the
-   * current elements of the collection.
-   */
-  [name: string]: NumberTemplate;
+export interface NumberTemplates extends Partial<Record<string, NumberTemplate>> {
 }
 
 /**
@@ -798,6 +792,14 @@ export abstract class TemplateBase<TTitle extends string | number = string, TPro
     public get values(): { [name: string]: SimpleValue | undefined } {
       return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property.value]));
     }
+
+    /**
+     * Checks whether this is a number template.
+     * @returns True if this is a number template, false otherwise.
+     */
+    public isNumberTemplate(): this is NumberTemplate<TPropertyDtos> {
+      return NumberTemplate.isNumberTemplate(this);
+    }
 }
 
 /**
@@ -830,6 +832,15 @@ export class NumberTemplate<TPropertyDtos extends ReadonlyArray<PropertyDto<Simp
     if (!Number.isInteger(this.title))
       throw new Error(`Expected ${dto?.title} to be an integer, but parsing resulted in ${this.title}.`);
   }
+
+  /**
+   * Checks whether the specified template is a number template.
+   * @param template The template to check.
+   * @returns True if the specified template is a number template, false otherwise.
+   */
+  public static isNumberTemplate<TPropertyDtos extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(template: TemplateBase<string | number, TPropertyDtos>): template is NumberTemplate<TPropertyDtos> {
+    return Number.isInteger(template.title);
+  }
 }
 
 /**
@@ -846,7 +857,7 @@ export class FormsResource extends Resource {
    * has at least one entry in the _templates dictionary collection. Each template contains
    * the following possible properties:
    */
-  public _templates!: Templates;
+  public declare _templates: Templates;
 
   /**
    * Constructs a new FormsResource object.
@@ -883,11 +894,11 @@ export class FormsResource extends Resource {
   public getTemplateByTitle(title: string): Template {
     const template = Object.entries(this._templates)
       .map(([, t]) => t)
-      .find(t => t.title === title);
+      .find(t => t?.title === title);
 
       if (template === undefined) {
         const templateTitles = Object.entries(this._templates)
-          .map(([, t]) => t.title);
+          .map(([, t]) => t?.title);
         throw new Error(`The form ${this} does not have a _template with the title '${title}'. It only has ${templateTitles}.`);
       }
 

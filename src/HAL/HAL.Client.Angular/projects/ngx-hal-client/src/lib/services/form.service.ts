@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import * as _ from "lodash";
-import { NumberTemplate, NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, Template, Templates } from "../models/formsResource";
+import { NumberTemplate, NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, Template, TemplateBase, Templates } from "../models/formsResource";
 
 @Injectable({
   providedIn: 'root'
@@ -32,9 +32,10 @@ export class FormService {
   public createFormGroupsFromTemplates(templates: Templates): { [key: string]: ReturnType<FormService["createFormGroupFromTemplate"]> } {
     const tabs = Object.fromEntries(
       Object.entries(templates)
+        .filter(([_, template]) => template !== undefined && template !== null)
         .map(([name, template]) => [
           name,
-          this.createFormGroupFromTemplate(template)
+          this.createFormGroupFromTemplate(template!)
         ]));
 
     return tabs;
@@ -66,7 +67,7 @@ export class FormService {
       Object.entries(templates)
         .filter(([key,]) => !ignoredProperties.some(p => key === p))
         .map(([, template]) =>
-          this.createFormGroupFromTemplate(template as unknown as Template));
+          this.createFormGroupFromTemplate(template!));
     const formArray = new FormArray(controls);
     return formArray;
   }
@@ -89,7 +90,7 @@ export class FormService {
    * const formGroup = this.formService.createFormGroupFromTemplate(template);
    * ```
    */
-  public createFormGroupFromTemplate<TProperties extends ReadonlyArray<Property<SimpleValue, string, string>>>(template: Template<TProperties>): FormGroup<{ [key: string]: ReturnType<FormService["createFormControl"]> }> {
+  public createFormGroupFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(template: TemplateBase<string | number, TProperties>): FormGroup<{ [key: string]: ReturnType<FormService["createFormControl"]> }> {
     const controls = Object.fromEntries(template.properties.map(p => [
       p.name,
       this.createFormControl(p)
@@ -128,10 +129,19 @@ export class FormService {
       OptionsValueField extends string = "value">(
     property: Property<TValue, OptionsPromptField, OptionsValueField>)
     : ReturnType<FormService["createFormGroupFromTemplate"]> | ReturnType<FormService["createFormArrayFromTemplates"]> | ReturnType<FormService["createSimpleFormControlFromProperty"]> {
-    if (property.type === PropertyType.Object)
-      return this.createFormGroupFromTemplate(property._templates['default']);
-    if (property.type === PropertyType.Collection)
-      return this.createFormArrayFromTemplates(property._templates as unknown as NumberTemplates, ['default']);
+    if (property.type === PropertyType.Object) {
+      const defaultTemplate = property._templates['default'];
+      if (!defaultTemplate)
+        throw new Error(`The property ${property.name} is of type Object, but has no default template.`);
+      return this.createFormGroupFromTemplate(defaultTemplate);
+    }
+
+    if (property.type === PropertyType.Collection) {
+      const numberTemplates = property._templates as unknown as NumberTemplates;
+      if (!numberTemplates)
+        throw new Error(`The property ${property.name} is of type Collection, but has no templates.`);
+      return this.createFormArrayFromTemplates(numberTemplates, ['default']);
+    }
 
     return this.createSimpleFormControlFromProperty(property);
   }
