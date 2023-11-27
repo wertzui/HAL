@@ -39,13 +39,13 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
     }
 
     /// <inheritdoc/>
-    public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "PutMultiple")
+    public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
     {
         var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
-        var target = LinkFactory.Create(action: listPutMethod, controller: controller).Href;
+        var editTarget = LinkFactory.TryCreate(link: out var editLink, action: listPutMethod, controller: controller) ? editLink.Href : null;
 
         var searchForm = CreateListSearchForm<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
-        var editForm = CreateListEditForm<TDto>(target);
+        var editForm = CreateListEditForm<TDto>(editTarget);
         var forms = new Dictionary<string, FormTemplate>
         {
             { searchForm.Title!, searchForm },
@@ -57,7 +57,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         return formResource;
     }
 
-    private FormTemplate CreateListEditForm<TDto>(string target)
+    private FormTemplate CreateListEditForm<TDto>(string? target)
     {
         var cacheKey = typeof(TDto) + "_ListEdit";
         var template = Cache.GetOrCreate(cacheKey, entry => CreateEditFormTemplate<TDto>(target)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
@@ -105,7 +105,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         return searchForm;
     }
 
-    private FormTemplate CreateEditFormTemplate<TDto>(string target)
+    private FormTemplate CreateEditFormTemplate<TDto>(string? target)
     {
         var editForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Edit");
         editForm.Target = target;

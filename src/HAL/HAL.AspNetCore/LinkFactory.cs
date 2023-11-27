@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Routing;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,7 +20,7 @@ using System.Text.RegularExpressions;
 namespace HAL.AspNetCore;
 
 /// <inheritdoc/>
-public class LinkFactory : ILinkFactory
+public partial class LinkFactory : ILinkFactory
 {
     private readonly IActionContextAccessor _actionContextAccessor;
     private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
@@ -39,10 +40,7 @@ public class LinkFactory : ILinkFactory
     /// </exception>
     public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
     {
-        if (actionContextAccessor is null)
-            throw new ArgumentNullException(nameof(actionContextAccessor));
-
-        _actionContextAccessor = actionContextAccessor;
+        _actionContextAccessor = actionContextAccessor ?? throw new ArgumentNullException(nameof(actionContextAccessor));
         _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
         _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
     }
@@ -51,16 +49,14 @@ public class LinkFactory : ILinkFactory
     public TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string? existingName = null, string? action = null, string? controller = null, object? routeValues = null)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         var selfHref = GetSelfHref(action, controller, routeValues);
 
         if (resource.Links is null || !resource.Links.TryGetValue(existingRel, out var links) || links.Count == 0)
             throw new ArgumentException($"The resource does not contain a link with the rel '{existingRel}'", nameof(existingRel));
 
-        var link = links.FirstOrDefault(l => existingName == null || l.Name == existingName);
-        if (link is null)
+        var link = links.FirstOrDefault(l => existingName == null || l.Name == existingName) ??
             throw new ArgumentException($"The resource does not contain links with the rel '{existingRel}', but none with the name '{existingName}'", nameof(existingName));
 
         return resource.AddLink(selfHref, link);
@@ -70,8 +66,7 @@ public class LinkFactory : ILinkFactory
     public TResource AddSelfLinkTo<TResource>(TResource resource, string? action = null, string? controller = null, object? routeValues = null)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         var selfHref = GetSelfHref(action, controller, routeValues);
         return resource.AddSelfLink(selfHref);
@@ -81,10 +76,8 @@ public class LinkFactory : ILinkFactory
     public TResource AddSwaggerUiCurieLinkTo<TResource>(TResource resource, string name)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
-        if (name is null)
-            throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(resource);
+        ArgumentNullException.ThrowIfNull(name);
 
         return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
     }
@@ -109,6 +102,29 @@ public class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public Link Create(string? name, string? title, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
         => Create(name, title, _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) ?? throw new InvalidOperationException($"Unable to generate the href value for a link. name: \"{name}\", title: \"{title}\", action: \"{action}\", controller: \"{controller}\", values: \"{values}\", protocol: \"{protocol}\", host: \"{host}\", fragment: \"{fragment}\""));
+
+
+    /// <inheritdoc/>
+    public bool TryCreate([NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+        => TryCreate(null, out link, action, controller, values, protocol, host, fragment);
+
+    /// <inheritdoc/>
+    public bool TryCreate(string? name, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+        => TryCreate(name, null, out link, action, controller, values, protocol, host, fragment);
+
+    /// <inheritdoc/>
+    public bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+    {
+        var href = _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
+        if (href is null)
+        {
+            link = null;
+            return false;
+        }
+
+        link = Create(name, title, href);
+        return true;
+    }
 
     /// <inheritdoc/>
     public IDictionary<string, ICollection<Link>> CreateAllLinks(string? prefix = null, ApiVersion? version = null)
@@ -137,8 +153,7 @@ public class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public ICollection<Link> CreateTemplated(string action, string? controller = null, ApiVersion? version = null)
     {
-        if (controller is null)
-            controller = GetCurrentControllerName();
+        controller ??= GetCurrentControllerName();
 
         var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
         return actionDescriptors
@@ -158,9 +173,9 @@ public class LinkFactory : ILinkFactory
 
         var uri = new Uri(link.Href);
         var path = uri.GetLeftPart(UriPartial.Path);
-        var parameters = GetParameters(values);
-        var hasNonTemplatedParameters = parameters.nonTemplated.Any();
-        var hasTemplatedParameters = parameters.templated.Any();
+        var (nonTemplated, templated) = GetParameters(values);
+        var hasNonTemplatedParameters = nonTemplated.Count != 0;
+        var hasTemplatedParameters = templated.Count != 0;
 
         if (!hasNonTemplatedParameters && !hasTemplatedParameters)
             return link;
@@ -173,7 +188,7 @@ public class LinkFactory : ILinkFactory
             uriSb.Append('?');
 
             var isFirst = true;
-            foreach (var nonTemplatedParameter in parameters.nonTemplated)
+            foreach (var nonTemplatedParameter in nonTemplated)
             {
                 var valueString = nonTemplatedParameter.Value?.ToString();
                 if (string.IsNullOrEmpty(valueString))
@@ -200,7 +215,7 @@ public class LinkFactory : ILinkFactory
                 uriSb.Append('?');
 
             var isFirst = true;
-            foreach (var templatedParameter in parameters.templated)
+            foreach (var templatedParameter in templated)
             {
                 if (isFirst)
                     isFirst = false;
@@ -220,8 +235,7 @@ public class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public Link CreateTemplated(ControllerActionDescriptor descriptor)
     {
-        if (descriptor is null)
-            throw new ArgumentNullException(nameof(descriptor));
+        ArgumentNullException.ThrowIfNull(descriptor);
 
         var hrefBuilder = new StringBuilder();
         var request = GetHttpContext().Request;
@@ -243,8 +257,7 @@ public class LinkFactory : ILinkFactory
     {
         var httpContext = GetHttpContext();
 
-        var path = _linkGenerator.GetUriByAction(httpContext, action, controller, routeValues);
-        if (path is null)
+        var path = _linkGenerator.GetUriByAction(httpContext, action, controller, routeValues) ??
             throw new InvalidOperationException($"Unable to generate the self link. request: {httpContext.Request}, action: {action}, controller: {controller}, routeValues: {routeValues}");
 
         queryString ??= httpContext.Request.QueryString;
@@ -421,7 +434,7 @@ public class LinkFactory : ILinkFactory
     {
         var cleanControllerName = controllerName;
 
-        var match = Regex.Match(controllerName, @"^(?<name>.*?)((?<controller>controller)(?<version>v(er(sion)?)?\d*))?$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
+        var match = GetControllerNameRegEx().Match(controllerName);
         var groups = match.Groups;
 
         if (groups.TryGetValue("name", out var nameMatch) && nameMatch.Success)
@@ -464,4 +477,6 @@ public class LinkFactory : ILinkFactory
     }
 
     private HttpContext GetHttpContext() => GetActionContext().HttpContext;
+    [GeneratedRegex(@"^(?<name>.*?)((?<controller>controller)(?<version>v(er(sion)?)?\d*))?$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, "de-DE")]
+    private static partial Regex GetControllerNameRegEx();
 }

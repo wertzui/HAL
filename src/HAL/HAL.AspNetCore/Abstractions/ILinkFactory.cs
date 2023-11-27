@@ -2,6 +2,7 @@
 using HAL.Common;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HAL.AspNetCore.Abstractions;
 
@@ -151,4 +152,47 @@ public interface ILinkFactory
     /// <param name="version">The version of the API. Default is the latest version.</param>
     /// <returns></returns>
     ICollection<Link> CreateTemplated(string action, string? controller = null, ApiVersion? version = null);
+
+    /// <summary>
+    /// Tries to create a link to the specified action in the specified controller.
+    /// </summary>
+    /// <param name="link">The link that has been created.</param>
+    /// <param name="action">The action.</param>
+    /// <param name="controller">The controller.</param>
+    /// <param name="values">The values.</param>
+    /// <param name="protocol">The protocol.</param>
+    /// <param name="host">The host.</param>
+    /// <param name="fragment">The fragment.</param>
+    /// <returns><c>true</c> if the link was created successfully; <c>false</c> otherwise.</returns>
+    bool TryCreate([NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
+
+    /// <summary>
+    /// Tries to create a link to the specified action in the specified controller with the given name.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="link">The link that has been created.</param>
+    /// <param name="action">The action.</param>
+    /// <param name="controller">The controller.</param>
+    /// <param name="values">The values.</param>
+    /// <param name="protocol">The protocol.</param>
+    /// <param name="host">The host.</param>
+    /// <param name="fragment">The fragment.</param>
+    /// <returns><c>true</c> if the link was created successfully; <c>false</c> otherwise.</returns>
+    bool TryCreate(string? name, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
+
+    /// <summary>
+    /// Tries to create a link to the specified action in the specified controller with the given name
+    /// and title.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="title">The title.</param>
+    /// <param name="link">The link that has been created.</param>
+    /// <param name="action">The action.</param>
+    /// <param name="controller">The controller.</param>
+    /// <param name="values">The values.</param>
+    /// <param name="protocol">The protocol.</param>
+    /// <param name="host">The host.</param>
+    /// <param name="fragment">The fragment.</param>
+    /// <returns><c>true</c> if the link was created successfully; <c>false</c> otherwise.</returns>
+    bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null);
 }
