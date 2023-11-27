@@ -39,7 +39,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
     }
 
     /// <inheritdoc/>
-    public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
+    public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "PutMultiple")
     {
         var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
         var target = LinkFactory.Create(action: listPutMethod, controller: controller).Href;
