@@ -14,18 +14,15 @@ public static class ResourceAspExtensions
     /// <typeparam name="TResource">The type of the resource.</typeparam>
     /// <param name="resource">The resource.</param>
     /// <param name="linkFactory">The link factory.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="routeValues">The route values.</param>
     /// <returns></returns>
     public static TResource AddSelfLink<TResource>(this TResource resource, ILinkFactory linkFactory, string? action = null, string? controller = null, object? routeValues = null)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
-
-        if (linkFactory is null)
-            throw new ArgumentNullException(nameof(linkFactory));
+        ArgumentNullException.ThrowIfNull(resource);
+        ArgumentNullException.ThrowIfNull(linkFactory);
 
         return linkFactory.AddSelfLinkTo(resource, action, controller, routeValues);
     }
@@ -41,11 +38,8 @@ public static class ResourceAspExtensions
     public static TResource AddSwaggerUiCurieLink<TResource>(this TResource resource, ILinkFactory linkFactory, string name)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
-
-        if (linkFactory is null)
-            throw new ArgumentNullException(nameof(linkFactory));
+        ArgumentNullException.ThrowIfNull(resource);
+        ArgumentNullException.ThrowIfNull(linkFactory);
 
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));

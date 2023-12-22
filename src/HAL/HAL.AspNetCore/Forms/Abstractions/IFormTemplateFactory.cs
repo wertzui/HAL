@@ -1,4 +1,5 @@
-﻿using HAL.Common.Forms;
+﻿using HAL.Common;
+using HAL.Common.Forms;
 using System;
 
 namespace HAL.AspNetCore.Forms.Abstractions;
@@ -17,7 +18,7 @@ public interface IFormTemplateFactory
     /// <param name="title">A human readable title for the form.</param>
     /// <param name="contentType">The content type that is used when the form is submitted.</param>
     /// <returns>A HAL form for the given type, but without any values.</returns>
-    FormTemplate CreateTemplateFor(Type dtoType, string method, string? title = null, string contentType = "application/json");
+    FormTemplate CreateTemplateFor(Type dtoType, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
 
     /// <summary>
     /// Creates a form for the given type.
@@ -27,5 +28,5 @@ public interface IFormTemplateFactory
     /// <param name="title">A human readable title for the form.</param>
     /// <param name="contentType">The content type that is used when the form is submitted.</param>
     /// <returns>A HAL form for the given type, but without any values.</returns>
-    FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = "application/json");
+    FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = Constants.MediaTypes.Json);
 }

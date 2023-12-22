@@ -1,4 +1,5 @@
 ﻿using HAL.AspNetCore.Forms.Abstractions;
+using HAL.Common;
 using HAL.Common.Forms;
 using System;
 using System.Collections;
@@ -101,7 +102,7 @@ public class FormValueFactory : IFormValueFactory
             if (defaultTemplate is not null && filled.Value is not null)
             {
                 var filledTemplate = FillWith(defaultTemplate, filled.Value);
-                filled.Templates = new Dictionary<string, FormTemplate> { { "default", filledTemplate } };
+                filled.Templates = new Dictionary<string, FormTemplate> { { Constants.DefaultFormTemplateName, filledTemplate } };
             }
             filled.Value = null;
         }
@@ -121,9 +122,9 @@ public class FormValueFactory : IFormValueFactory
         return FillWith(defaultTemplate, values);
     }
 
-    private IDictionary<string, FormTemplate> FillWith(FormTemplate defaultTemplate, IEnumerable values)
+    private Dictionary<string, FormTemplate> FillWith(FormTemplate defaultTemplate, IEnumerable values)
     {
-        var templates = new Dictionary<string, FormTemplate> { { "default", defaultTemplate } };
+        var templates = new Dictionary<string, FormTemplate> { { Constants.DefaultFormTemplateName, defaultTemplate } };
 
         if (values is null)
             return templates;

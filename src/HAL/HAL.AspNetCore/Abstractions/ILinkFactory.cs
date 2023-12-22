@@ -19,7 +19,7 @@ public interface ILinkFactory
     /// <param name="resource">The resource.</param>
     /// <param name="existingRel">The rel of the existing link.</param>
     /// <param name="existingName">The optional name of the existing link.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="routeValues">The route values.</param>
     /// <returns></returns>
@@ -30,7 +30,7 @@ public interface ILinkFactory
     /// </summary>
     /// <typeparam name="TResource">The type of the resource.</typeparam>
     /// <param name="resource">The resource.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="routeValues">The route values.</param>
     /// <returns></returns>
@@ -40,7 +40,7 @@ public interface ILinkFactory
     /// <summary>
     /// Gets the href value for the "self" link.
     /// </summary>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="routeValues">The route values.</param>
     /// <param name="queryString">Allows to override the query string. In case of null, the query string from the current HTTP context is used.</param>
@@ -84,7 +84,7 @@ public interface ILinkFactory
     /// Creates a link to the specified action in the specified controller with the given name.
     /// </summary>
     /// <param name="name">The name.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="values">The values.</param>
     /// <param name="protocol">The protocol.</param>
@@ -107,7 +107,7 @@ public interface ILinkFactory
     /// </summary>
     /// <param name="name">The name.</param>
     /// <param name="title">The title.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="values">The values.</param>
     /// <param name="protocol">The protocol.</param>
@@ -147,7 +147,7 @@ public interface ILinkFactory
     /// <summary>
     /// Creates all templated links that match the given controller and action.
     /// </summary>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix</param>
     /// <param name="controller">The controller.</param>
     /// <param name="version">The version of the API. Default is the latest version.</param>
     /// <returns></returns>
@@ -157,7 +157,7 @@ public interface ILinkFactory
     /// Tries to create a link to the specified action in the specified controller.
     /// </summary>
     /// <param name="link">The link that has been created.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="values">The values.</param>
     /// <param name="protocol">The protocol.</param>
@@ -171,7 +171,7 @@ public interface ILinkFactory
     /// </summary>
     /// <param name="name">The name.</param>
     /// <param name="link">The link that has been created.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="values">The values.</param>
     /// <param name="protocol">The protocol.</param>
@@ -187,7 +187,7 @@ public interface ILinkFactory
     /// <param name="name">The name.</param>
     /// <param name="title">The title.</param>
     /// <param name="link">The link that has been created.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The action. This is normally the name of the controller method without the async suffix. If none is provided, the action that is currently being executed is used.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="values">The values.</param>
     /// <param name="protocol">The protocol.</param>

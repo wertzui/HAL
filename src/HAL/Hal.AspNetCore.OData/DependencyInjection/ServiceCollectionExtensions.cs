@@ -1,4 +1,5 @@
-﻿using HAL.AspNetCore.OData;
+﻿using HAL.AspNetCore.Abstractions;
+using HAL.AspNetCore.OData;
 using HAL.AspNetCore.OData.Abstractions;
 using System;
 
@@ -18,15 +19,16 @@ public static class ServiceCollectionExtensions
     /// <exception cref="ArgumentNullException">services</exception>
     public static IMvcBuilder AddHALOData(this IMvcBuilder builder)
     {
-        if (builder is null)
-            throw new ArgumentNullException(nameof(builder));
+        ArgumentNullException.ThrowIfNull(builder);
 
         builder.AddHAL();
 
         var services = builder.Services;
         services.AddSingleton<IODataQueryFactory, ODataQueryFactory>();
-        services.AddScoped<IODataResourceFactory, ODataResourceFactory>();
-        services.AddScoped<IODataFormFactory, ODataFormFactory>();
+        services.AddSingleton<IODataResourceFactory, ODataResourceFactory>();
+        services.AddSingleton<IODataFormFactory, ODataFormFactory>();
+        services.AddSingleton<ILinkFactory, ODataLinkFactory>();
+
 
         return builder;
     }

@@ -51,8 +51,7 @@ public class ODataQueryFactory : IODataQueryFactory
         long top,
         long? totalCount)
     {
-        if (resources is null)
-            throw new ArgumentNullException(nameof(resources));
+        ArgumentNullException.ThrowIfNull(resources);
 
         return GetListNavigation(resources.LongCount(), rawValues, baseHref, skip, top, totalCount);
     }

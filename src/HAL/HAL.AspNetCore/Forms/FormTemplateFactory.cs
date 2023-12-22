@@ -1,4 +1,5 @@
 ﻿using HAL.AspNetCore.Forms.Abstractions;
+using HAL.Common;
 using HAL.Common.Binary;
 using HAL.Common.Forms;
 using Microsoft.Extensions.Caching.Memory;
@@ -40,7 +41,7 @@ public class FormTemplateFactory : IFormTemplateFactory
     }
 
     /// <inheritdoc/>
-    public FormTemplate CreateTemplateFor(Type dtoType, string? method, string? title = null, string contentType = "application/json")
+    public FormTemplate CreateTemplateFor(Type dtoType, string? method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
         var properties = CreatePropertiesFor(dtoType);
 
@@ -58,7 +59,7 @@ public class FormTemplateFactory : IFormTemplateFactory
     }
 
     /// <inheritdoc/>
-    public FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = "application/json") => CreateTemplateFor(typeof(TDto), method, title, contentType);
+    public FormTemplate CreateTemplateFor<TDto>(string method, string? title = null, string contentType = Constants.MediaTypes.Json) => CreateTemplateFor(typeof(TDto), method, title, contentType);
 
     /// <summary>
     /// When the user cannot edit a property, that is if it is required and either read-only or
@@ -556,9 +557,9 @@ public class FormTemplateFactory : IFormTemplateFactory
     /// <param name="title">A human readable title for the form.</param>
     /// <param name="contentType">The content type that is used when the form is submitted.</param>
     /// <returns>A new dictionary with only a "default" form template.</returns>
-    private IDictionary<string, FormTemplate> CreateDefaultTemplateFor(Type dtoType, string? method, string? title = null, string contentType = "application/json")
+    private Dictionary<string, FormTemplate> CreateDefaultTemplateFor(Type dtoType, string? method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
-        return new Dictionary<string, FormTemplate> { { "default", CreateTemplateFor(dtoType, method, title, contentType) } };
+        return new Dictionary<string, FormTemplate> { { Constants.DefaultFormTemplateName, CreateTemplateFor(dtoType, method, title, contentType) } };
     }
 
     /// <summary>

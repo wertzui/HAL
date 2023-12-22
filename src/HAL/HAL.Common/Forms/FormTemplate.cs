@@ -16,7 +16,7 @@ public class FormTemplate
     /// contains an unrecognized value, the client SHOULD act is if the contentType is set to
     /// "application/json". See Encoding Request Bodies for details.
     /// </summary>
-    public string ContentType { get; set; } = "application/json";
+    public string ContentType { get; set; } = Constants.MediaTypes.Json;
 
     /// <summary>
     /// The HTTP method the client SHOULD use when the service request. Any valid HTTP method is

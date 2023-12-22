@@ -33,7 +33,7 @@ public class ResourceFactory : IResourceFactory
     public Resource<T> Create<T>(T state) => new() { State = state };
 
     /// <inheritdoc/>
-    public Resource<T> CreateForGetEndpoint<T>(T state, string? action = "Get", string? controller = null, object? routeValues = null) =>
+    public Resource<T> CreateForEndpoint<T>(T state, string? action = "Get", string? controller = null, object? routeValues = null) =>
         Create(state)
         .AddSelfLink(LinkFactory, action, controller, routeValues);
 
@@ -68,14 +68,9 @@ public class ResourceFactory : IResourceFactory
     /// <inheritdoc/>
     public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
     {
-        if (resources is null)
-            throw new ArgumentNullException(nameof(resources));
-
-        if (keyAccessor is null)
-            throw new ArgumentNullException(nameof(keyAccessor));
-
-        if (idAccessor is null)
-            throw new ArgumentNullException(nameof(idAccessor));
+        ArgumentNullException.ThrowIfNull(resources);
+        ArgumentNullException.ThrowIfNull(keyAccessor);
+        ArgumentNullException.ThrowIfNull(idAccessor);
 
         if (string.IsNullOrWhiteSpace(listGetMethod))
             throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or whitespace.", nameof(listGetMethod));
@@ -93,14 +88,9 @@ public class ResourceFactory : IResourceFactory
     /// <inheritdoc/>
     public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
     {
-        if (resources is null)
-            throw new ArgumentNullException(nameof(resources));
-
-        if (keyAccessor is null)
-            throw new ArgumentNullException(nameof(keyAccessor));
-
-        if (idAccessor is null)
-            throw new ArgumentNullException(nameof(idAccessor));
+        ArgumentNullException.ThrowIfNull(resources);
+        ArgumentNullException.ThrowIfNull(keyAccessor);
+        ArgumentNullException.ThrowIfNull(idAccessor);
 
         if (string.IsNullOrWhiteSpace(listGetMethod))
             throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or whitespace.", nameof(listGetMethod));
@@ -119,14 +109,11 @@ public class ResourceFactory : IResourceFactory
 
     private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller, string listGetMethod, string singleGetMethod, Resource resource)
     {
-        if (resources is null)
-            throw new ArgumentNullException(nameof(resources));
+        ArgumentNullException.ThrowIfNull(resources);
 
-        if (keyAccessor is null)
-            throw new ArgumentNullException(nameof(keyAccessor));
+        ArgumentNullException.ThrowIfNull(keyAccessor);
 
-        if (idAccessor is null)
-            throw new ArgumentNullException(nameof(idAccessor));
+        ArgumentNullException.ThrowIfNull(idAccessor);
 
         if (string.IsNullOrWhiteSpace(listGetMethod))
             throw new ArgumentException($"'{nameof(listGetMethod)}' cannot be null or white space.", nameof(listGetMethod));

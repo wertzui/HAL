@@ -3,9 +3,9 @@
 namespace HAL.AspNetCore.Utils;
 
 /// <summary>
-/// Helper for generation action method names.
+/// Helper for generating action method names.
 /// </summary>
-public class ActionHelper
+public static class ActionHelper
 {
     /// <summary>
     /// Removes the "Async" suffix from the action method name if it exists.

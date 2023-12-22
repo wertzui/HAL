@@ -343,7 +343,10 @@ public partial class LinkFactory : ILinkFactory
         }
     }
 
-    private static void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
+    /// <summary>
+    /// Appends the query part of the link.
+    /// </summary>
+    protected virtual void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
     {
         var queryStarted = false;
         foreach (var parameter in descriptor.Parameters)

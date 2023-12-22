@@ -98,7 +98,7 @@ public class ResourceSerializationTests
         {
             Embedded = new Dictionary<string, ICollection<Resource>>
             {
-                { "foo", new List<Resource> { new Resource() } }
+                { "foo", new List<Resource> { new() } }
             }
         };
         var expectedResourceJson = "{\"_embedded\":{\"foo\":[{}]}}";
@@ -136,7 +136,7 @@ public class ResourceSerializationTests
         {
             Links = new Dictionary<string, ICollection<Link>>
             {
-                { "foo", new List<Link> { new Link("bar") } }
+                { "foo", new List<Link> { new("bar") } }
             }
         };
         var resourceJson = "{\"_links\":{\"foo\":[{\"href\":\"bar\"}]}}";
@@ -156,7 +156,7 @@ public class ResourceSerializationTests
         {
             Links = new Dictionary<string, ICollection<Link>>
             {
-                { "foo", new List<Link> { new Link("bar") } }
+                { "foo", new List<Link> { new("bar") } }
             }
         };
         var expectedResourceJson = "{\"_links\":{\"foo\":[{\"href\":\"bar\"}]}}";
@@ -329,6 +329,6 @@ public class ResourceSerializationTests
 
         }
 
-        public static StateWithPrivateConstructor Create() => new StateWithPrivateConstructor();
+        public static StateWithPrivateConstructor Create() => new();
     }
 }

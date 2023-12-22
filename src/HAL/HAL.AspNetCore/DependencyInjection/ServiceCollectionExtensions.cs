@@ -23,17 +23,16 @@ public static class ServiceCollectionExtensions
     /// <exception cref="ArgumentNullException">services</exception>
     public static IMvcBuilder AddHAL(this IMvcBuilder builder)
     {
-        if (builder is null)
-            throw new ArgumentNullException(nameof(builder));
+        ArgumentNullException.ThrowIfNull(builder);
 
         var services = builder.Services;
 
-        services.AddScoped<ILinkFactory, LinkFactory>();
-        services.AddScoped<IResourceFactory, ResourceFactory>();
+        services.AddSingleton<ILinkFactory, LinkFactory>();
+        services.AddSingleton<IResourceFactory, ResourceFactory>();
 
-        services.AddScoped<IFormTemplateFactory, FormTemplateFactory>();
-        services.AddScoped<IFormValueFactory, FormValueFactory>();
-        services.AddScoped<IFormFactory, FormFactory>();
+        services.AddSingleton<IFormTemplateFactory, FormTemplateFactory>();
+        services.AddSingleton<IFormValueFactory, FormValueFactory>();
+        services.AddSingleton<IFormFactory, FormFactory>();
 
         services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
@@ -48,7 +47,7 @@ public static class ServiceCollectionExtensions
                 o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
                 o.JsonSerializerOptions.Converters.Insert(0, new DateOnlyJsonConverter());
                 o.JsonSerializerOptions.Converters.Insert(1, new TimeOnlyJsonConverter());
-                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter(JsonNamingPolicy.CamelCase));
                 o.JsonSerializerOptions.Converters.Add(new ExceptionJsonConverterFactory());
             });
 

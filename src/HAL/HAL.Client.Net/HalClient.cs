@@ -1,4 +1,5 @@
-﻿using Microsoft.Net.Http.Headers;
+﻿using HAL.Common;
+using Microsoft.Net.Http.Headers;
 using System.Net.Http.Json;
 using Tavis.UriTemplates;
 
@@ -224,20 +225,30 @@ public class HalClient : IHalClient
 
     private static void AddHeadersToRequest(IDictionary<string, IEnumerable<string>>? headers, string? version, HttpRequestMessage request)
     {
-        if (headers is null || !headers.ContainsKey(HeaderNames.Accept))
+        // Add default accept headers if the original response does not already contain any headers
+        // which are used in conjunction with HAL.
+        if (headers is null || !headers.TryGetValue(HeaderNames.Accept, out var userAcceptHeaders) ||
+            !(userAcceptHeaders.Contains(Constants.MediaTypes.Hal) && userAcceptHeaders.Contains(Constants.MediaTypes.HalForms) && userAcceptHeaders.Contains(Constants.MediaTypes.HalFormsPrs) && userAcceptHeaders.Contains(Constants.MediaTypes.Json)))
         {
-            request.Headers.Add(HeaderNames.Accept, "application/hal+json");
-            request.Headers.Add(HeaderNames.Accept, "application/json");
+            request.Headers.Accept.Add(new(Constants.MediaTypes.Hal, 0.9));
+            request.Headers.Accept.Add(new(Constants.MediaTypes.Json, 0.7));
         }
 
-        if (version is not null)
-            request.Headers.Add(HeaderNames.Accept, $"v={version}");
-
+        // Add the headers provided by the user.
         if (headers is not null)
         {
             foreach (var header in headers)
             {
-                request.Headers.Add(header.Key, header.Value);
+                request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+        }
+
+        // Add a version to all accept headers.
+        if (version is not null)
+        {
+            foreach (var header in request.Headers.Accept)
+            {
+                header.Parameters.Add(new("v", version));
             }
         }
     }

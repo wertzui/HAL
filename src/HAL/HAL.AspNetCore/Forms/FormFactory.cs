@@ -55,7 +55,7 @@ public class FormFactory : IFormFactory
     protected IFormValueFactory ValueFactory { get; }
 
     /// <inheritdoc/>
-    public FormTemplate CreateForm<T>(T value, string target, string method, string? title = null, string contentType = "application/json")
+    public FormTemplate CreateForm<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
         var type = typeof(T);
         var name = type.Name;
@@ -72,10 +72,10 @@ public class FormFactory : IFormFactory
     }
 
     /// <inheritdoc/>
-    public FormsResource CreateResource(FormTemplate defaultTemplate) => new(new Dictionary<string, FormTemplate> { { "default", defaultTemplate } });
+    public FormsResource CreateResource(FormTemplate defaultTemplate) => new(new Dictionary<string, FormTemplate> { { Constants.DefaultFormTemplateName, defaultTemplate } });
 
     /// <inheritdoc/>
-    public FormsResource CreateResourceForEndpoint<T>(T value, HttpMethod method, string title, string contentType = "application/json", string action = "Get", string? controller = null, object? routeValues = null)
+    public FormsResource CreateResourceForEndpoint<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null)
     {
         var target = LinkFactory.GetSelfHref(action, controller, routeValues);
         var template = CreateForm(value, target, method.Method, title, contentType);

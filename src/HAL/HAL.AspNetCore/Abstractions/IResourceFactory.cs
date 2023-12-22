@@ -30,11 +30,11 @@ public interface IResourceFactory
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="state">The state.</param>
-    /// <param name="action">The action.</param>
+    /// <param name="action">The name of the action that is used to generate the self link. This is normally the name of the controller method without the async suffix. If none is provided, "Get" is used as default.</param>
     /// <param name="controller">The controller.</param>
     /// <param name="routeValues">The route values.</param>
     /// <returns></returns>
-    Resource<T> CreateForGetEndpoint<T>(T state, string? action = "Get", string? controller = null, object? routeValues = null);
+    Resource<T> CreateForEndpoint<T>(T state, string? action = "Get", string? controller = null, object? routeValues = null);
 
     /// <summary>
     /// Creates a resource for the home endpoint which will contain all possible links to all

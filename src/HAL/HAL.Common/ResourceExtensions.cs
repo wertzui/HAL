@@ -20,8 +20,7 @@ public static class ResourceExtensions
     public static TResource AddCurieLink<TResource>(this TResource resource, string name, string href)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
@@ -48,14 +47,12 @@ public static class ResourceExtensions
     public static TResource AddEmbedded<TResource>(this TResource resource, string key, Resource embedded)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
 
-        if (embedded is null)
-            throw new ArgumentNullException(nameof(embedded));
+        ArgumentNullException.ThrowIfNull(embedded);
 
         var collection = GetOrCreateEmbeddedCollection(resource, key);
 
@@ -78,17 +75,13 @@ public static class ResourceExtensions
     public static TResource AddEmbedded<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, Resource> embeddedSelector)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (keySelector is null)
-            throw new ArgumentNullException(nameof(keySelector));
+        ArgumentNullException.ThrowIfNull(keySelector);
 
-        if (embeddedSelector is null)
-            throw new ArgumentNullException(nameof(embeddedSelector));
+        ArgumentNullException.ThrowIfNull(embeddedSelector);
 
         foreach (var item in source)
         {
@@ -110,11 +103,9 @@ public static class ResourceExtensions
     public static TResource AddLink<TResource>(this TResource resource, Link link)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (link is null)
-            throw new ArgumentNullException(nameof(link));
+        ArgumentNullException.ThrowIfNull(link);
 
         if (link.Name is null)
             throw new ArgumentNullException(nameof(Link.Name));
@@ -135,14 +126,12 @@ public static class ResourceExtensions
     public static TResource AddLink<TResource>(this TResource resource, string rel, Link link)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrWhiteSpace(rel))
             throw new ArgumentException($"'{nameof(rel)}' cannot be null or whitespace.", nameof(rel));
 
-        if (link is null)
-            throw new ArgumentNullException(nameof(link));
+        ArgumentNullException.ThrowIfNull(link);
 
         var collection = GetOrCreateLinkCollection(resource, rel);
 
@@ -163,14 +152,11 @@ public static class ResourceExtensions
     public static TResource AddLink<TResource, TSource>(this TResource resource, IEnumerable<TSource> source, Func<TSource, Link> linkSelector)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (linkSelector is null)
-            throw new ArgumentNullException(nameof(linkSelector));
+        ArgumentNullException.ThrowIfNull(linkSelector);
 
         foreach (var item in source)
         {
@@ -195,17 +181,13 @@ public static class ResourceExtensions
     public static TResource AddLinks<TResource, TSource, TKey>(this TResource resource, IEnumerable<TSource> source, Func<TSource, TKey> relSelector, Func<TSource, Link> linkSelector)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (relSelector is null)
-            throw new ArgumentNullException(nameof(relSelector));
+        ArgumentNullException.ThrowIfNull(relSelector);
 
-        if (linkSelector is null)
-            throw new ArgumentNullException(nameof(linkSelector));
+        ArgumentNullException.ThrowIfNull(linkSelector);
 
         foreach (var item in source)
         {
@@ -227,11 +209,9 @@ public static class ResourceExtensions
     public static TResource AddLinks<TResource>(this TResource resource, IEnumerable<Link> links)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (links is null)
-            throw new ArgumentNullException(nameof(links));
+        ArgumentNullException.ThrowIfNull(links);
 
         foreach (var link in links)
         {
@@ -254,11 +234,9 @@ public static class ResourceExtensions
         where TResource : Resource
         where TLinkCollection : IEnumerable<Link>
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
-        if (source is null)
-            throw new ArgumentNullException(nameof(source));
+        ArgumentNullException.ThrowIfNull(source);
 
         foreach (var rel in source)
         {
@@ -285,8 +263,7 @@ public static class ResourceExtensions
     public static TResource AddSelfLink<TResource>(this TResource resource, string href)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrEmpty(href))
             throw new ArgumentException($"'{nameof(href)}' cannot be null or empty.", nameof(href));
@@ -305,8 +282,7 @@ public static class ResourceExtensions
     public static Link GetSelfLink<TResource>(this TResource resource)
         where TResource : Resource
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         var link = resource.Links?[Constants.SelfLinkName]?.FirstOrDefault() ??
             throw new ArgumentException($"The resource does not have a {Constants.SelfLinkName} link.", nameof(resource));
@@ -322,8 +298,7 @@ public static class ResourceExtensions
     /// <param name="resource">The resource.</param>
     public static Resource<TState?> CastState<TState>(this Resource resource)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         var type = resource.GetType();
 
@@ -341,8 +316,7 @@ public static class ResourceExtensions
     /// <param name="resource">The resource.</param>
     public static Resource<TState> CastState<TState>(this Resource<object> resource)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         var type = resource.GetType();
 
@@ -358,8 +332,7 @@ public static class ResourceExtensions
     /// <returns></returns>
     public static Resource<TState> ChangeStateTo<TState>(this Resource resource, TState state)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         return new Resource<TState> { State = state, Embedded = resource.Embedded, Links = resource.Links };
     }
@@ -371,16 +344,14 @@ public static class ResourceExtensions
     /// <returns></returns>
     public static Resource RemoveState(this Resource resource)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         return new() { Embedded = resource.Embedded, Links = resource.Links };
     }
 
     private static ICollection<Resource> GetOrCreateEmbeddedCollection(Resource resource, string key)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
@@ -399,8 +370,7 @@ public static class ResourceExtensions
 
     private static ICollection<Link> GetOrCreateLinkCollection(Resource resource, string key)
     {
-        if (resource is null)
-            throw new ArgumentNullException(nameof(resource));
+        ArgumentNullException.ThrowIfNull(resource);
 
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));

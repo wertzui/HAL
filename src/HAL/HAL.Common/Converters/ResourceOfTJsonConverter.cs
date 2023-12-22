@@ -186,8 +186,8 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     }
 
     private static T CreateState(
-        IDictionary<string, object?> stateproperties,
-        IDictionary<string, object?> stateConstructorArguments)
+        Dictionary<string, object?> stateproperties,
+        Dictionary<string, object?> stateConstructorArguments)
     {
         T state = default!;
         var stateType = typeof(T);

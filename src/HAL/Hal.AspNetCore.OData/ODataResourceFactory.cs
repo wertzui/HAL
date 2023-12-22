@@ -38,17 +38,13 @@ public class ODataResourceFactory : ResourceFactory, IODataResourceFactory
         string listGetMethod = "GetList",
         string singleGetMethod = "Get")
     {
-        if (resources is null)
-            throw new ArgumentNullException(nameof(resources));
+        ArgumentNullException.ThrowIfNull(resources);
 
-        if (keyAccessor is null)
-            throw new ArgumentNullException(nameof(keyAccessor));
+        ArgumentNullException.ThrowIfNull(keyAccessor);
 
-        if (idAccessor is null)
-            throw new ArgumentNullException(nameof(idAccessor));
+        ArgumentNullException.ThrowIfNull(idAccessor);
 
-        if (oDataQueryOptions is null)
-            throw new ArgumentNullException(nameof(oDataQueryOptions));
+        ArgumentNullException.ThrowIfNull(oDataQueryOptions);
 
         if (maxTop < 1)
             throw new ArgumentOutOfRangeException(nameof(maxTop), $"'{nameof(maxTop)}' cannot be less than 1, but is {maxTop}.");
