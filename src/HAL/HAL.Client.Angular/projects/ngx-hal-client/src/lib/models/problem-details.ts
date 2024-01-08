@@ -30,10 +30,14 @@ export class ProblemDetails extends Resource implements ResourceOfDto<ProblemDet
   }
 
   public static containsProblemDetailsInformation(resource: unknown) {
-    return resource && (resource instanceof ProblemDetails || (resource instanceof Resource && 'status' in resource && _.isNumber(resource['status']) && resource['status'] >= 100 && resource['status'] < 600));
+    return resource && (resource instanceof ProblemDetails || (resource instanceof Resource && ProblemDetails.hasValidHttpStatus(resource)));
   }
 
   public static isProblemDetailsDto(dto: unknown): dto is ProblemDetailsDto {
-    return _.isObject(dto) && 'status' in dto && _.isNumber(dto['status']) && dto['status'] >= 100 && dto['status'] < 600;
+    return typeof dto === "object" && dto !== null && ProblemDetails.hasValidHttpStatus(dto);
+  }
+
+  public static hasValidHttpStatus(dto: object): dto is { status: number } {
+    return 'status' in dto && typeof dto.status === "number" && Number.isInteger(dto.status) && dto.status >= 100 && dto.status < 600;
   }
 }

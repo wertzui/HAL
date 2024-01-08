@@ -174,7 +174,7 @@ export class FormService {
   }
 
   private static getPropertyValue<TValue extends SimpleValue = SimpleValue>(property: Property<TValue, string, string>): TValue | null | TValue[]{
-    if (property.options && _.isArray(property.options.selectedValues) && property.options.selectedValues.length > 0) {
+    if (property.options && Array.isArray(property.options.selectedValues) && property.options.selectedValues.length > 0) {
       if (property.options.maxItems !== undefined && property.options.maxItems > 1)
         return property.options.selectedValues;
 

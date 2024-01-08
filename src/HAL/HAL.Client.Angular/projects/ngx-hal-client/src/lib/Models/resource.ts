@@ -178,7 +178,7 @@ export class Resource {
     if (dto === null || dto === undefined)
       return dto;
 
-    if (_.isString(dto)) {
+    if (typeof dto === "string") {
       if (this._iso8601RegEx.test(dto)) {
         var maybeDate = new Date(dto);
         if (!isNaN(maybeDate.getTime()))
@@ -192,13 +192,13 @@ export class Resource {
       }
     }
 
-    else if (_.isArray(dto)) {
+    else if (Array.isArray(dto)) {
       for (let i = 0; i < dto.length; i++) {
         dto[i] = this.parseDates(dto[i]);
       }
     }
 
-    else if (_.isPlainObject(dto)) {
+    else if (typeof dto === "object" && dto !== null) {
       for (const [key, value] of Object.entries(dto as { [name: string]: unknown })) {
         (dto as { [name: string]: unknown })[key] = this.parseDates(value);
       }
