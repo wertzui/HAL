@@ -67,17 +67,17 @@ public class FormTemplateFactory : IFormTemplateFactory
     /// validation triggering. This is mostly used when adding elements to a collection which
     /// have required and read-only properties, like an ID.
     /// </summary>
-    /// <param name="template">The property template to set a default value for.</param>
+    /// <param name="halProperty">The property template to set a default value for.</param>
     /// <param name="property">The property info to get the value for.</param>
     /// <param name="defaultDto">The object to get the value from.</param>
-    private static void AddDefaultValueIfUserCannotEditProperty(Property template, PropertyInfo property, object? defaultDto)
+    private static void AddDefaultValueIfUserCannotEditProperty(Property halProperty, PropertyInfo property, object? defaultDto)
     {
         if (defaultDto is null)
             return;
 
-        if (template.Required && (template.ReadOnly || template.Type.HasValue && template.Type == PropertyType.Hidden))
+        if (halProperty.Required && halProperty.Value is null && (halProperty.ReadOnly || halProperty.Type.HasValue && halProperty.Type == PropertyType.Hidden))
         {
-            template.Value = property.GetValue(defaultDto);
+            halProperty.Value = property.GetValue(defaultDto);
         }
     }
 
@@ -408,6 +408,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = sbyte.MinValue;
             template.Max = sbyte.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(byte?)))
         {
@@ -415,6 +416,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = byte.MinValue;
             template.Max = byte.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(short?)))
         {
@@ -422,6 +424,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = short.MinValue;
             template.Max = short.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(char?)))
         {
@@ -435,6 +438,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = int.MinValue;
             template.Max = int.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(long?)))
         {
@@ -442,6 +446,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = long.MinValue;
             template.Max = long.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(nint?)))
         {
@@ -449,6 +454,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = nint.MinValue;
             template.Max = nint.MaxValue;
             template.Regex = $@"^(\+|-)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(float?)))
         {
@@ -456,6 +462,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = float.MinValue;
             template.Max = float.MaxValue;
             template.Regex = $@"^[-+]?\d*\.?\d*$";
+            template.Step = 0.01;
         }
         else if (propertyType.IsAssignableTo(typeof(double?)))
         {
@@ -463,6 +470,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = double.MinValue;
             template.Max = double.MaxValue;
             template.Regex = $@"^[-+]?\d*\.?\d*$";
+            template.Step = 0.01;
         }
         else if (propertyType.IsAssignableTo(typeof(decimal?)))
         {
@@ -470,6 +478,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = (double)decimal.MinValue;
             template.Max = (double)decimal.MaxValue;
             template.Regex = $@"^[-+]?\d*\.?\d*$";
+            template.Step = 0.01;
         }
         else if (propertyType.IsAssignableTo(typeof(ushort?)))
         {
@@ -477,6 +486,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = ushort.MinValue;
             template.Max = ushort.MaxValue;
             template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(uint?)))
         {
@@ -484,6 +494,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = uint.MinValue;
             template.Max = uint.MaxValue;
             template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(ulong?)))
         {
@@ -491,6 +502,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = ulong.MinValue;
             template.Max = ulong.MaxValue;
             template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(nuint?)))
         {
@@ -498,6 +510,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             template.Min = nuint.MinValue;
             template.Max = nuint.MaxValue;
             template.Regex = $@"^(\+)?\d{(template.Required ? "+" : "*")}$";
+            template.Step = 1;
         }
         else if (propertyType.IsAssignableTo(typeof(DateTime?)))
         {
@@ -587,115 +600,141 @@ public class FormTemplateFactory : IFormTemplateFactory
     /// <summary>
     /// Creates the template for the given property.
     /// </summary>
-    /// <param name="property">The property to create the template for.</param>
+    /// <param name="propertyInfo">The property to create the template for.</param>
     /// <param name="dtoType">The type containing the property.</param>
     /// <param name="defaultDto">
     /// A default instance of the DTO which is used to fill properties which cannot be set by
     /// the user.
     /// </param>
     /// <returns>The generated property template.</returns>
-    private Property? CreatePropertyTemplate(PropertyInfo property, Type dtoType, object? defaultDto)
+    private Property? CreatePropertyTemplate(PropertyInfo propertyInfo, Type dtoType, object? defaultDto)
     {
-        var template = new Property(_propertyNamingPolicy.ConvertName(property.Name))
-        {
-            Prompt = property.Name
-        };
+        var attributes = propertyInfo.GetCustomAttributes(true);
+        var customPropertyGenerationAttributes = attributes.OfType<CustomPropertyGenerationAttribute>().OrderBy(a => a.Order).ToList();
+        var exclusiveCustomAttributes = customPropertyGenerationAttributes.Where(a => a.Exclusive).ToList();
+        if (exclusiveCustomAttributes.Count > 1)
+            throw new InvalidOperationException($"Multiple {nameof(CustomPropertyGenerationAttribute)}s with {nameof(CustomPropertyGenerationAttribute.Exclusive)} set to true found on property {propertyInfo.Name} of type {dtoType.Name}. Only one exclusive Attribute can be used.");
 
-        AddTypeInformation(template, property);
-        AddForeignKeyLink(template, property, dtoType);
+        var nonCustomPropertyAttributes = attributes.Where(p => !customPropertyGenerationAttributes.Contains(p));
 
-        foreach (var attribute in property.GetCustomAttributes(true))
+        var halProperty = new Property(_propertyNamingPolicy.ConvertName(propertyInfo.Name));
+
+        if (exclusiveCustomAttributes.Count == 1)
         {
-            switch (attribute)
+            var attribute = exclusiveCustomAttributes[0];
+            attribute.Apply(dtoType, propertyInfo, halProperty);
+        }
+        else
+        {
+
+            halProperty.Prompt = propertyInfo.Name;
+
+            AddTypeInformation(halProperty, propertyInfo);
+            AddForeignKeyLink(halProperty, propertyInfo, dtoType);
+
+            foreach (var attribute in nonCustomPropertyAttributes)
             {
-                case DataTypeAttribute dataType:
-                    AddTypeInformationFromAttribute(template, dataType);
-                    break;
+                switch (attribute)
+                {
+                    case DataTypeAttribute dataType:
+                        AddTypeInformationFromAttribute(halProperty, dataType);
+                        break;
 
-                case ConcurrencyCheckAttribute:
-                    template.Type = PropertyType.Hidden;
-                    break;
+                    case ConcurrencyCheckAttribute:
+                        halProperty.Type = PropertyType.Hidden;
+                        break;
 
-                case DisplayAttribute display:
-                    template.Prompt = display.GetName();
-                    template.Placeholder = display.GetPrompt();
-                    if (display.GetAutoGenerateField() == false)
+                    case DisplayAttribute display:
+                        halProperty.Prompt = display.GetName();
+                        halProperty.Placeholder = display.GetPrompt();
+                        if (display.GetAutoGenerateField() == false)
+                            return null;
+                        break;
+
+                    case DisplayNameAttribute displayName:
+                        halProperty.Prompt = displayName.DisplayName;
+                        break;
+
+                    case PromptDisplayTypeAttribute prompDisplayType:
+                        halProperty.PromptDisplay = prompDisplayType.PromptDisplay;
+                        break;
+
+                    case EditableAttribute editable:
+                        halProperty.ReadOnly = !editable.AllowEdit;
+                        break;
+
+                    case ForeignKeyAttribute foreignKey:
+                        AddForeignKeyLink(halProperty, propertyInfo, foreignKey, dtoType);
+                        break;
+
+                    case KeyAttribute:
+                        halProperty.ReadOnly = true;
+                        halProperty.Required = true;
+                        break;
+
+                    case LengthAttribute length:
+                        halProperty.MaxLength = length.MaximumLength;
+                        halProperty.MinLength = length.MinimumLength;
+                        break;
+
+                    case MaxLengthAttribute maxLength:
+                        halProperty.MaxLength = maxLength.Length;
+                        break;
+
+                    case MinLengthAttribute minLength:
+                        halProperty.MinLength = minLength.Length;
+                        break;
+
+                    case RangeAttribute range:
+                        if (double.TryParse(range.Minimum?.ToString(), out var min))
+                            halProperty.Min = min;
+                        if (double.TryParse(range.Maximum?.ToString(), out var max))
+                            halProperty.Max = max;
+                        break;
+
+                    case RegularExpressionAttribute regularExpression:
+                        halProperty.Regex = regularExpression.Pattern;
+                        break;
+
+                    case RequiredAttribute:
+                        halProperty.Required = true;
+                        break;
+
+                    case ScaffoldColumnAttribute scaffoldColumn when !scaffoldColumn.Scaffold:
                         return null;
-                    break;
 
-                case DisplayNameAttribute displayName:
-                    template.Prompt = displayName.DisplayName;
-                    break;
+                    case StringLengthAttribute stringLength:
+                        halProperty.MinLength = stringLength.MinimumLength;
+                        halProperty.MaxLength = stringLength.MinimumLength;
+                        break;
 
-                case PromptDisplayTypeAttribute prompDisplayType:
-                    template.PromptDisplay = prompDisplayType.PromptDisplay;
-                    break;
+                    case TimestampAttribute:
+                        halProperty.Type = PropertyType.Hidden;
+                        break;
 
-                case EditableAttribute editable:
-                    template.ReadOnly = !editable.AllowEdit;
-                    break;
+                    case UIHintAttribute uIHint when Enum.TryParse<PropertyType>(uIHint.UIHint, true, out var custom):
+                        halProperty.Type = custom;
+                        break;
 
-                case ForeignKeyAttribute foreignKey:
-                    AddForeignKeyLink(template, property, foreignKey, dtoType);
-                    break;
+                    default:
+                        break;
+                }
 
-                case KeyAttribute:
-                    template.ReadOnly = true;
-                    template.Required = true;
-                    break;
-
-                case MaxLengthAttribute maxLength:
-                    template.MaxLength = maxLength.Length;
-                    break;
-
-                case MinLengthAttribute minLength:
-                    template.MinLength = minLength.Length;
-                    break;
-
-                case RangeAttribute range:
-                    if (double.TryParse(range.Minimum?.ToString(), out var min))
-                        template.Min = min;
-                    if (double.TryParse(range.Maximum?.ToString(), out var max))
-                        template.Max = max;
-                    break;
-
-                case RegularExpressionAttribute regularExpression:
-                    template.Regex = regularExpression.Pattern;
-                    break;
-
-                case RequiredAttribute:
-                    template.Required = true;
-                    break;
-
-                case ScaffoldColumnAttribute scaffoldColumn when !scaffoldColumn.Scaffold:
-                    return null;
-
-                case StringLengthAttribute stringLength:
-                    template.MinLength = stringLength.MinimumLength;
-                    template.MaxLength = stringLength.MinimumLength;
-                    break;
-
-                case TimestampAttribute:
-                    template.Type = PropertyType.Hidden;
-                    break;
-
-                case UIHintAttribute uIHint when Enum.TryParse<PropertyType>(uIHint.UIHint, true, out var custom):
-                    template.Type = custom;
-                    break;
-
-                default:
-                    break;
+                AddExtensionDataToProperty(halProperty, attribute);
             }
 
-            AddExtensionDataToproperty(template, attribute);
+            foreach (var attribute in customPropertyGenerationAttributes)
+            {
+                attribute.Apply(dtoType, propertyInfo, halProperty);
+            }
         }
 
-        AddDefaultValueIfUserCannotEditProperty(template, property, defaultDto);
+        AddDefaultValueIfUserCannotEditProperty(halProperty, propertyInfo, defaultDto);
 
-        return template;
+        return halProperty;
     }
 
-    private static void AddExtensionDataToproperty(Property template, object attribute)
+    private static void AddExtensionDataToProperty(Property template, object attribute)
     {
         if (attribute is IPropertyExtensionData)
         {
