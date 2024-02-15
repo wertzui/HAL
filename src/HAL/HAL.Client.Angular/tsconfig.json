@@ -12,7 +12,7 @@
     "declaration": false,
     "useDefineForClassFields": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "Node",
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",

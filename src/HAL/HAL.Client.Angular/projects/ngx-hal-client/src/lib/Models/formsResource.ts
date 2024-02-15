@@ -931,6 +931,9 @@ const dt: TemplateDto<typeof dtos> = {
   properties: dtos,
 }
 
-const template = new Template(dt);
-const value = template.properties[0].value;
-const value2 = template.properties[1].value;
+/**
+ * This helper type converts a Property<X, Y, Z> to an OptionsItemDto<X, Y, Z> and preserves the generic parameters.
+ */
+export type ExtractGenericOptionsItemType<TProperty> = TProperty extends Property<infer X, infer Y, infer Z> ? OptionsItemDto<X, Y, Z> : never
+export type ExtractGenericOptionsSelectedValuesType<TProperty> = TProperty extends Property<infer X, infer Y, infer Z> ? Options<X, Y, Z>["selectedValues"] : never
+export type ExtractValueType<TProperty> = TProperty extends Property<infer X, infer Y, infer Z> ? X : never
