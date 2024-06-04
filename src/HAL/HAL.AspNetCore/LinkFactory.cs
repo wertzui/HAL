@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using HAL.AspNetCore.Abstractions;
+using HAL.AspNetCore.Utils;
 using HAL.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,10 +23,6 @@ namespace HAL.AspNetCore;
 /// <inheritdoc/>
 public partial class LinkFactory : ILinkFactory
 {
-    private readonly IActionContextAccessor _actionContextAccessor;
-    private readonly IApiDescriptionGroupCollectionProvider _apiExplorer;
-    private readonly LinkGenerator _linkGenerator;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="LinkFactory"/> class.
     /// </summary>
@@ -40,10 +37,32 @@ public partial class LinkFactory : ILinkFactory
     /// </exception>
     public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
     {
-        _actionContextAccessor = actionContextAccessor ?? throw new ArgumentNullException(nameof(actionContextAccessor));
-        _apiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
-        _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
+        ActionContextAccessor = actionContextAccessor ?? throw new ArgumentNullException(nameof(actionContextAccessor));
+        ApiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
+        LinkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
     }
+
+    private enum TemplatedType
+    {
+        NotTemplated,
+        SimpleTemplated,
+        ExplodeTemplated
+    }
+
+    /// <summary>
+    /// Gets the action context accessor.
+    /// </summary>
+    protected IActionContextAccessor ActionContextAccessor { get; }
+
+    /// <summary>
+    /// Gets the API explorer.
+    /// </summary>
+    protected IApiDescriptionGroupCollectionProvider ApiExplorer { get; }
+
+    /// <summary>
+    /// Gets the link generator.
+    /// </summary>
+    protected LinkGenerator LinkGenerator { get; }
 
     /// <inheritdoc/>
     public TResource AddFormLinkForExistingLinkTo<TResource>(TResource resource, string existingRel, string? existingName = null, string? action = null, string? controller = null, object? routeValues = null)
@@ -79,7 +98,7 @@ public partial class LinkFactory : ILinkFactory
         ArgumentNullException.ThrowIfNull(resource);
         ArgumentNullException.ThrowIfNull(name);
 
-        return resource.AddCurieLink(name, _linkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
+        return resource.AddCurieLink(name, LinkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
     }
 
     /// <inheritdoc/>
@@ -101,29 +120,10 @@ public partial class LinkFactory : ILinkFactory
 
     /// <inheritdoc/>
     public Link Create(string? name, string? title, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
-        => Create(name, title, _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) ?? throw new InvalidOperationException($"Unable to generate the href value for a link. name: \"{name}\", title: \"{title}\", action: \"{action}\", controller: \"{controller}\", values: \"{values}\", protocol: \"{protocol}\", host: \"{host}\", fragment: \"{fragment}\""));
-
-
-    /// <inheritdoc/>
-    public bool TryCreate([NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
-        => TryCreate(null, out link, action, controller, values, protocol, host, fragment);
-
-    /// <inheritdoc/>
-    public bool TryCreate(string? name, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
-        => TryCreate(name, null, out link, action, controller, values, protocol, host, fragment);
-
-    /// <inheritdoc/>
-    public bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
     {
-        var href = _linkGenerator.GetUriByAction(GetHttpContext(), action, controller, values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
-        if (href is null)
-        {
-            link = null;
-            return false;
-        }
-
-        link = Create(name, title, href);
-        return true;
+        return TryCreate(name, title, out var link, action, controller, values, protocol, host, fragment)
+            ? link
+            : throw new InvalidOperationException($"Unable to generate the href value for a link. name: \"{name}\", title: \"{title}\", action: \"{action}\", controller: \"{controller}\", values: \"{values}\", protocol: \"{protocol}\", host: \"{host}\", fragment: \"{fragment}\"");
     }
 
     /// <inheritdoc/>
@@ -257,13 +257,74 @@ public partial class LinkFactory : ILinkFactory
     {
         var httpContext = GetHttpContext();
 
-        var path = _linkGenerator.GetUriByAction(httpContext, action, controller, routeValues) ??
+        var path = LinkGenerator.GetUriByAction(httpContext, ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), routeValues) ??
             throw new InvalidOperationException($"Unable to generate the self link. request: {httpContext.Request}, action: {action}, controller: {controller}, routeValues: {routeValues}");
 
         queryString ??= httpContext.Request.QueryString;
 
         return path + queryString;
     }
+
+    /// <inheritdoc/>
+    public bool TryCreate([NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+        => TryCreate(null, out link, action, controller, values, protocol, host, fragment);
+
+    /// <inheritdoc/>
+    public bool TryCreate(string? name, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+        => TryCreate(name, null, out link, action, controller, values, protocol, host, fragment);
+
+    /// <inheritdoc/>
+    public bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
+    {
+        var href = LinkGenerator.GetUriByAction(GetHttpContext(), ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
+        if (href is null)
+        {
+            link = null;
+            return false;
+        }
+
+        link = Create(name, title, href);
+        return true;
+    }
+
+    /// <summary>
+    /// Appends the query part of the link.
+    /// </summary>
+    protected virtual void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
+    {
+        var queryStarted = false;
+        foreach (var parameter in descriptor.Parameters)
+        {
+            if (parameter.BindingInfo?.BindingSource == BindingSource.Query)
+            {
+                if (!queryStarted)
+                {
+                    queryStarted = true;
+                    sb.Append("{?");
+                }
+                else
+                {
+                    sb.Append(',');
+                }
+
+                sb.Append(parameter.BindingInfo.BinderModelName ?? parameter.Name);
+
+                var isEnumerable = parameter.ParameterType.IsGenericType && parameter.ParameterType.IsAssignableTo(typeof(IEnumerable));
+                if (isEnumerable)
+                    sb.Append('*');
+            }
+        }
+
+        if (queryStarted)
+            sb.Append('}');
+
+        isTemplated = queryStarted;
+    }
+
+    /// <summary>
+    /// Gets the current <see cref="HttpContext"/>.
+    /// </summary>
+    protected HttpContext GetHttpContext() => GetActionContext().HttpContext;
 
     private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
     {
@@ -343,39 +404,8 @@ public partial class LinkFactory : ILinkFactory
         }
     }
 
-    /// <summary>
-    /// Appends the query part of the link.
-    /// </summary>
-    protected virtual void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
-    {
-        var queryStarted = false;
-        foreach (var parameter in descriptor.Parameters)
-        {
-            if (parameter.BindingInfo?.BindingSource == BindingSource.Query)
-            {
-                if (!queryStarted)
-                {
-                    queryStarted = true;
-                    sb.Append("{?");
-                }
-                else
-                {
-                    sb.Append(',');
-                }
-
-                sb.Append(parameter.BindingInfo.BinderModelName ?? parameter.Name);
-
-                var isEnumerable = parameter.ParameterType.IsGenericType && parameter.ParameterType.IsAssignableTo(typeof(IEnumerable));
-                if (isEnumerable)
-                    sb.Append('*');
-            }
-        }
-
-        if (queryStarted)
-            sb.Append('}');
-
-        isTemplated = queryStarted;
-    }
+    [GeneratedRegex(@"^(?<name>.*?)((?<controller>controller)(?<version>v(er(sion)?)?\d*))?$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, "de-DE")]
+    private static partial Regex GetControllerNameRegEx();
 
     private static (IReadOnlyDictionary<string, object> nonTemplated, IReadOnlyCollection<string> templated) GetParameters(object values)
     {
@@ -426,13 +456,6 @@ public partial class LinkFactory : ILinkFactory
         return false;
     }
 
-    private enum TemplatedType
-    {
-        NotTemplated,
-        SimpleTemplated,
-        ExplodeTemplated
-    }
-
     private static string RemoveVersionFrom(string controllerName)
     {
         var cleanControllerName = controllerName;
@@ -446,11 +469,11 @@ public partial class LinkFactory : ILinkFactory
         return cleanControllerName;
     }
 
-    private ActionContext GetActionContext() => _actionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current HttpContext.");
+    private ActionContext GetActionContext() => ActionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current HttpContext.");
 
     private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion? version)
     {
-        var descriptorGroups = _apiExplorer.ApiDescriptionGroups.Items;
+        var descriptorGroups = ApiExplorer.ApiDescriptionGroups.Items;
 
         if (version is not null)
         {
@@ -478,8 +501,4 @@ public partial class LinkFactory : ILinkFactory
 
         throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");
     }
-
-    private HttpContext GetHttpContext() => GetActionContext().HttpContext;
-    [GeneratedRegex(@"^(?<name>.*?)((?<controller>controller)(?<version>v(er(sion)?)?\d*))?$", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, "de-DE")]
-    private static partial Regex GetControllerNameRegEx();
 }

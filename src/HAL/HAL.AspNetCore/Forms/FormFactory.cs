@@ -55,6 +55,10 @@ public class FormFactory : IFormFactory
     protected IFormValueFactory ValueFactory { get; }
 
     /// <inheritdoc/>
+    public FormTemplate CreateForm<T>(T value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json)
+        => CreateForm(value, target, method.Method, title, contentType);
+
+    /// <inheritdoc/>
     public FormTemplate CreateForm<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
         var type = typeof(T);

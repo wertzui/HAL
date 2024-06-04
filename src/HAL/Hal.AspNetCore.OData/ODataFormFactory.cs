@@ -110,7 +110,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         var editForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Edit");
         editForm.Target = target;
 
-        editForm.Properties ??= new List<Property>();
+        editForm.Properties ??= [];
 
         return editForm;
     }
@@ -130,7 +130,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
             }
         }
 
-        searchForm.Properties ??= new List<Property>();
+        searchForm.Properties ??= [];
         searchForm.Properties.Add(new Property("$orderby") { Type = PropertyType.Hidden });
 
         return searchForm;

@@ -68,7 +68,7 @@ public class DynamicJsonConverter : JsonConverter<dynamic?>
 
     private object? ReadList(JsonElement jsonElement)
     {
-        IList<object?> list = new List<object?>();
+        IList<object?> list = [];
         foreach (var item in jsonElement.EnumerateArray())
         {
             list.Add(ReadValue(item));

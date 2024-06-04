@@ -260,11 +260,7 @@ public class FormTemplateFactory : IFormTemplateFactory
             // First look for a [Key] Attribute defined on the class, then for an inherited
             // [Key] attribute and at last for an Id property.
             .OrderBy(p => p.OwnKeyAttribute is not null ? 0 : p.InheritedKeyAttribute is not null ? 1 : 2)
-            .FirstOrDefault();
-
-        if (primaryKeyProperty is null)
-            throw new ArgumentException($"Unable to determine the primary key for {type.Name}. No property with a [Key] Attribute or the name Id was found.", nameof(type));
-
+            .FirstOrDefault() ?? throw new ArgumentException($"Unable to determine the primary key for {type.Name}. No property with a [Key] Attribute or the name Id was found.", nameof(type));
         return _propertyNamingPolicy.ConvertName(primaryKeyProperty.Name);
     }
 

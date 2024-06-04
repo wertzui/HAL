@@ -74,7 +74,7 @@ public record Resource : IEquatable<Resource>
         return hash.ToHashCode();
     }
 
-    private void NestedHash<TKey, TValue>(IDictionary<TKey, ICollection<TValue>>? dictionary, HashCode hash)
+    private static void NestedHash<TKey, TValue>(IDictionary<TKey, ICollection<TValue>>? dictionary, HashCode hash)
     {
         if (dictionary is not null)
         {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HAL.Common.Forms;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -9,10 +10,10 @@ using System.Text.Json.Serialization;
 namespace HAL.Common.Converters;
 
 /// <summary>
-/// A converter that can read and write <see cref="Resource"/>.
+/// A converter that can read and write <see cref="FormsResource"/>.
 /// </summary>
-/// <seealso cref="JsonConverter{Resource}" />
-public class ResourceJsonConverter : JsonConverter<Resource>
+/// <seealso cref="JsonConverter{FormsResource}" />
+public class FormsResourceJsonConverter : JsonConverter<FormsResource>
 {
     /// <summary>
     /// Determines if the given property should be written to the JSON payload based on the ignore condition.
@@ -52,14 +53,15 @@ public class ResourceJsonConverter : JsonConverter<Resource>
     }
 
     /// <inheritdoc/>
-    public override Resource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override FormsResource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             throw new JsonException($"Malformed JSON. Expected start of object '{{', but got {reader.TokenType}.");
 
-        Resource resource;
+        FormsResource resource;
         IDictionary<string, ICollection<Link>>? links = default;
         IDictionary<string, ICollection<Resource>>? embedded = default;
+        IDictionary<string, FormTemplate>? templates = default;
         var state = new ExpandoObject();
         JsonSerializerOptions? optionsWithDynamicConverter = default;
 
@@ -67,7 +69,9 @@ public class ResourceJsonConverter : JsonConverter<Resource>
         {
             if (reader.TokenType == JsonTokenType.EndObject)
             {
-                resource = state.Any() ? new Resource<object> { State = state } : new Resource();
+                templates ??= new Dictionary<string, FormTemplate>();
+
+                resource = state.Any() ? new FormsResource<object>(templates) { State = state } : new FormsResource(templates);
 
                 if (embedded is not null)
                     resource.Embedded = embedded;
@@ -92,6 +96,10 @@ public class ResourceJsonConverter : JsonConverter<Resource>
             {
                 links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
             }
+            else if (propertyName == Constants.FormTemplatesPropertyName)
+            {
+                templates = JsonSerializer.Deserialize<IDictionary<string, FormTemplate>>(ref reader, options);
+            }
             else if (propertyName is not null)
             {
                 optionsWithDynamicConverter ??= AddDynamicConverter(options);
@@ -104,14 +112,14 @@ public class ResourceJsonConverter : JsonConverter<Resource>
     }
 
     /// <inheritdoc/>
-    public override void Write(Utf8JsonWriter writer, Resource value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, FormsResource value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
         var type = value.GetType();
         if (type.IsGenericType)
         {
-            var stateProperty = type.GetProperty(nameof(Resource<object>.State));
+            var stateProperty = type.GetProperty(nameof(FormsResource<object>.State));
             if (stateProperty is not null)
             {
                 var state = stateProperty.GetValue(value);
@@ -120,6 +128,12 @@ public class ResourceJsonConverter : JsonConverter<Resource>
                     WriteState(writer, state, options);
                 }
             }
+        }
+
+        if (value.Templates != null)
+        {
+            writer.WritePropertyName(Constants.FormTemplatesPropertyName);
+            JsonSerializer.Serialize(writer, value.Templates, options);
         }
 
         if (value.Links != null)

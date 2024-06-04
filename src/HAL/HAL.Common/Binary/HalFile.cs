@@ -8,7 +8,7 @@ namespace HAL.Common.Binary;
 /// <summary>
 /// Represents a file that is either referenced by a "normal" URI, or a "data" Uri.
 /// </summary>
-	[JsonConverter(typeof(HalFileJsonConverter))]
+[JsonConverter(typeof(HalFileJsonConverter))]
 public class HalFile
 {
     private const string _base64Splitter = ";base64,";
@@ -69,7 +69,7 @@ public class HalFile
     /// Whether this instance has a URI with a data schema or not.
     /// If it has a data schema, it's Content property will be populated too.
     /// </summary>
-    [MemberNotNullWhen(true, new[] { nameof(Content), nameof(MimeType) })]
+    [MemberNotNullWhen(true, [nameof(Content), nameof(MimeType)])]
     public bool HasDataUri => _content is not null || (_uri?.StartsWith(_dataSchema) ?? false);
 
     /// <summary>

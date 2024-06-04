@@ -57,7 +57,7 @@ public static class UriBuilderExtensions
             .Select(pair => new
             {
                 pair.Name,
-                List = (pair.Value is not string && pair.Value is IEnumerable list ? list.Cast<object>() : new[] { pair.Value })
+                List = (pair.Value is not string && pair.Value is IEnumerable list ? list.Cast<object>() : [pair.Value])
                     .Select(element => element?.ToString())
                     .Where(element => !string.IsNullOrEmpty(element))
             })

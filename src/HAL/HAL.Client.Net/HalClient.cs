@@ -1,4 +1,5 @@
 ﻿using HAL.Common;
+using HAL.Common.Forms;
 using Microsoft.Net.Http.Headers;
 using System.Net.Http.Json;
 using Tavis.UriTemplates;
@@ -21,6 +22,8 @@ public class HalClient : IHalClient
     /// </param>
     public HalClient(IHttpClientFactory httpClientFactory)
     {
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+
         _httpClientFactory = httpClientFactory;
     }
 
@@ -33,27 +36,25 @@ public class HalClient : IHalClient
     /// <param name="name">The name that is used to retrieve the HTTPClient from the <paramref name="httpClientFactory"/>.</param>
     public HalClient(IHttpClientFactory httpClientFactory, string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException($"'{nameof(name)}' cannot be null or whitespace.", nameof(name));
-        }
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
         _httpClientFactory = httpClientFactory;
         _name = name;
     }
 
     /// <inheritdoc/>
-    public Task<HalResponse<TResponse>> DeleteAsync<TResponse>(
+    public Task<HalResponse<Resource<TState>>> DeleteAsync<TState>(
         Uri requestUri,
         string? eTag = default,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
         string? version = default,
         CancellationToken cancellationToken = default)
-        => SendAsync<object, TResponse>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
+        => SendAsync<object, TState>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse> DeleteAsync(
+    public Task<HalResponse<Resource>> DeleteAsync(
         Uri requestUri,
         string? eTag = default,
         IDictionary<string, object>? uriParameters = default,
@@ -63,16 +64,16 @@ public class HalClient : IHalClient
         => SendAsync<object>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse<TResponse>> GetAsync<TResponse>(
+    public Task<HalResponse<Resource<TState>>> GetAsync<TState>(
         Uri requestUri,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
         string? version = default,
         CancellationToken cancellationToken = default)
-        => SendAsync<object, TResponse>(HttpMethod.Get, requestUri, null, uriParameters, headers, version, cancellationToken);
+        => SendAsync<object, TState>(HttpMethod.Get, requestUri, null, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse> GetAsync(
+    public Task<HalResponse<Resource>> GetAsync(
         Uri requestUri,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
@@ -81,17 +82,17 @@ public class HalClient : IHalClient
         => SendAsync<object>(HttpMethod.Get, requestUri, null, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse<TResponse>> PostAsync<TRequest, TResponse>(
+    public Task<HalResponse<Resource<TState>>> PostAsync<TRequest, TState>(
         Uri requestUri,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
         string? version = default,
         CancellationToken cancellationToken = default)
-        => SendAsync<TRequest, TResponse>(HttpMethod.Post, requestUri, content, uriParameters, headers, version, cancellationToken);
+        => SendAsync<TRequest, TState>(HttpMethod.Post, requestUri, content, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse> PostAsync<TRequest>(
+    public Task<HalResponse<Resource>> PostAsync<TRequest>(
         Uri requestUri,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
@@ -101,17 +102,17 @@ public class HalClient : IHalClient
         => SendAsync(HttpMethod.Post, requestUri, content, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse<TResponse>> PutAsync<TRequest, TResponse>(
+    public Task<HalResponse<Resource<TState>>> PutAsync<TRequest, TState>(
         Uri requestUri,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
         string? version = default,
         CancellationToken cancellationToken = default)
-        => SendAsync<TRequest, TResponse>(HttpMethod.Put, requestUri, content, uriParameters, headers, version, cancellationToken);
+        => SendAsync<TRequest, TState>(HttpMethod.Put, requestUri, content, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public Task<HalResponse> PutAsync<TRequest>(
+    public Task<HalResponse<Resource>> PutAsync<TRequest>(
         Uri requestUri,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
@@ -121,7 +122,7 @@ public class HalClient : IHalClient
         => SendAsync(HttpMethod.Put, requestUri, content, uriParameters, headers, version, cancellationToken);
 
     /// <inheritdoc/>
-    public async Task<HalResponse<TResponse>> SendAsync<TRequest, TResponse>(
+    public async Task<HalResponse<Resource<TState>>> SendAsync<TRequest, TState>(
         HttpMethod method,
         Uri requestUri,
         TRequest? content = default,
@@ -130,15 +131,15 @@ public class HalClient : IHalClient
         string? version = default,
         CancellationToken cancellationToken = default)
     {
-        using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
+        using var response = await SendHttpRequestAsync(method, requestUri, Accepts.Hal, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
 
-        var halResponse = await HalResponse.FromHttpResponse<TResponse>(response, cancellationToken);
+        var halResponse = await HalResponse.FromHttpResponse<Resource<TState>>(response, cancellationToken);
 
         return halResponse;
     }
 
     /// <inheritdoc/>
-    public async Task<HalResponse> SendAsync<TRequest>(
+    public async Task<HalResponse<Resource>> SendAsync<TRequest>(
         HttpMethod method,
         Uri requestUri,
         TRequest? content = default,
@@ -147,9 +148,121 @@ public class HalClient : IHalClient
         string? version = default,
         CancellationToken cancellationToken = default)
     {
-        using var response = await SendHttpRequestAsync(method, requestUri, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
+        using var response = await SendHttpRequestAsync(method, requestUri, Accepts.Hal, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
 
-        var halResponse = await HalResponse.FromHttpResponse(response, cancellationToken);
+        var halResponse = await HalResponse.FromHttpResponse<Resource>(response, cancellationToken);
+
+        return halResponse;
+    }
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource<TState>>> DeleteFormAsync<TState>(
+        Uri requestUri,
+        string? eTag = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<object, TState>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource>> DeleteFormAsync(
+        Uri requestUri,
+        string? eTag = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<object>(HttpMethod.Delete, requestUri, null, uriParameters, AddETag(headers, eTag), version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource<TState>>> GetFormAsync<TState>(
+        Uri requestUri,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<object, TState>(HttpMethod.Get, requestUri, null, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource>> GetFormAsync(
+        Uri requestUri,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<object>(HttpMethod.Get, requestUri, null, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource<TState>>> PostFormAsync<TRequest, TState>(
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<TRequest, TState>(HttpMethod.Post, requestUri, content, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource>> PostFormAsync<TRequest>(
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync(HttpMethod.Post, requestUri, content, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource<TState>>> PutFormAsync<TRequest, TState>(
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync<TRequest, TState>(HttpMethod.Put, requestUri, content, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<HalResponse<FormsResource>> PutFormAsync<TRequest>(
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+        => SendFormAsync(HttpMethod.Put, requestUri, content, uriParameters, headers, version, cancellationToken);
+
+    /// <inheritdoc/>
+    public async Task<HalResponse<FormsResource<TState>>> SendFormAsync<TRequest, TState>(
+        HttpMethod method,
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await SendHttpRequestAsync(method, requestUri, Accepts.HalForms, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
+
+        var halResponse = await HalResponse.FromHttpResponse<FormsResource<TState>>(response, cancellationToken);
+
+        return halResponse;
+    }
+
+    /// <inheritdoc/>
+    public async Task<HalResponse<FormsResource>> SendFormAsync<TRequest>(
+        HttpMethod method,
+        Uri requestUri,
+        TRequest? content = default,
+        IDictionary<string, object>? uriParameters = default,
+        IDictionary<string, IEnumerable<string>>? headers = default,
+        string? version = default,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await SendHttpRequestAsync(method, requestUri, Accepts.HalForms, content, uriParameters, headers, version, HttpCompletionOption.ResponseContentRead, cancellationToken);
+
+        var halResponse = await HalResponse.FromHttpResponse<FormsResource>(response, cancellationToken);
 
         return halResponse;
     }
@@ -158,6 +271,7 @@ public class HalClient : IHalClient
     public async Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(
         HttpMethod method,
         Uri requestUri,
+        Accepts accepts,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
@@ -166,7 +280,7 @@ public class HalClient : IHalClient
         CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(method, requestUri);
-        var response = await SendHttpRequestAsync(request, content, uriParameters, headers, version, completionOption, cancellationToken);
+        var response = await SendHttpRequestAsync(request, accepts, content, uriParameters, headers, version, completionOption, cancellationToken);
 
         return response;
     }
@@ -174,6 +288,7 @@ public class HalClient : IHalClient
     /// <inheritdoc/>
     public async Task<HttpResponseMessage> SendHttpRequestAsync<TRequest>(
         HttpRequestMessage request,
+        Accepts accepts,
         TRequest? content = default,
         IDictionary<string, object>? uriParameters = default,
         IDictionary<string, IEnumerable<string>>? headers = default,
@@ -184,7 +299,7 @@ public class HalClient : IHalClient
         if (request.RequestUri is null)
             throw new ArgumentException("The request must have a RequestUri.", nameof(request));
 
-        AddHeadersToRequest(headers, version, request);
+        AddHeadersToRequest(headers, accepts, version, request);
 
         AddParametersToRequest(request.RequestUri, uriParameters, request);
 
@@ -217,21 +332,34 @@ public class HalClient : IHalClient
     {
         if (headers is not null && eTag is not null)
         {
-            headers[HeaderNames.ETag] = new[] { eTag };
+            headers[HeaderNames.ETag] = [eTag];
         }
 
         return headers;
     }
 
-    private static void AddHeadersToRequest(IDictionary<string, IEnumerable<string>>? headers, string? version, HttpRequestMessage request)
+    private static void AddHeadersToRequest(IDictionary<string, IEnumerable<string>>? headers, Accepts accepts, string? version, HttpRequestMessage request)
     {
         // Add default accept headers if the original response does not already contain any headers
         // which are used in conjunction with HAL.
         if (headers is null || !headers.TryGetValue(HeaderNames.Accept, out var userAcceptHeaders) ||
-            !(userAcceptHeaders.Contains(Constants.MediaTypes.Hal) && userAcceptHeaders.Contains(Constants.MediaTypes.HalForms) && userAcceptHeaders.Contains(Constants.MediaTypes.HalFormsPrs) && userAcceptHeaders.Contains(Constants.MediaTypes.Json)))
+            !(userAcceptHeaders.Contains(Constants.MediaTypes.Hal) || userAcceptHeaders.Contains(Constants.MediaTypes.HalForms) || userAcceptHeaders.Contains(Constants.MediaTypes.HalFormsPrs) || userAcceptHeaders.Contains(Constants.MediaTypes.Json)))
         {
-            request.Headers.Accept.Add(new(Constants.MediaTypes.Hal, 0.9));
-            request.Headers.Accept.Add(new(Constants.MediaTypes.Json, 0.7));
+            switch (accepts)
+            {
+                case Accepts.Hal:
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.Hal, 0.9));
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.Json, 0.8));
+                    break;
+                case Accepts.HalForms:
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.HalForms, 0.9));
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.HalFormsPrs, 0.8));
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.Hal, 0.7));
+                    request.Headers.Accept.Add(new(Constants.MediaTypes.Json, 0.6));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(accepts), accepts, "The value is not supported.");
+            }
         }
 
         // Add the headers provided by the user.

@@ -29,9 +29,7 @@ public class KeyValueDictionaryConverter<TValue> : JsonConverter<IDictionary<str
             var dictionary = new Dictionary<string, TValue>();
             while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
             {
-                var key = reader.GetString();
-                if (key is null)
-                    throw new JsonException("Cannot use null as Dictionary key");
+                var key = reader.GetString() ?? throw new JsonException("Cannot use null as Dictionary key");
                 var value = JsonSerializer.Deserialize<TValue>(ref reader, options)!;
                 dictionary[key] = value;
             }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using HAL.Common.Converters;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Forms;
@@ -6,6 +7,7 @@ namespace HAL.Common.Forms;
 /// <summary>
 /// A HAL-Forms document is the same as a normal HAL resource, but also has a _templates property.
 /// </summary>
+[JsonConverter(typeof(FormsResourceJsonConverter))]
 public record FormsResource : Resource
 {
     /// <summary>

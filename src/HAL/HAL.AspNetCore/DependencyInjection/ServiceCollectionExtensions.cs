@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
                 o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
                 o.JsonSerializerOptions.Converters.Insert(0, new DateOnlyJsonConverter());
                 o.JsonSerializerOptions.Converters.Insert(1, new TimeOnlyJsonConverter());
-                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumMemberConverter(JsonNamingPolicy.CamelCase));
+                o.JsonSerializerOptions.Converters.Add(new JsonEnumConverter(JsonNamingPolicy.CamelCase));
                 o.JsonSerializerOptions.Converters.Add(new ExceptionJsonConverterFactory());
             });
 

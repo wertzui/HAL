@@ -84,7 +84,7 @@ public class FormValueFactory : IFormValueFactory
                 if (filled.Value is IEnumerable enumerable)
                     filled.Options.SelectedValues = new HashSet<object?>(enumerable.Cast<object>());
                 else
-                    filled.Options.SelectedValues = new HashSet<object?> { filled.Value };
+                    filled.Options.SelectedValues = [filled.Value];
 
                 filled.Value = null;
             }
@@ -143,8 +143,7 @@ public class FormValueFactory : IFormValueFactory
 
     private static object? GetValue<TDto>(Property property, TDto value, Type valueType)
     {
-        var propertyInfo = valueType.GetProperty(property.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
-        if (propertyInfo is null)
+        var propertyInfo = valueType.GetProperty(property.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase) ??
             throw new ArgumentException($"The property {property.Name} does not exist in the value {value}.", nameof(property));
 
         var propertyValue = propertyInfo.GetValue(value);

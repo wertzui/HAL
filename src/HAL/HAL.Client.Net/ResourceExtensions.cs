@@ -14,13 +14,13 @@ public static class ResourceExtensions
     public static IEnumerable<Link> FindLinks(this Resource resource, string rel)
     {
         if (resource.Links is null)
-            return Array.Empty<Link>();
+            return [];
 
         if (!resource.Links.TryGetValue(rel, out var links))
-            return Array.Empty<Link>();
+            return [];
 
         if (links is null)
-            return Array.Empty<Link>();
+            return [];
 
         return links.Where(l => l is not null);
     }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.Routing;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,8 +17,8 @@ namespace HAL.AspNetCore.OData
     /// </summary>
     public class ODataLinkFactory : LinkFactory
     {
-        private static readonly IReadOnlySet<string> _oDataParameters = new HashSet<string> { "$filter", "$orderby", "$skip", "$top" };
-        private static readonly string _oDataParametersAsString = string.Join(",", _oDataParameters);
+        private static readonly FrozenSet<string> _oDataParameters = new HashSet<string> { "$filter", "$orderby", "$skip", "$top" }.ToFrozenSet();
+        private static readonly string _oDataParametersAsString = string.Join(',', _oDataParameters);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ODataLinkFactory"/> class.
@@ -33,6 +34,7 @@ namespace HAL.AspNetCore.OData
         {
         }
 
+        /// <inheritdoc/>
         protected override void AppendQuery(ControllerActionDescriptor descriptor, StringBuilder sb, out bool isTemplated)
         {
             var queryStarted = false;
@@ -65,7 +67,7 @@ namespace HAL.AspNetCore.OData
                     }
                     else
                     {
-                        sb.Append(parameter.BindingInfo.BinderModelName ?? parameter.Name);
+                        sb.Append(parameter.BindingInfo?.BinderModelName ?? parameter.Name);
 
                         var isEnumerable = parameter.ParameterType.IsGenericType && parameter.ParameterType.IsAssignableTo(typeof(IEnumerable));
                         if (isEnumerable)

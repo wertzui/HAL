@@ -108,7 +108,7 @@ public static class ResourceExtensions
         ArgumentNullException.ThrowIfNull(link);
 
         if (link.Name is null)
-            throw new ArgumentNullException(nameof(Link.Name));
+            throw new ArgumentException($"{nameof(link)}.{nameof(link.Name)} is null.", nameof(link));
 
         var key = link.Name;
 
@@ -240,9 +240,7 @@ public static class ResourceExtensions
 
         foreach (var rel in source)
         {
-            var key = rel.Key?.ToString();
-            if (key is null)
-                throw new ArgumentException($"One key of the ${nameof(source)} collection is null. The value is ${rel.Value}.", nameof(source));
+            var key = (rel.Key?.ToString()) ?? throw new ArgumentException($"One key of the ${nameof(source)} collection is null. The value is ${rel.Value}.", nameof(source));
 
             foreach (var link in rel.Value)
             {
@@ -356,12 +354,11 @@ public static class ResourceExtensions
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
 
-        if (resource.Embedded is null)
-            resource.Embedded = new Dictionary<string, ICollection<Resource>>();
+        resource.Embedded ??= new Dictionary<string, ICollection<Resource>>();
 
         if (!resource.Embedded.TryGetValue(key, out var collection))
         {
-            collection = new List<Resource>();
+            collection = [];
             resource.Embedded[key] = collection;
         }
 
@@ -375,12 +372,11 @@ public static class ResourceExtensions
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException($"'{nameof(key)}' cannot be null or whitespace.", nameof(key));
 
-        if (resource.Links is null)
-            resource.Links = new Dictionary<string, ICollection<Link>>();
+        resource.Links ??= new Dictionary<string, ICollection<Link>>();
 
         if (!resource.Links.TryGetValue(key, out var collection))
         {
-            collection = new List<Link>();
+            collection = [];
             resource.Links[key] = collection;
         }
 

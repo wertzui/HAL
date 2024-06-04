@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HAL.Common.Forms;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -11,9 +12,9 @@ namespace HAL.Common.Converters;
 
 /// <summary>
 /// Caches reflection related information to be used by the
-/// <see cref="ResourceJsonConverter{T}"/> class.
+/// <see cref="FormsResourceOfTJsonConverter{T}"/> class.
 /// </summary>
-public static class ResourceJsonConverterCache
+public static class FormsResourceJsonConverterCache
 {
     private static readonly ConcurrentDictionary<Type, IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>>> _constructorCache = new();
     private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
@@ -59,11 +60,11 @@ public static class ResourceJsonConverterCache
     /// <returns>Whether the state can be null or not.</returns>
     public static bool StateCanBeNull<TState>()
     {
-        var resourceType = typeof(Resource<TState>);
+        var resourceType = typeof(FormsResource<TState>);
 
         return _stateCanBeNullCache.GetOrAdd(resourceType, t =>
         {
-            var stateProperty = t.GetProperty(nameof(Resource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
+            var stateProperty = t.GetProperty(nameof(FormsResource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
             var nullabilityInfo = _nullabilityInfoContext.Create(stateProperty);
             var stateMustNotBeNull = nullabilityInfo.WriteState is NullabilityState.NotNull;
             return stateMustNotBeNull;
@@ -92,27 +93,28 @@ public static class ResourceJsonConverterCache
 /// </summary>
 /// <typeparam name="T">The type of the state of the resource.</typeparam>
 /// <seealso cref="JsonConverter{T}"/>
-public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
+public class FormsResourceOfTJsonConverter<T> : JsonConverter<FormsResource<T>>
 {
     /// <inheritdoc/>
     public override bool CanConvert(Type typeToConvert)
     {
         return
-            typeToConvert == typeof(Resource);
+            typeToConvert == typeof(FormsResource);
     }
 
     /// <inheritdoc/>
-    public override Resource<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override FormsResource<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
             throw new JsonException();
         }
 
-        Resource<T> resource;
+        FormsResource<T> resource;
         var stateType = typeof(T);
         IDictionary<string, ICollection<Link>>? links = default;
         IDictionary<string, ICollection<Resource>>? embedded = default;
+        IDictionary<string, FormTemplate>? templates = default;
         var stateProperties = new Dictionary<string, object?>();
         var stateConstructorArguments = new Dictionary<string, object?>();
 
@@ -121,7 +123,10 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
             if (reader.TokenType == JsonTokenType.EndObject)
             {
                 var state = CreateState(stateProperties, stateConstructorArguments);
-                resource = new Resource<T> { State = state };
+
+                templates ??= new Dictionary<string, FormTemplate>();
+
+                resource = new FormsResource<T>(templates) { State = state };
 
                 if (embedded is not null)
                     resource.Embedded = embedded;
@@ -146,6 +151,10 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
             {
                 links = JsonSerializer.Deserialize<IDictionary<string, ICollection<Link>>>(ref reader, options);
             }
+            else if (propertyName == Constants.FormTemplatesPropertyName)
+            {
+                templates = JsonSerializer.Deserialize<IDictionary<string, FormTemplate>>(ref reader, options);
+            }
             else
             {
                 // Try to map by constructor parameter
@@ -157,7 +166,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
                 }
 
                 // Try to map by property
-                if (ResourceJsonConverterCache.TryGetProperty(stateType, propertyName, out var property))
+                if (FormsResourceJsonConverterCache.TryGetProperty(stateType, propertyName, out var property))
                 {
                     stateProperties[property.Name] = JsonSerializer.Deserialize(ref reader, property.PropertyType, options);
                     continue;
@@ -172,7 +181,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     }
 
     /// <inheritdoc/>
-    public override void Write(Utf8JsonWriter writer, Resource<T> value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, FormsResource<T> value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
@@ -191,7 +200,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
     {
         T state = default!;
         var stateType = typeof(T);
-        var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
+        var stateConstructors = FormsResourceJsonConverterCache.GetConstructors(stateType);
 
         // Create an instance
         if (stateConstructorArguments.Count == 0 && stateConstructors.Count > 0)
@@ -224,14 +233,14 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
 
         if (state is null)
         {
-            if (!ResourceJsonConverterCache.StateCanBeNull<T>())
-                throw new JsonException($"Unable to deserialize the state of the resource, because the state could not be created and cannot be null. Unable to find a matching constructor for the possible arguments {JsonSerializer.Serialize(stateConstructors)}");
+            if (!FormsResourceJsonConverterCache.StateCanBeNull<T>())
+                throw new JsonException($"Unable to deserialize the state of the forms resource, because the state could not be created and cannot be null. Unable to find a matching constructor for the possible arguments {JsonSerializer.Serialize(stateConstructors)}");
             else
                 return state;
         }
 
         // Set property values
-        foreach (var pair in ResourceJsonConverterCache.GetProperties(stateType).PropertiesWithCorrectCasing)
+        foreach (var pair in FormsResourceJsonConverterCache.GetProperties(stateType).PropertiesWithCorrectCasing)
         {
             var propertyName = pair.Key;
             var property = pair.Value;
@@ -265,7 +274,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
 
     private static bool TryGetConstructorParameter(Type stateType, string lowerPropertyName, [NotNullWhen(true)] out ParameterInfo? parameter)
     {
-        var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
+        var stateConstructors = FormsResourceJsonConverterCache.GetConstructors(stateType);
 
         parameter = stateConstructors
             .Select(c => c.Value.TryGetValue(lowerPropertyName, out var parameter) ? parameter : null)
@@ -291,7 +300,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
         var value = property.GetValue(state);
         var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 
-        if (ResourceJsonConverter.ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
+        if (FormsResourceJsonConverter.ShouldWriteProperty(property, value, defaultValue, options.DefaultIgnoreCondition))
         {
             writer.WritePropertyName(name);
             JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);

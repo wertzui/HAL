@@ -276,6 +276,26 @@ public class ResourceSerializationTests
     }
 
     [TestMethod]
+    public void Resource_with_a_constructor_with_a_nested_record_can_be_deserialized()
+    {
+        // Arrange
+        var expectedResource = new Resource<ImmutableStateWithConstructorAndNestedRecord>
+        {
+            State = new ImmutableStateWithConstructorAndNestedRecord(42, new("Bar"))
+        };
+        var resourceJson = JsonSerializer.Serialize(expectedResource, Constants.DefaultSerializerOptions);
+
+        // Act
+        var actualResource = JsonSerializer.Deserialize<Resource<ImmutableStateWithConstructorAndNestedRecord>>(resourceJson, Constants.DefaultSerializerOptions);
+
+        // Assert
+        Assert.IsNotNull(actualResource);
+        Assert.AreEqual(expectedResource.State, actualResource.State);
+        Assert.AreEqual(expectedResource.State.NestedState, actualResource.State?.NestedState);
+        Assert.AreEqual(expectedResource.State.X, actualResource.State?.X);
+    }
+
+    [TestMethod]
     public void Resource_with_a_state_with_private_constructor_throws_a_meaningfull_exception()
     {
         // Arrange
@@ -330,5 +350,17 @@ public class ResourceSerializationTests
         }
 
         public static StateWithPrivateConstructor Create() => new();
+    }
+
+    private record ImmutableStateWithConstructorAndNestedRecord
+    {
+        public ImmutableStateWithConstructorAndNestedRecord(int x, ImmutableState? nestedState = default)
+        {
+            X = x;
+            NestedState = nestedState;
+        }
+
+        public int X { get; }
+        public ImmutableState? NestedState { get; }
     }
 }
