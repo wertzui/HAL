@@ -1,4 +1,3 @@
-import * as _ from "lodash";
 import { Resource, ResourceDto, } from "./resource"
 import { ResourceOfDto } from "./resourceOf";
 /*

@@ -1,5 +1,4 @@
 import { Link, LinkDto } from "./link";
-import * as _ from 'lodash';
 
 /** 
  *  A Resource Object represents a resource.   

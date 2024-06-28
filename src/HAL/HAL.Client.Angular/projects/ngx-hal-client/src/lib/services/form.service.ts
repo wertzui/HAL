@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
-import * as _ from "lodash";
-import { NumberTemplate, NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, Template, TemplateBase, Templates } from "../models/formsResource";
+import { NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates } from "../models/formsResource";
 
 @Injectable({
   providedIn: 'root'
