@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace HAL.AspNetCore.OData;
 
@@ -39,13 +40,13 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
     }
 
     /// <inheritdoc/>
-    public FormsResource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
+    public async ValueTask<FormsResource<Page>> CreateForODataListEndpointUsingSkipTopPagingAsync<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
     {
         var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
         var editTarget = LinkFactory.TryCreate(link: out var editLink, action: listPutMethod, controller: controller) ? editLink.Href : null;
 
-        var searchForm = CreateListSearchForm<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
-        var editForm = CreateListEditForm<TDto>(editTarget);
+        var searchForm = await CreateListSearchFormAsync<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);
+        var editForm = await CreateListEditFormAsync<TDto>(editTarget);
         var forms = new Dictionary<string, FormTemplate>
         {
             { searchForm.Title!, searchForm },
@@ -57,17 +58,28 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         return formResource;
     }
 
-    private FormTemplate CreateListEditForm<TDto>(string? target)
+    private async ValueTask<FormTemplate> CreateListEditFormAsync<TDto>(string? target)
     {
         var cacheKey = typeof(TDto) + "_ListEdit";
-        var template = Cache.GetOrCreate(cacheKey, entry => CreateEditFormTemplate<TDto>(target)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
+
+        if (!Cache.TryGetValue<FormTemplate>(cacheKey, out var template) || template is null)
+        {
+            template = await CreateEditFormTemplateAsync<TDto>(target);
+            Cache.Set(cacheKey, template);
+        }
+
         return template;
     }
 
-    private FormTemplate CreateListSearchForm<TDto>(string listGetMethod, ODataRawQueryOptions queryOptions)
+    private async ValueTask<FormTemplate> CreateListSearchFormAsync<TDto>(string listGetMethod, ODataRawQueryOptions queryOptions)
     {
         var cacheKey = typeof(TDto) + "_ListSearch";
-        var template = Cache.GetOrCreate(cacheKey, entry => CreateSearchFormTemplate<TDto>(listGetMethod)) ?? throw new InvalidOperationException($"A form template for the type {cacheKey} exists in the cache but is null.");
+
+        if (!Cache.TryGetValue<FormTemplate>(cacheKey, out var template) || template is null)
+        {
+            template = await CreateSearchFormTemplateAsync<TDto>(listGetMethod);
+            Cache.Set(cacheKey, template);
+        }
 
         // A new template needs to be created here to add the $orderby property value.
         var searchForm = new FormTemplate
@@ -105,9 +117,9 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         return searchForm;
     }
 
-    private FormTemplate CreateEditFormTemplate<TDto>(string? target)
+    private async ValueTask<FormTemplate> CreateEditFormTemplateAsync<TDto>(string? target)
     {
-        var editForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Put.ToString(), "Edit");
+        var editForm = await TemplateFactory.CreateTemplateForAsync<TDto>(HttpMethod.Put.ToString(), "Edit");
         editForm.Target = target;
 
         editForm.Properties ??= [];
@@ -115,9 +127,9 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         return editForm;
     }
 
-    private FormTemplate CreateSearchFormTemplate<TDto>(string listGetMethod)
+    private async ValueTask<FormTemplate> CreateSearchFormTemplateAsync<TDto>(string listGetMethod)
     {
-        var searchForm = TemplateFactory.CreateTemplateFor<TDto>(HttpMethod.Get.ToString(), "Search", "application/x-www-form-urlencoded");
+        var searchForm = await TemplateFactory.CreateTemplateForAsync<TDto>(HttpMethod.Get.ToString(), "Search", "application/x-www-form-urlencoded");
         searchForm.Target = listGetMethod;
 
         if (searchForm.Properties is not null)

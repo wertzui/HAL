@@ -2,6 +2,7 @@
 using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Forms;
 using HAL.AspNetCore.Forms.Abstractions;
+using HAL.AspNetCore.Forms.Customization;
 using HAL.Common.Converters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
@@ -31,7 +32,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IResourceFactory, ResourceFactory>();
 
         services.AddSingleton<IFormTemplateFactory, FormTemplateFactory>();
+        services.AddSingleton<IPropertyTemplateGenerationCustomization, DefaultPropertyTemplateGeneration>();
+
         services.AddSingleton<IFormValueFactory, FormValueFactory>();
+        services.AddSingleton<IPropertyValueGenerationCustomization, DefaultPropertyValueGeneration>();
+
         services.AddSingleton<IFormFactory, FormFactory>();
 
         services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();

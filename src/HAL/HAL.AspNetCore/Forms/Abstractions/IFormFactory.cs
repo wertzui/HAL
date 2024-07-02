@@ -1,6 +1,7 @@
 ﻿using HAL.Common;
 using HAL.Common.Forms;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace HAL.AspNetCore.Forms.Abstractions;
 
@@ -20,7 +21,7 @@ public interface IFormFactory
     /// <param name="title">The title of the form.</param>
     /// <param name="contentType">The content type that is used when submitting the form.</param>
     /// <returns>A <see cref="FormTemplate"/> for the type, filled with the given values.</returns>
-    FormTemplate CreateForm<T>(T value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json);
+    ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json);
 
     /// <summary>
     /// Creates the <see cref="FormTemplate"/> for the given type and fills it with the given value.
@@ -32,7 +33,7 @@ public interface IFormFactory
     /// <param name="title">The title of the form.</param>
     /// <param name="contentType">The content type that is used when submitting the form.</param>
     /// <returns>A <see cref="FormTemplate"/> for the type, filled with the given values.</returns>
-    FormTemplate CreateForm<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
+    ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
 
     /// <summary>
     /// Creates an empty <see cref="FormsResource"/>.
@@ -54,5 +55,5 @@ public interface IFormFactory
     /// <param name="controller">The controller to which the form will be submitted to.</param>
     /// <param name="routeValues">The route values to which the form will be submitted to.</param>
     /// <returns></returns>
-    FormsResource CreateResourceForEndpoint<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null);
+    ValueTask<FormsResource> CreateResourceForEndpointAsync<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null);
 }

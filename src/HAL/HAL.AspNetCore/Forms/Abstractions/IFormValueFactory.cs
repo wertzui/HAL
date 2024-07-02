@@ -1,4 +1,5 @@
 ﻿using HAL.Common.Forms;
+using System.Threading.Tasks;
 
 namespace HAL.AspNetCore.Forms.Abstractions;
 
@@ -14,5 +15,5 @@ public interface IFormValueFactory
     /// <param name="template">The template to fill with values.</param>
     /// <param name="value">The values to fill the template with.</param>
     /// <returns>A copy of the template, filled with values.</returns>
-    FormTemplate FillWith(FormTemplate template, object? value);
+    ValueTask<FormTemplate> FillWithAsync(FormTemplate template, object? value);
 }
