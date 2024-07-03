@@ -1,6 +1,7 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Forms;
 using HAL.AspNetCore.Forms.Abstractions;
+using HAL.AspNetCore.Forms.Customization;
 using HAL.AspNetCore.OData.Abstractions;
 using HAL.Common;
 using HAL.Common.Forms;
@@ -25,6 +26,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
     /// <param name="templateFactory">The template factory.</param>
     /// <param name="valueFactory">The value factory.</param>
     /// <param name="linkFactory">The link factory.</param>
+    /// <param name="customizations">The customizations which add <see cref="FormTemplate"/>s to the forms resource.</param>
     /// <param name="cache">The cache.</param>
     /// <param name="resourceFactory">The resource factory.</param>
     /// <exception cref="ArgumentNullException">resourceFactory</exception>
@@ -32,9 +34,10 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         IFormTemplateFactory templateFactory,
         IFormValueFactory valueFactory,
         ILinkFactory linkFactory,
+        IEnumerable<IFormsResourceGenerationCustomization> customizations,
         IMemoryCache cache,
         IODataResourceFactory resourceFactory)
-        : base(templateFactory, valueFactory, linkFactory, cache)
+        : base(templateFactory, valueFactory, linkFactory, customizations, cache)
     {
         _resourceFactory = resourceFactory ?? throw new ArgumentNullException(nameof(resourceFactory));
     }
@@ -54,6 +57,14 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
         };
 
         var formResource = new FormsResource<Page>(forms) { Embedded = resource.Embedded, Links = resource.Links, State = resource.State };
+
+        foreach (var customization in Customizations)
+        {
+            if (customization.AppliesTo(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null))
+            {
+                await customization.ApplyAsync(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null, this);
+            }
+        }
 
         return formResource;
     }

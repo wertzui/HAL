@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPropertyValueGenerationCustomization, DefaultPropertyValueGeneration>();
 
         services.AddSingleton<IFormFactory, FormFactory>();
+        services.AddSingleton<IFormsResourceGenerationCustomization, DefaultFormsResourceGenerationCustomization>();
 
         services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 

@@ -16,7 +16,7 @@ namespace HAL.Tests.AspNetCore
     public class FormFactoryTests
     {
         [TestMethod]
-        public async Task FormFactory_can_Generate_a_simple_Form()
+        public async Task FormFactory_can_generate_a_simple_Form()
         {
             // Arrange
             var templateFactory = new FormTemplateFactory([new DefaultPropertyTemplateGeneration([])]);
@@ -24,7 +24,7 @@ namespace HAL.Tests.AspNetCore
             var linkFactory = Substitute.For<ILinkFactory>();
             using var cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
             var dto = new SimpleDto { Age = 42, Name = "John Doe" };
-            var sut = new FormFactory(templateFactory, valueFactory, linkFactory, cache);
+            var sut = new FormFactory(templateFactory, valueFactory, linkFactory, [new DefaultFormsResourceGenerationCustomization(linkFactory)], cache);
 
             // Act
             var form = await sut.CreateFormAsync(dto, "target", HttpMethod.Post, "title", "contentType");

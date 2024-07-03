@@ -1,5 +1,6 @@
 ﻿using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Forms.Abstractions;
+using HAL.AspNetCore.Forms.Customization;
 using HAL.Common;
 using HAL.Common.Forms;
 using Microsoft.Extensions.Caching.Memory;
@@ -26,17 +27,20 @@ public class FormFactory : IFormFactory
     /// </param>
     /// <param name="valueFactory">The factory that is used to fill the templates with values.</param>
     /// <param name="linkFactory">The link factory.</param>
+    /// <param name="customizations">The customizations which add <see cref="FormTemplate"/>s to the forms resource.</param>
     /// <param name="cache">The cache to hold the empty templates.</param>
     /// <exception cref="ArgumentNullException"></exception>
     public FormFactory(
         IFormTemplateFactory templateFactory,
         IFormValueFactory valueFactory,
         ILinkFactory linkFactory,
+        IEnumerable<IFormsResourceGenerationCustomization> customizations,
         IMemoryCache cache)
     {
         TemplateFactory = templateFactory ?? throw new ArgumentNullException(nameof(templateFactory));
         ValueFactory = valueFactory ?? throw new ArgumentNullException(nameof(valueFactory));
         LinkFactory = linkFactory ?? throw new ArgumentNullException(nameof(linkFactory));
+        Customizations = customizations ?? throw new ArgumentNullException(nameof(customizations));
         Cache = cache ?? throw new ArgumentNullException(nameof(cache));
     }
 
@@ -44,6 +48,11 @@ public class FormFactory : IFormFactory
     /// The link factory.
     /// </summary>
     protected ILinkFactory LinkFactory { get; }
+
+    /// <summary>
+    /// The customizations which are applied in <see cref="CreateResourceForEndpointAsync{T}(T, HttpMethod, string, string, string, string?, object?)"/>.
+    /// </summary>
+    protected IEnumerable<IFormsResourceGenerationCustomization> Customizations { get; }
 
     /// <summary>
     /// The form template factory.
@@ -88,11 +97,16 @@ public class FormFactory : IFormFactory
     /// <inheritdoc/>
     public async ValueTask<FormsResource> CreateResourceForEndpointAsync<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null)
     {
-        var target = LinkFactory.GetSelfHref(action, controller, routeValues);
-        var template = await CreateFormAsync(value, target, method.Method, title, contentType);
+        var resource = new FormsResource(new Dictionary<string, FormTemplate>())
+            .AddSelfLink(LinkFactory, action, controller, routeValues);
 
-        var resource = CreateResource(template)
-            .AddSelfLink(target);
+        foreach (var customization in Customizations)
+        {
+            if (customization.AppliesTo(resource, value, method, title, contentType, action, controller, routeValues))
+            {
+                await customization.ApplyAsync(resource, value, method, title, contentType, action, controller, routeValues, this);
+            }
+        }
 
         return resource;
     }
