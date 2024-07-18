@@ -103,6 +103,7 @@ public interface IResourceFactory
     /// </param>
     /// <param name="idAccessor">The identifier accessor.</param>
     /// <param name="controller">The controller.</param>
+    /// <param name="version">The version of the API. Default is the latest version.</param>
     /// <param name="listGetMethod">
     /// The name of the get method for the list endpoint. Default is "GetList".
     /// </param>
@@ -110,7 +111,7 @@ public interface IResourceFactory
     /// The name of the get method for the get-single endpoint. Default is "Get".
     /// </param>
     /// <returns></returns>
-    Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
+    Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
 
     /// <summary>
     /// Creates a resource for a list endpoint. Call this during a get all request in your
@@ -131,6 +132,7 @@ public interface IResourceFactory
     /// The state with paging information (optional if the endpoint supports it).
     /// </param>
     /// <param name="controller">The controller.</param>
+    /// <param name="version">The version of the API. Default is the latest version.</param>
     /// <param name="listGetMethod">
     /// The name of the get method for the list endpoint. Default is "GetList".
     /// </param>
@@ -138,5 +140,5 @@ public interface IResourceFactory
     /// The name of the get method for the get-single endpoint. Default is "Get".
     /// </param>
     /// <returns></returns>
-    Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
+    Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
 }

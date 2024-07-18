@@ -1,4 +1,5 @@
-﻿using HAL.AspNetCore.Abstractions;
+﻿using Asp.Versioning;
+using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Forms;
 using HAL.AspNetCore.Forms.Abstractions;
 using HAL.AspNetCore.Forms.Customization;
@@ -43,9 +44,9 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
     }
 
     /// <inheritdoc/>
-    public async ValueTask<FormsResource<Page>> CreateForODataListEndpointUsingSkipTopPagingAsync<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
+    public async ValueTask<FormsResource<Page>> CreateForODataListEndpointUsingSkipTopPagingAsync<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get", string listPutMethod = "Put")
     {
-        var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, listGetMethod, singleGetMethod);
+        var resource = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(resources, keyAccessor, idAccessor, oDataQueryOptions, maxTop, totalCount, controller, version, listGetMethod, singleGetMethod);
         var editTarget = LinkFactory.TryCreate(link: out var editLink, action: listPutMethod, controller: controller) ? editLink.Href : null;
 
         var searchForm = await CreateListSearchFormAsync<TDto>(resource.GetSelfLink().Href, oDataQueryOptions);

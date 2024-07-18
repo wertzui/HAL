@@ -1,4 +1,5 @@
-﻿using HAL.AspNetCore.Abstractions;
+﻿using Asp.Versioning;
+using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.OData.Abstractions;
 using HAL.Common;
 using Microsoft.AspNetCore.OData.Query;
@@ -35,6 +36,7 @@ public class ODataResourceFactory : ResourceFactory, IODataResourceFactory
         long maxTop = 50,
         long? totalCount = null,
         string? controller = null,
+        ApiVersion? version = null,
         string listGetMethod = "GetList",
         string singleGetMethod = "Get")
     {
@@ -66,7 +68,7 @@ public class ODataResourceFactory : ResourceFactory, IODataResourceFactory
 
         var links = _oDataQueryFactory.GetListNavigation(resources, oDataQueryOptions, LinkFactory.Create(action: listGetMethod, controller: controller).Href, skip, top, totalCount);
 
-        var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links, page, controller, listGetMethod, singleGetMethod);
+        var resource = CreateForListEndpointWithPaging(resources, keyAccessor, idAccessor, links, page, controller, version, listGetMethod, singleGetMethod);
 
         return resource;
     }

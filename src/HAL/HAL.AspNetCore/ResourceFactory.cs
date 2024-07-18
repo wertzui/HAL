@@ -66,7 +66,7 @@ public class ResourceFactory : IResourceFactory
         .AddSwaggerUiCurieLink(LinkFactory, curieName);
 
     /// <inheritdoc/>
-    public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+    public Resource CreateForListEndpoint<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
     {
         ArgumentNullException.ThrowIfNull(resources);
         ArgumentNullException.ThrowIfNull(keyAccessor);
@@ -80,13 +80,13 @@ public class ResourceFactory : IResourceFactory
 
         var resource = Create();
 
-        AddSelfAndEmbedded(resources, keyAccessor, idAccessor, controller, listGetMethod, singleGetMethod, resource);
+        AddSelfAndEmbedded(resources, keyAccessor, idAccessor, controller, version, listGetMethod, singleGetMethod, resource);
 
         return resource;
     }
 
     /// <inheritdoc/>
-    public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
+    public Resource<Page> CreateForListEndpointWithPaging<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, IPageLinks? links = null, Page? state = null, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get")
     {
         ArgumentNullException.ThrowIfNull(resources);
         ArgumentNullException.ThrowIfNull(keyAccessor);
@@ -100,14 +100,14 @@ public class ResourceFactory : IResourceFactory
 
         var resource = Create(state ?? new Page());
 
-        AddSelfAndEmbedded(resources, keyAccessor, idAccessor, controller, listGetMethod, singleGetMethod, resource);
+        AddSelfAndEmbedded(resources, keyAccessor, idAccessor, controller, version, listGetMethod, singleGetMethod, resource);
 
         links?.AddTo(resource);
 
         return resource;
     }
 
-    private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller, string listGetMethod, string singleGetMethod, Resource resource)
+    private void AddSelfAndEmbedded<T, TKey, TId>(IEnumerable<T> resources, Func<T, TKey> keyAccessor, Func<T, TId> idAccessor, string? controller, ApiVersion? version, string listGetMethod, string singleGetMethod, Resource resource)
     {
         ArgumentNullException.ThrowIfNull(resources);
 
@@ -130,7 +130,7 @@ public class ResourceFactory : IResourceFactory
             {
                 var embeddedResource =
                     Create(r)
-                    .AddLinks(LinkFactory.CreateTemplated(ActionHelper.StripAsyncSuffix(singleGetMethod), ActionHelper.StripControllerSuffix(controller)), _ => Constants.SelfLinkName, l => l);
+                    .AddLinks(LinkFactory.CreateTemplated(ActionHelper.StripAsyncSuffix(singleGetMethod), ActionHelper.StripControllerSuffix(controller), version), _ => Constants.SelfLinkName, l => l);
 
                 if (embeddedResource.Links is not null && embeddedResource.Links.TryGetValue(Constants.SelfLinkName, out var selfLinks))
                 {

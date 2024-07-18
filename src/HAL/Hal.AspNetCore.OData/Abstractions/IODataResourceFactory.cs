@@ -1,4 +1,5 @@
-﻿using HAL.AspNetCore.Abstractions;
+﻿using Asp.Versioning;
+using HAL.AspNetCore.Abstractions;
 using HAL.Common;
 using Microsoft.AspNetCore.OData.Query;
 using System;
@@ -25,8 +26,9 @@ public interface IODataResourceFactory : IResourceFactory
     /// <param name="maxTop">The maximum top.</param>
     /// <param name="totalCount">The total count.</param>
     /// <param name="controller">The controller.</param>
+    /// <param name="version">The version of the API. Default is the latest version.</param>
     /// <param name="listGetMethod">The name of the get method for the list endpoint. Default is "GetList".</param>
     /// <param name="singleGetMethod">The name of the get method for the get-single endpoint. Default is "Get".</param>
     /// <returns></returns>
-    Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
+    Resource<Page> CreateForODataListEndpointUsingSkipTopPaging<TDto, TKey, TId>(IEnumerable<TDto> resources, Func<TDto, TKey> keyAccessor, Func<TDto, TId> idAccessor, ODataRawQueryOptions oDataQueryOptions, long maxTop = 50, long? totalCount = null, string? controller = null, ApiVersion? version = null, string listGetMethod = "GetList", string singleGetMethod = "Get");
 }
