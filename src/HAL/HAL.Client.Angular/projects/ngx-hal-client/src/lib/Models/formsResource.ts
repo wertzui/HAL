@@ -794,6 +794,14 @@ export abstract class TemplateBase<TTitle extends string | number = string, TPro
     }
 
     /**
+     * Returns an object where the keys are the property names and the values are the properties.
+     * If there are no properties, an empty object is returned.
+     */
+    public get propertiesRecord(): Record<string, ExtractGenericPropertyType<TPropertyDtos[number]>> {
+      return !this.properties ? {} : Object.fromEntries(this.properties.map(property => [property.name, property as any]));
+    }
+
+    /**
      * Checks whether this is a number template.
      * @returns True if this is a number template, false otherwise.
      */

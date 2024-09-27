@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using HAL.Common;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -25,12 +26,15 @@ namespace System.Text.Json.Serialization
         /// <param name="namingPolicy">
         /// Optional naming policy for writing enum values.
         /// </param>
+        /// <param name="jsonFlagsEnumSerializationHandling">
+        /// Defines how flags enums are serialized. Default value: <see cref="JsonFlagsEnumSerializationHandling.Array"/>.
+        /// </param>
         /// <param name="allowIntegerValues">
         /// True to allow undefined enum values. When true, if an enum value isn't
         /// defined it will output as a number rather than a string.
         /// </param>
-        public JsonEnumConverter(JsonNamingPolicy? namingPolicy = null, bool allowIntegerValues = true)
-            : this(new JsonEnumConverterOptions { NamingPolicy = namingPolicy, AllowIntegerValues = allowIntegerValues })
+        public JsonEnumConverter(JsonNamingPolicy? namingPolicy = null, JsonFlagsEnumSerializationHandling jsonFlagsEnumSerializationHandling = JsonFlagsEnumSerializationHandling.Array, bool allowIntegerValues = true)
+            : this(new JsonEnumConverterOptions { NamingPolicy = namingPolicy, JsonFlagsEnumSerializationHandling = jsonFlagsEnumSerializationHandling, AllowIntegerValues = allowIntegerValues })
         {
         }
 

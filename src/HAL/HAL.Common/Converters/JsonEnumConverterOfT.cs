@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Globalization;
 using System.Diagnostics;
+using HAL.Common;
 
 namespace System.Text.Json.Serialization
 {
@@ -28,6 +29,21 @@ namespace System.Text.Json.Serialization
                 RawValue = rawValue;
             }
         }
+        private class FlagsEnumInfo
+        {
+#pragma warning disable SA1401 // Fields should be private
+            public string[] Name;
+            public TEnum EnumValue;
+            public ulong RawValue;
+#pragma warning restore SA1401 // Fields should be private
+
+            public FlagsEnumInfo(string[] name, TEnum enumValue, ulong rawValue)
+            {
+                Name = name;
+                EnumValue = enumValue;
+                RawValue = rawValue;
+            }
+        }
 
         private const BindingFlags EnumBindings = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static;
         private const int MaximumAutoGrowthCacheSize = 64;
@@ -42,9 +58,11 @@ namespace System.Text.Json.Serialization
         private readonly Type _EnumType;
         private readonly TypeCode _EnumTypeCode;
         private readonly bool _IsFlags;
+        private readonly JsonFlagsEnumSerializationHandling _JsonFlagsEnumSerializationHandling;
         private readonly object _TransformedToRawCopyLockObject = new();
         private readonly object _RawToTransformedCopyLockObject = new();
         private Dictionary<TEnum, EnumInfo> _RawToTransformed;
+        private Dictionary<TEnum, FlagsEnumInfo> _RawFlagsToTransformed;
         private Dictionary<string, EnumInfo> _TransformedToRaw;
         private static readonly PropertyInfo? s_JsonException_AppendPathInformation
             = typeof(JsonException).GetProperty("AppendPathInformation", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -60,6 +78,7 @@ namespace System.Text.Json.Serialization
             _AllowIntegerValues = computedOptions?.AllowIntegerValues ?? true;
             _EnumTypeCode = Type.GetTypeCode(_EnumType);
             _IsFlags = _EnumType.IsDefined(typeof(FlagsAttribute), true);
+            _JsonFlagsEnumSerializationHandling = computedOptions?.JsonFlagsEnumSerializationHandling ?? JsonFlagsEnumSerializationHandling.Array;
 
             ulong? deserializationFailureFallbackValue = computedOptions?.ConvertedDeserializationFailureFallbackValue;
 
@@ -69,6 +88,7 @@ namespace System.Text.Json.Serialization
             int numberOfBuiltInNames = builtInNames.Length;
 
             _RawToTransformed = new Dictionary<TEnum, EnumInfo>(numberOfBuiltInNames);
+            _RawFlagsToTransformed = new Dictionary<TEnum, FlagsEnumInfo>(numberOfBuiltInNames);
             _TransformedToRaw = new Dictionary<string, EnumInfo>(numberOfBuiltInNames);
 
             for (int i = 0; i < numberOfBuiltInNames; i++)
@@ -192,11 +212,23 @@ namespace System.Text.Json.Serialization
 
             ulong rawValue = JsonEnumConverter.GetEnumValue(_EnumTypeCode, value);
 
-            if (_IsFlags
-                && TryGetStringForFlagsEnumValue(value, rawValue, rawToTransformed, out string? flagsValueString))
+            if (_IsFlags)
             {
-                writer.WriteStringValue(flagsValueString);
-                return;
+                if (_JsonFlagsEnumSerializationHandling == JsonFlagsEnumSerializationHandling.Array
+                    && TryGetArrayForFlagsEnumValue(value, rawValue, rawToTransformed, out string[] flagsValueArray))
+                {
+                    writer.WriteStartArray();
+                    foreach (string flagValue in flagsValueArray)
+                        writer.WriteStringValue(flagValue);
+                    writer.WriteEndArray();
+                    return;
+                }
+                else if (_JsonFlagsEnumSerializationHandling == JsonFlagsEnumSerializationHandling.String
+                    && TryGetStringForFlagsEnumValue(value, rawValue, rawToTransformed, out string? flagsValueString))
+                {
+                    writer.WriteStringValue(flagsValueString);
+                    return;
+                }
             }
 
             if (!_AllowIntegerValues)
@@ -484,6 +516,58 @@ namespace System.Text.Json.Serialization
             }
 
             flagsValueString = null;
+            return false;
+        }
+
+        private bool TryGetArrayForFlagsEnumValue(
+            TEnum value,
+            ulong rawValue,
+            Dictionary<TEnum, EnumInfo> rawToTransformed,
+            out string[] flagsValueArray)
+        {
+            if (_RawFlagsToTransformed.TryGetValue(value, out FlagsEnumInfo? flagsEnumInfo))
+            {
+                flagsValueArray = flagsEnumInfo.Name;
+                return true;
+            }
+
+            ulong calculatedValue = 0;
+
+            var list = new List<string>();
+            foreach (KeyValuePair<TEnum, EnumInfo> enumItem in rawToTransformed)
+            {
+                EnumInfo enumInfo = enumItem.Value;
+                if (!value.HasFlag(enumInfo.EnumValue)
+                    || enumInfo.RawValue == 0) // Definitions with 'None' should hit the cache case.
+                {
+                    continue;
+                }
+
+                // Track the value to make sure all bits are represented.
+                calculatedValue |= enumInfo.RawValue;
+
+                list.Add(enumInfo.Name);
+            }
+
+            if (calculatedValue == rawValue)
+            {
+                flagsValueArray = list.ToArray();
+                if (rawToTransformed.Count < MaximumAutoGrowthCacheSize)
+                {
+                    lock (_RawToTransformedCopyLockObject)
+                    {
+                        if (!_RawFlagsToTransformed.ContainsKey(value) && _RawFlagsToTransformed.Count < MaximumAutoGrowthCacheSize)
+                        {
+                            Dictionary<TEnum, FlagsEnumInfo> rawToTransformedCopy = new(_RawFlagsToTransformed);
+                            rawToTransformedCopy[value] = new FlagsEnumInfo(flagsValueArray, value, rawValue);
+                            _RawFlagsToTransformed = rawToTransformedCopy;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            flagsValueArray = [];
             return false;
         }
 

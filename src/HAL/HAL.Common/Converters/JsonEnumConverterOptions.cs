@@ -1,4 +1,6 @@
-﻿namespace System.Text.Json.Serialization
+﻿using HAL.Common;
+
+namespace System.Text.Json.Serialization
 {
     /// <summary>
     /// Stores options for <see cref="JsonEnumConverter"/>.
@@ -18,6 +20,14 @@
         /// for reading enum values. Default value: <see langword="true"/>.
         /// </summary>
         public bool AllowIntegerValues { get; set; } = true;
+
+        /// <summary>
+        /// Defines how flags enums are serialized. Default value: <see cref="JsonFlagsEnumSerializationHandling.Array"/>.
+        /// This only affects the serialization of flags enums.
+        /// Non-flags enums are always serialized as strings.
+        /// Both methods are supported for deserialization.
+        /// </summary>
+        public JsonFlagsEnumSerializationHandling JsonFlagsEnumSerializationHandling { get; set; } = JsonFlagsEnumSerializationHandling.Array;
 
         /// <summary>
         /// Gets or sets the optional default value to use when a json string
@@ -42,6 +52,9 @@
         /// <param name="namingPolicy">
         /// Optional naming policy for writing enum values.
         /// </param>
+        /// <param name="jsonFlagsEnumSerializationHandling">
+        /// Defines how flags enums are serialized. Default value: <see cref="JsonFlagsEnumSerializationHandling.Array"/>.
+        /// </param>
         /// <param name="allowIntegerValues">
         /// True to allow undefined enum values. When true, if an enum value isn't
         /// defined it will output as a number rather than a string.
@@ -53,10 +66,12 @@
         /// </param>
         public JsonEnumConverterOptions(
             JsonNamingPolicy? namingPolicy = null,
+            JsonFlagsEnumSerializationHandling jsonFlagsEnumSerializationHandling = JsonFlagsEnumSerializationHandling.Array,
             bool allowIntegerValues = true,
             object? deserializationFailureFallbackValue = null)
         {
             NamingPolicy = namingPolicy;
+            JsonFlagsEnumSerializationHandling = jsonFlagsEnumSerializationHandling;
             AllowIntegerValues = allowIntegerValues;
             DeserializationFailureFallbackValue = deserializationFailureFallbackValue;
         }

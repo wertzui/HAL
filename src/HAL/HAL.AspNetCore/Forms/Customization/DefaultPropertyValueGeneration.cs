@@ -37,9 +37,24 @@ namespace HAL.AspNetCore.Forms.Customization
                 if (halFormsProperty.Value is not null)
                 {
                     if (halFormsProperty.Value is IEnumerable enumerable)
+                    {
+                        // is enumerable
                         halFormsProperty.Options.SelectedValues = new HashSet<object?>(enumerable.Cast<object>());
+                    }
+                    else if (propertyInfo.PropertyType.IsEnum && propertyInfo.PropertyType.IsDefined(typeof(FlagsAttribute)))
+                    {
+                        // is flags enum
+                        var underlyingPropertyValue = Convert.ToUInt64(halFormsProperty.Value);
+                        halFormsProperty.Options.SelectedValues = Enum.GetValues(propertyInfo.PropertyType)
+                            .Cast<object>()
+                            .Where(f => (Convert.ToUInt64(f) & underlyingPropertyValue) != 0 && !f.Equals(0))
+                            .ToArray();
+                    }
                     else
+                    {
+                        // is single value
                         halFormsProperty.Options.SelectedValues = [halFormsProperty.Value];
+                    }
 
                     halFormsProperty.Value = null;
                 }
