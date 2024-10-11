@@ -12,7 +12,7 @@ namespace HAL.Common.Forms;
 /// support all of the core attributes and MAY support some or all of the additional attributes.
 /// </summary>
 /// <typeparam name="T">The type of the value of this property.</typeparam>
-public class Property<T>
+public record Property<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Property{T}" /> class.
@@ -188,7 +188,7 @@ public class Property<T>
 /// <summary>
 /// A Property whose state is of type object?.
 /// </summary>
-public class Property : Property<object?>
+public record Property : Property<object?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Property"/> class.

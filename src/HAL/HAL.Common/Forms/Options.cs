@@ -26,7 +26,7 @@ namespace HAL.Common.Forms;
 /// etc.).
 /// </summary>
 /// <typeparam name="T">The type of the value(s) for this element.</typeparam>
-public class Options<T>
+public record Options<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Options{T}"/> class.
