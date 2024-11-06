@@ -257,12 +257,29 @@ public partial class LinkFactory : ILinkFactory
     {
         var httpContext = GetHttpContext();
 
-        var path = LinkGenerator.GetUriByAction(httpContext, ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), routeValues) ??
+        var routeValueDictionary = MergeExplicitAndAmbientRouteValues(routeValues, httpContext);
+
+        var path = LinkGenerator.GetUriByAction(httpContext, ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), routeValueDictionary) ??
             throw new InvalidOperationException($"Unable to generate the self link. request: {httpContext.Request}, action: {action}, controller: {controller}, routeValues: {routeValues}");
 
         queryString ??= httpContext.Request.QueryString;
 
         return path + queryString;
+    }
+
+    private static RouteValueDictionary MergeExplicitAndAmbientRouteValues(object? routeValues, HttpContext? httpContext)
+    {
+        var routeValueDictionary = new RouteValueDictionary(routeValues);
+        if (httpContext?.Request.RouteValues is not null)
+        {
+            foreach (var routeValue in httpContext.Request.RouteValues)
+            {
+                if (!routeValueDictionary.ContainsKey(routeValue.Key))
+                    routeValueDictionary.Add(routeValue.Key, routeValue.Value);
+            }
+        }
+
+        return routeValueDictionary;
     }
 
     /// <inheritdoc/>
