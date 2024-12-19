@@ -1,11 +1,13 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Resource, ResourceDto } from '../models/resource';
 import { lastValueFrom } from 'rxjs';
 import { ListResource, ListResourceDto, ProblemDetails, ProblemDetailsDto } from '../../public-api';
 import { ResourceFactory } from './resource-factory';
+import { FormsResource, FormsResourceDto } from '../models/formsResource';
 
 interface HttpClientOptions {
+  body?: any;
   headers?: HttpHeaders;
   responseType: 'json';
   observe: 'response';
@@ -29,7 +31,7 @@ export class HalClient {
    */
   public get httpClient(): HttpClient { return this._httpClient; }
 
-  
+
   /**
    * Retrieves a resource from the specified URI.
    * @param uri The URI of the resource to retrieve.
@@ -70,32 +72,9 @@ export class HalClient {
    * @returns A promise that resolves with the response body as a resource object or a problem details object.
    */
   public async get<TDto, TResource extends Resource = Resource>(uri: string, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders): Promise<HttpResponse<TResource | ProblemDetails>> {
-    const options = HalClient.createOptions(headers);
-    let dtoResponse: HttpResponse<TDto & ResourceDto | ProblemDetailsDto> | undefined;
-    try {
-      dtoResponse = await lastValueFrom(this._httpClient.get<TDto & ResourceDto | ProblemDetailsDto>(uri, options));
-    }
-    catch (e) {
-      if (e instanceof HttpErrorResponse || e instanceof HttpResponse)
-        return HalClient.convertErrorResponse(e);
-      else
-        return HalClient.convertError(e, "GET", uri, options);
-    }
-
-    if (!dtoResponse)
-      return HalClient.convertNoResponse("GET", uri, options);
-
-    try {
-      if (dtoResponse.ok)
-        return HalClient.convertResponse(dtoResponse as HttpResponse<TDto & ResourceDto>, factory);
-
-      return HalClient.convertErrorResponse(dtoResponse as HttpResponse<ProblemDetailsDto>);
-    }
-    catch (e) {
-      return HalClient.convertFailedToConvertToProblemDetails(dtoResponse, e);
-    }
+    return this.request<TDto, TResource>("GET", uri, undefined, factory, headers);
   }
-  
+
   /**
    * Sends a POST request to the specified URI and returns the response as a Resource object with the specified DTO type.
    * @param uri The URI to send the POST request to.
@@ -140,33 +119,9 @@ export class HalClient {
    * @returns A promise that resolves to an HttpResponse containing the resource or a ProblemDetails object.
    */
   public async post<TDto, TResource extends Resource = Resource>(uri: string, body: any, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders): Promise<HttpResponse<TResource | ProblemDetails>> {
-    const options = HalClient.createOptions(headers);
-    let dtoResponse: HttpResponse<TDto & ResourceDto | ProblemDetailsDto> | undefined;
-
-    try {
-      dtoResponse = await lastValueFrom(this._httpClient.post<TDto & ResourceDto | ProblemDetailsDto>(uri, body, options));
-    }
-    catch (e) {
-      if (e instanceof HttpErrorResponse || e instanceof HttpResponse)
-        return HalClient.convertErrorResponse(e);
-      else
-        return HalClient.convertError(e, "GET", uri, options);
-    }
-
-    if (!dtoResponse)
-      return HalClient.convertNoResponse("GET", uri, options);
-
-    try {
-      if (dtoResponse.ok)
-        return HalClient.convertResponse(dtoResponse as HttpResponse<TDto & ResourceDto>, factory);
-
-      return HalClient.convertErrorResponse(dtoResponse as HttpResponse<ProblemDetailsDto>);
-    }
-    catch (e) {
-      return HalClient.convertFailedToConvertToProblemDetails(dtoResponse, e);
-    }
+    return this.request<TDto, TResource>("POST", uri, body, factory, headers);
   }
-  
+
   /**
    * Sends a PUT request to the specified URI and returns the response as a Resource object with the specified DTO type.
    * @param uri The URI to send the PUT request to.
@@ -198,8 +153,8 @@ export class HalClient {
    * @returns A Promise that resolves with the response as a Forms Resource.
    * @template TDto The type of the DTO to deserialize from the response body. Most of the time this will be void, because the forms resource does not contain any data by itself, but in the template.
    */
-  public async putAndGetResultAsFormsResource<TDto = void>(uri: string, body: any, headers?: HttpHeaders): Promise<HttpResponse<Resource & TDto | ProblemDetails>> {
-    return this.put<TDto, Resource & TDto>(uri, body, ResourceFactory.createFormResource, headers);
+  public async putAndGetResultAsFormsResource<TDto = void>(uri: string, body: any, headers?: HttpHeaders): Promise<HttpResponse<FormsResource & TDto | ProblemDetails>> {
+    return this.put<TDto, FormsResource>(uri, body, ResourceFactory.createFormResource, headers);
   }
 
   /**
@@ -210,26 +165,46 @@ export class HalClient {
    * @param headers Optional headers to include in the request.
    * @returns A promise that resolves with the response object or a problem details object.
    */
-  public async put<TDto, TResource extends Resource = Resource>(uri: string, body: any, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders): Promise<HttpResponse<TResource | ProblemDetails>> {
-    const options = HalClient.createOptions(headers);
-    let dtoResponse: HttpResponse<TDto & ResourceDto | ProblemDetailsDto> | undefined;
+  public put<TDto, TResource extends Resource = Resource>(uri: string, body: any, factory: (dto: (ResourceDto | FormsResourceDto) & TDto) => TResource & TDto, headers?: HttpHeaders): Promise<HttpResponse<TResource & TDto | ProblemDetails>> {
+    return this.request<TDto, TResource>("PUT", uri, body, factory, headers);
+  }
+
+  /**
+   * Sends a HTTP request to the specified URI with the provided method, body and headers.
+   * @param method The HTTP method to use for the request.
+   * @param uri The URI to send the request to.
+   * @param body The body of the request.
+   * @param factory A factory function that creates a new instance of the resource object from the response body. Normally this is one of the factory functions of the ResourceFactory class.
+   * @param headers Optional headers to include in the request.
+   * @returns A promise that resolves with the response object or a problem details object.
+   */
+  public async request<TDto, TResource extends Resource = Resource>(
+    method: string,
+    uri: string,
+    body: any,
+    factory: (dto: (ResourceDto | FormsResourceDto) & TDto) => TResource & TDto,
+    headers?: HttpHeaders)
+    : Promise<HttpResponse<TResource & TDto | ProblemDetails>> {
+    const options = HalClient.createOptions(body, headers);
+    
+    let dtoResponse: HttpResponse<(ResourceDto | FormsResourceDto) & TDto | ProblemDetailsDto> | undefined;
 
     try {
-      dtoResponse = await lastValueFrom(this._httpClient.put<TDto & ResourceDto | ProblemDetailsDto>(uri, body, options));
+      dtoResponse = await lastValueFrom(this._httpClient.request<(ResourceDto | FormsResourceDto) & TDto | ProblemDetailsDto>(method, uri, options));
     }
     catch (e) {
       if (e instanceof HttpErrorResponse || e instanceof HttpResponse)
         return HalClient.convertErrorResponse(e);
       else
-        return HalClient.convertError(e, "GET", uri, options);
+        return HalClient.convertError(e, method, uri, options);
     }
 
     if (!dtoResponse)
-      return HalClient.convertNoResponse("GET", uri, options);
+      return HalClient.convertNoResponse(method, uri, options);
 
     try {
       if (dtoResponse.ok)
-      return HalClient.convertResponse(dtoResponse as HttpResponse<TDto & ResourceDto>, factory);
+        return HalClient.convertResponse(dtoResponse as HttpResponse<(ResourceDto | FormsResourceDto) & TDto>, factory);
 
       return HalClient.convertErrorResponse(dtoResponse as HttpResponse<ProblemDetailsDto>);
     }
@@ -246,7 +221,7 @@ export class HalClient {
    * @returns A Promise that resolves with an HttpResponse containing either void or a ProblemDetails object.
    */
   public async delete(uri: string, headers?: HttpHeaders): Promise<HttpResponse<void | ProblemDetails>> {
-    const options = HalClient.createOptions(headers);
+    const options = HalClient.createOptions(undefined, headers);
     let response: HttpResponse<void | ProblemDetailsDto> | undefined;
 
     try {
@@ -256,11 +231,11 @@ export class HalClient {
       if (e instanceof HttpErrorResponse || e instanceof HttpResponse)
         response = HalClient.convertErrorResponse(e);
       else
-        return HalClient.convertError(e, "GET", uri, options);
+        return HalClient.convertError(e, "DELETE", uri, options);
     }
 
     if (!response)
-      return HalClient.convertNoResponse("GET", uri, options);
+      return HalClient.convertNoResponse("DELETE", uri, options);
 
     if (!response.ok) {
       try {
@@ -276,9 +251,10 @@ export class HalClient {
     return response as HttpResponse<void>;
   }
 
-  private static createOptions(headers?: HttpHeaders): HttpClientOptions {
+  private static createOptions(body?: any, headers?: HttpHeaders): HttpClientOptions {
     headers?.append('Accept', 'application/hal+json')
     return {
+      body: body,
       headers: headers,
       responseType: 'json',
       observe: 'response'
@@ -300,7 +276,7 @@ export class HalClient {
     if (response instanceof HttpErrorResponse) {
       let dto: ResourceDto & ProblemDetailsDto;
 
-      if(ProblemDetails.isProblemDetailsDto(response.error)) {
+      if (ProblemDetails.isProblemDetailsDto(response.error)) {
         dto = response.error;
       }
       else {

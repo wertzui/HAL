@@ -1,6 +1,6 @@
 {
   "name": "@wertzui/ngx-hal-client",
-  "version": "12.2.0",
+  "version": "13.0.0",
   "author": "wertzui",
   "description": "An Angular client to consume a REST service that serves application/hal+json and/or application/hal-forms+json.",
   "publishConfig": {
@@ -26,14 +26,14 @@
     "tslib": "^2"
   },
   "peerDependencies": {
-    "@angular/common": "^18",
-    "@angular/core": "^18",
-    "@angular/forms": "^18",
+    "@angular/common": "^19",
+    "@angular/core": "^19",
+    "@angular/forms": "^19",
     "uri-templates-es": "^1"
   },
   "devDependencies": {
-    "@angular/platform-browser-dynamic": "^18",
+    "@angular/platform-browser-dynamic": "^19",
     "@types/uri-templates": "0.1.34",
-    "eslint": "^9.5.0"
+    "eslint": "^9.17.0"
   }
 }
