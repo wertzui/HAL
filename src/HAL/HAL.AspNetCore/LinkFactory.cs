@@ -98,6 +98,10 @@ public partial class LinkFactory : ILinkFactory
         ArgumentNullException.ThrowIfNull(resource);
         ArgumentNullException.ThrowIfNull(name);
 
+        var httpContext = GetHttpContext();
+        var href = httpContext is null ?
+            LinkGenerator.GetUriByAction("Index", "Home", null, "https", new HostString("example.org"), options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}" :
+            LinkGenerator.GetUriByAction(httpContext, "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}";
         return resource.AddCurieLink(name, LinkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
     }
 
@@ -238,8 +242,11 @@ public partial class LinkFactory : ILinkFactory
         ArgumentNullException.ThrowIfNull(descriptor);
 
         var hrefBuilder = new StringBuilder();
-        var request = GetHttpContext().Request;
-        hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a URL like https://localhost:5001/
+        var request = GetHttpContext()?.Request;
+        if (request is not null)
+            hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a URL like https://localhost:5001/
+        else
+            hrefBuilder.Append("https://example.org");
 
         AppendPath(descriptor, hrefBuilder, out var pathIsTemplated);
 
@@ -256,6 +263,8 @@ public partial class LinkFactory : ILinkFactory
     public string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null, QueryString? queryString = null)
     {
         var httpContext = GetHttpContext();
+        if (httpContext is null)
+            return "https://example.org";
 
         var routeValueDictionary = MergeExplicitAndAmbientRouteValues(routeValues, httpContext);
 
@@ -293,7 +302,10 @@ public partial class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
     {
-        var href = LinkGenerator.GetUriByAction(GetHttpContext(), ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
+        var httpContext = GetHttpContext();
+        var href = httpContext is null ?
+            LinkGenerator.GetUriByAction(action!, controller!, values, "https", host is null ? default : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) :
+            LinkGenerator.GetUriByAction(GetHttpContext(), ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
         if (href is null)
         {
             link = null;
@@ -486,7 +498,7 @@ public partial class LinkFactory : ILinkFactory
         return cleanControllerName;
     }
 
-    private ActionContext GetActionContext() => ActionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current HttpContext.");
+    private ActionContext GetActionContext() => ActionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current ActionContext.");
 
     private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion? version)
     {
