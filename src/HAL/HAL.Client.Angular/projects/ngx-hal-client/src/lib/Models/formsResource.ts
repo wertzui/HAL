@@ -797,7 +797,7 @@ export abstract class TemplateBase<TTitle extends string | number = string, TPro
      * Returns an object where the keys are the property names and the values are the properties.
      * If there are no properties, an empty object is returned.
      */
-    public get propertiesRecord(): Record<string, ExtractGenericPropertyType<TPropertyDtos[number]>> {
+    public get propertiesRecord(): Partial<Record<string, ExtractGenericPropertyType<TPropertyDtos[number]>>> {
       if (this._propertiesRecord === undefined) {
         if (this.properties === undefined)
           this._propertiesRecord = {};
@@ -807,7 +807,7 @@ export abstract class TemplateBase<TTitle extends string | number = string, TPro
       return this._propertiesRecord;
     }
 
-    private _propertiesRecord?: Record<string, ExtractGenericPropertyType<TPropertyDtos[number]>>;
+    private _propertiesRecord?: Partial<Record<string, ExtractGenericPropertyType<TPropertyDtos[number]>>>;
 
     /**
      * Checks whether this is a number template.
