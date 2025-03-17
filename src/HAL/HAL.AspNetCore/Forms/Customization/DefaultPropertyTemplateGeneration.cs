@@ -1,4 +1,5 @@
 ﻿using HAL.AspNetCore.Forms.Abstractions;
+using HAL.Common.Attributes;
 using HAL.Common.Binary;
 using HAL.Common.Forms;
 using System;
@@ -23,27 +24,28 @@ namespace HAL.AspNetCore.Forms.Customization
     /// It generates a property template for a property based on the property's type, name and attributes.
     /// It reacts to the following attributes:
     /// <list type="bullet">
+    ///     <item><c>[ConcurrencyCheck]</c></item>
     ///     <item><c>[DataType]</c></item>
     ///     <item><c>[Display]</c></item>
     ///     <item><c>[DisplayName]</c></item>
     ///     <item><c>[Editable]</c></item>
+    ///     <item><c>[FileExtensions]</c></item>
     ///     <item><c>[ForeignKey]</c></item>
+    ///     <item><c>[IgnoreDataMember]</c></item>
+    ///     <item><c>[JsonIgnore]</c></item>
     ///     <item><c>[Key]</c></item>
     ///     <item><c>[Length]</c></item>
     ///     <item><c>[MaxLength]</c></item>
     ///     <item><c>[MinLength]</c></item>
+    ///     <item><c>[PromptDisplayType]</c></item>
     ///     <item><c>[Range]</c></item>
     ///     <item><c>[RegularExpression]</c></item>
     ///     <item><c>[Required]</c></item>
+    ///     <item><c>[ScaffoldColumn]</c></item>
+    ///     <item><c>[Step]</c></item>
     ///     <item><c>[StringLength]</c></item>
     ///     <item><c>[Timestamp]</c></item>
     ///     <item><c>[UIHint]</c></item>
-    ///     <item><c>[ConcurrencyCheck]</c></item>
-    ///     <item><c>[ScaffoldColumn]</c></item>
-    ///     <item><c>[IgnoreDataMember]</c></item>
-    ///     <item><c>[JsonIgnore]</c></item>
-    ///     <item><c>[PromptDisplayType]</c></item>
-    ///     <item><c>[FileExtensions]</c></item>
     /// </list>
     /// </summary>
     public class DefaultPropertyTemplateGeneration : IPropertyTemplateGenerationCustomization
@@ -411,6 +413,10 @@ namespace HAL.AspNetCore.Forms.Customization
 
                     case UIHintAttribute uIHint when Enum.TryParse<PropertyType>(uIHint.UIHint, true, out var custom):
                         halFormsProperty.Type = custom;
+                        break;
+
+                    case StepAttribute step:
+                        halFormsProperty.Step = step.Step;
                         break;
 
                     default:

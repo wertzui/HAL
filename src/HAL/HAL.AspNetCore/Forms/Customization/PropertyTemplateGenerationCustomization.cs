@@ -86,7 +86,7 @@ namespace HAL.AspNetCore.Forms.Customization
 
         /// <inheritdoc/>
         public bool AppliesTo(PropertyInfo propertyInfo, Property halFormsProperty)
-            => propertyInfo == Property;
+            => Property.HasSameMetadataDefinitionAs(propertyInfo);
 
         /// <inheritdoc/>
         public virtual ValueTask ApplyAsync(PropertyInfo propertyInfo, Property halFormsProperty, IFormTemplateFactory formTemplateFactory) => ValueTask.CompletedTask;
