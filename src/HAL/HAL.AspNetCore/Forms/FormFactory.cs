@@ -76,8 +76,7 @@ public class FormFactory : IFormFactory
 
         // We do not cache method and title so we can reuse the same template for Create (POST)
         // and Edit (PUT) forms.
-        FormTemplate? template;
-        if (!Cache.TryGetValue(name, out template) || template is null)
+        if (!Cache.TryGetValue(name, out FormTemplate? template) || template is null)
         {
             template = await TemplateFactory.CreateTemplateForAsync<T>("template_does_not_need_a_method", contentType: contentType);
             Cache.Set(name, template);
