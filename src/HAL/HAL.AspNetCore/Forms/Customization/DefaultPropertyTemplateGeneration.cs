@@ -24,8 +24,10 @@ namespace HAL.AspNetCore.Forms.Customization
     /// It generates a property template for a property based on the property's type, name and attributes.
     /// It reacts to the following attributes:
     /// <list type="bullet">
+    ///     <item><c>[AllowedValues]</c></item>
     ///     <item><c>[ConcurrencyCheck]</c></item>
     ///     <item><c>[DataType]</c></item>
+    ///     <item><c>[DeniedValues]</c></item>
     ///     <item><c>[Display]</c></item>
     ///     <item><c>[DisplayName]</c></item>
     ///     <item><c>[Editable]</c></item>
@@ -178,6 +180,7 @@ namespace HAL.AspNetCore.Forms.Customization
 
                 case DataType.PhoneNumber:
                     template.Type = PropertyType.Tel;
+                    template.Regex = @"^(\+\s?)?((?<!\+.*)\(\+?\d+([\s\-\.]?\d+)?\)|\d+)([\s\-\.]?(\(\d+([\s\-\.]?\d+)?\)|\d+))*(\s?(x|ext\.?)\s?\d+)?$";
                     break;
 
                 case DataType.Currency:
@@ -198,7 +201,7 @@ namespace HAL.AspNetCore.Forms.Customization
 
                 case DataType.EmailAddress:
                     template.Type = PropertyType.Email;
-                    template.Regex = @"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01 -\x08\x0b\x0c\x0e -\x1f\x21\x23 -\x5b\x5d -\x7f] |\\[\x01-\x09\x0b\x0c\x0e -\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])";
+                    template.Regex = @"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|""(?:[\x01.\x08\x0b\x0c\x0e.\x1f\x21\x23.\x5b\x5d.\x7f] |\\[\x01-\x09\x0b\x0c\x0e.\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])";
                     break;
 
                 case DataType.Password:
@@ -207,10 +210,12 @@ namespace HAL.AspNetCore.Forms.Customization
 
                 case DataType.Url:
                     template.Type = PropertyType.Url;
+                    template.Regex = @"^[a-z][a-z0-9+\-.]*:\S+$";
                     break;
 
                 case DataType.ImageUrl:
                     template.Type = PropertyType.Image;
+                    template.Regex = @"^[a-z][a-z0-9+\-.]*:\S+$";
                     break;
 
                 case DataType.CreditCard:
@@ -220,6 +225,7 @@ namespace HAL.AspNetCore.Forms.Customization
 
                 case DataType.PostalCode:
                     template.Type = PropertyType.Text;
+                    template.Regex = @"^[A-Z0-9][A-Z0-9\- ]{0,10}[A-Z0-9]$";
                     break;
 
                 case DataType.Upload when dataType is FileExtensionsAttribute f:
@@ -340,6 +346,40 @@ namespace HAL.AspNetCore.Forms.Customization
             {
                 switch (attribute)
                 {
+                    case AllowedValuesAttribute allowedValues:
+                        if (halFormsProperty.Options?.Inline is not null)
+                        {
+                            // Remove all Options.Inline items that are not in the allowed values.
+                            var itemsToRemove = halFormsProperty.Options.Inline
+                                .Where(i => !allowedValues.Values.Contains(i.Value))
+                                .ToHashSet();
+                            foreach (var item in itemsToRemove)
+                            {
+                                halFormsProperty.Options.Inline?.Remove(item);
+                            }
+                        }
+                        else if (halFormsProperty.Options is null)
+                        {
+                            // If there are no inline options, create them from the allowed values.
+                            halFormsProperty.Type = null;
+                            halFormsProperty.Options = new Options<object?>(allowedValues.Values.Select(v => new OptionsItem<object?>(v?.ToString() ?? "null", v)).ToList());
+                        }
+                        break;
+
+                    case DeniedValuesAttribute deniedValues:
+                        if (halFormsProperty.Options?.Inline is not null)
+                        {
+                            // Remove all Options.Inline items that are denied
+                            var itemsToRemove = halFormsProperty.Options.Inline
+                                .Where(i => deniedValues.Values.Contains(i.Value))
+                                .ToHashSet();
+                            foreach (var item in itemsToRemove)
+                            {
+                                halFormsProperty.Options.Inline?.Remove(item);
+                            }
+                        }
+                        break;
+
                     case DataTypeAttribute dataType:
                         AddTypeInformationFromAttribute(halFormsProperty, dataType);
                         break;
@@ -394,6 +434,10 @@ namespace HAL.AspNetCore.Forms.Customization
                             halFormsProperty.Max = max;
                         break;
 
+                    case ReadOnlyAttribute readOnly:
+                        halFormsProperty.ReadOnly = readOnly.IsReadOnly;
+                        break;
+
                     case RegularExpressionAttribute regularExpression:
                         halFormsProperty.Regex = regularExpression.Pattern;
                         break;
@@ -404,7 +448,7 @@ namespace HAL.AspNetCore.Forms.Customization
 
                     case StringLengthAttribute stringLength:
                         halFormsProperty.MinLength = stringLength.MinimumLength;
-                        halFormsProperty.MaxLength = stringLength.MinimumLength;
+                        halFormsProperty.MaxLength = stringLength.MaximumLength;
                         break;
 
                     case TimestampAttribute:

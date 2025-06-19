@@ -42,7 +42,7 @@ public class ExceptionJsonConverter<TException> : JsonConverter<TException>
     /// <inheritdoc/>
     public override TException? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotSupportedException("Deserializing exceptions is not unsafe and not allowed.");
+        throw new NotSupportedException("Deserializing exceptions is unsafe and not allowed.");
     }
 
     /// <inheritdoc/>
@@ -69,7 +69,14 @@ public class ExceptionJsonConverter<TException> : JsonConverter<TException>
         foreach (var prop in serializableProperties)
         {
             writer.WritePropertyName(prop.Name);
-            JsonSerializer.Serialize(writer, prop.Value, options);
+            try
+            {
+                JsonSerializer.Serialize(writer, prop.Value, options);
+            }
+            catch
+            {
+                writer.WriteNullValue();
+            }
         }
 
         writer.WriteEndObject();
