@@ -49,7 +49,7 @@ namespace HAL.AspNetCore.Forms.Customization
                         {
                             SelectedValues = Enum.GetValues(propertyInfo.PropertyType)
                                 .Cast<object?>()
-                                .Where(f => (Convert.ToUInt64(f) & underlyingPropertyValue) != 0 && !f.Equals(0))
+                                .Where(f => (Convert.ToUInt64(f) & underlyingPropertyValue) != 0 && !f!.Equals(0))
                                 .ToHashSet()
                         };
                     }
