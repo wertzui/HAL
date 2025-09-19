@@ -16,4 +16,4 @@ export * from './lib/services/form.service';
 export * from './lib/services/hal-client';
 export * from './lib/services/resource-factory';
 
-export * from './lib/hal-client.module';
+export { provideHalClient, ensureJsonPreservesTimeZoneInformation, restoreDefaultToJson } from './lib/provideHalClient';
