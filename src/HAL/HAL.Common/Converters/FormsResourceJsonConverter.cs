@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace HAL.Common.Converters;
 
@@ -13,7 +14,7 @@ namespace HAL.Common.Converters;
 /// A converter that can read and write <see cref="FormsResource"/>.
 /// </summary>
 /// <seealso cref="JsonConverter{FormsResource}" />
-public class FormsResourceJsonConverter : JsonConverter<FormsResource>
+public class FormsResourceJsonConverter : JsonConverter<FormsResource>, IJsonTypeInfoResolver
 {
     /// <summary>
     /// Determines if the given property should be written to the JSON payload based on the ignore condition.
@@ -178,5 +179,24 @@ public class FormsResourceJsonConverter : JsonConverter<FormsResource>
                 JsonSerializer.Serialize(writer, value, value?.GetType() ?? typeof(object), options);
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
+    {
+        if (type != typeof(FormsResource))
+            return null;
+
+        var typeInfo = JsonTypeInfo.CreateJsonTypeInfo<Resource>(options);
+
+        var resourceProperties = typeof(FormsResource).GetProperties();
+
+        foreach (var property in resourceProperties)
+        {
+            var propertyName = ConverterUtils.GetPropertyName(property, options.PropertyNamingPolicy);
+            typeInfo.AddJsonPropertyInfo(property, propertyName);
+        }
+
+        return typeInfo;
     }
 }

@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc.ApiExplorer;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.Routing;
@@ -24,13 +24,13 @@ namespace HAL.AspNetCore.OData
         /// Initializes a new instance of the <see cref="ODataLinkFactory"/> class.
         /// </summary>
         /// <param name="linkGenerator">The link generator from ASP.Net Core.</param>
-        /// <param name="actionContextAccessor">The action context accessor.</param>
+        /// <param name="httpContextAccessor">The HTTP context accessor.</param>
         /// <param name="apiExplorer">The API explorer.</param>
         public ODataLinkFactory(
             LinkGenerator linkGenerator,
-            IActionContextAccessor actionContextAccessor,
+            IHttpContextAccessor httpContextAccessor,
             IApiDescriptionGroupCollectionProvider apiExplorer)
-            : base(linkGenerator, actionContextAccessor, apiExplorer)
+            : base(linkGenerator, httpContextAccessor, apiExplorer)
         {
         }
 

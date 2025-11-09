@@ -43,7 +43,7 @@ public class ResourceSerializationTests
         Assert.AreEqual(expectedResourceJson, actualResourceJson);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(JsonIgnoreCondition.Never)]
     [DataRow(JsonIgnoreCondition.WhenWritingDefault)]
     [DataRow(JsonIgnoreCondition.WhenWritingNull)]
@@ -307,7 +307,7 @@ public class ResourceSerializationTests
 
         // Act
         // Assert
-        Assert.ThrowsException<JsonException>(() => JsonSerializer.Deserialize<Resource<StateWithPrivateConstructor>>(resourceJson, Constants.DefaultSerializerOptions));
+        Assert.ThrowsExactly<JsonException>(() => JsonSerializer.Deserialize<Resource<StateWithPrivateConstructor>>(resourceJson, Constants.DefaultSerializerOptions));
     }
 
     private record TestState<T>

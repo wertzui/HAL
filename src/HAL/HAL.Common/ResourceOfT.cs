@@ -1,5 +1,6 @@
 ﻿using HAL.Common.Converters;
 using System;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common;
@@ -12,6 +13,14 @@ namespace HAL.Common;
 /// <para>In addition this resource also has a state.</para>
 /// </summary>
 [JsonConverter(typeof(ResourceOfTJsonConverterFactory))]
+[Description(
+    """
+    A Resource Object represents a resource.
+    It has two reserved properties:
+    (1)  "_links": contains links to other resources.
+    (2)  "_embedded": contains embedded resources.
+    In addition this resource also has a state.
+    """)]
 public record Resource<TState> : Resource, IEquatable<Resource<TState>>
 {
     /// <summary>

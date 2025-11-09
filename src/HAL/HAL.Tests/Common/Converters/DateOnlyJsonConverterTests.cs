@@ -9,7 +9,7 @@ namespace HAL.Tests.Common.Converters;
 [TestClass]
 public class DateOnlyJsonConverterTests
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("2021-01-01", "2021-01-01")]
     [DataRow("2021-01-01T00:00:00.000+01:00", "2021-01-01")]
     [DataRow("2021-01-01T00:00:00.000Z", "2021-01-01")]

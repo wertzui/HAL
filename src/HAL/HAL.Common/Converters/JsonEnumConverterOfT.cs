@@ -11,7 +11,10 @@ using HAL.Common;
 
 namespace System.Text.Json.Serialization
 {
-    internal class JsonEnumConverter<TEnum> : JsonConverter<TEnum>
+    /// <summary>
+    /// <see cref="JsonConverter{TEnum}"/> to convert enums to and from strings, respecting <see cref="EnumMemberAttribute"/> decorations. Supports nullable enums.
+    /// </summary>
+    public class JsonEnumConverter<TEnum> : JsonConverter<TEnum>
         where TEnum : struct, Enum
     {
         private class EnumInfo
@@ -67,6 +70,12 @@ namespace System.Text.Json.Serialization
         private static readonly PropertyInfo? s_JsonException_AppendPathInformation
             = typeof(JsonException).GetProperty("AppendPathInformation", BindingFlags.NonPublic | BindingFlags.Instance);
 
+        /// <summary>
+        /// Creates a new <see cref="JsonEnumConverter{TEnum}"/> instance.
+        /// </summary>
+        /// <param name="options">The options to configure the converter.</param>
+        /// <exception cref="NotSupportedException"></exception>
+        /// <exception cref="JsonException"></exception>
         public JsonEnumConverter(JsonEnumConverterOptions? options)
         {
             _EnumType = typeof(TEnum);
@@ -107,7 +116,7 @@ namespace System.Text.Json.Serialization
                                          name;
 
                 if (enumValue is not TEnum typedValue)
-                    throw new NotSupportedException();
+                    throw new NotSupportedException($"Enum type mismatch: {enumValue.GetType()} cannot be converted to {_EnumType}.");
 
                 if (deserializationFailureFallbackValue.HasValue && rawValue == deserializationFailureFallbackValue)
                 {
@@ -123,6 +132,7 @@ namespace System.Text.Json.Serialization
                 throw new JsonException($"JsonStringEnumMemberConverter could not find a definition on Enum type {_EnumType} matching deserializationFailureFallbackValue '{deserializationFailureFallbackValue}'.");
         }
 
+        /// <inheritdoc/>
         public override TEnum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             JsonTokenType token = reader.TokenType;
@@ -161,6 +171,7 @@ namespace System.Text.Json.Serialization
             return ReadNumericEnumValue(ref reader, token);
         }
 
+        /// <inheritdoc/>
         public override TEnum ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             JsonTokenType token = reader.TokenType;
@@ -201,6 +212,7 @@ namespace System.Text.Json.Serialization
             return _DeserializationFailureFallbackValue ?? throw GenerateJsonException_DeserializeUnableToConvertValue(_EnumType, enumString);
         }
 
+        /// <inheritdoc/>
         public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
         {
             Dictionary<TEnum, EnumInfo> rawToTransformed = _RawToTransformed;
@@ -239,6 +251,7 @@ namespace System.Text.Json.Serialization
             writer.WriteRawValue(data, skipInputValidation: true);
         }
 
+        /// <inheritdoc/>
         public override void WriteAsPropertyName(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
         {
             Dictionary<TEnum, EnumInfo> rawToTransformed = _RawToTransformed;

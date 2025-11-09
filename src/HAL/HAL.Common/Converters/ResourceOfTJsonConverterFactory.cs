@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace HAL.Common.Converters;
 
@@ -9,7 +10,7 @@ namespace HAL.Common.Converters;
 /// A factory to instantiate a <see cref="ResourceJsonConverter{T}"/> with the correct type.
 /// </summary>
 /// <seealso cref="JsonConverterFactory" />
-public class ResourceOfTJsonConverterFactory : JsonConverterFactory
+public class ResourceOfTJsonConverterFactory : JsonConverterFactory, IJsonTypeInfoResolver
 {
     private static readonly Type _converterType = typeof(ResourceJsonConverter<>);
     private static readonly Type _resourceType = typeof(Resource<>);
@@ -35,5 +36,39 @@ public class ResourceOfTJsonConverterFactory : JsonConverterFactory
             _converterType.MakeGenericType(stateType));
 
         return converter ?? throw new ArgumentException($"{nameof(typeToConvert)} is not of type Resource<T>.", nameof(typeToConvert));
+    }
+
+    /// <inheritdoc/>
+    public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
+    {
+        if (!type.IsGenericType)
+            return null;
+
+        var genericType = type.GetGenericTypeDefinition();
+        if (genericType != typeof(Resource<>))
+            return null;
+
+        var stateType = type.GetGenericArguments()[0];
+
+        var typeInfo = JsonTypeInfo.CreateJsonTypeInfo(type, options);
+
+        var resourceProperties = typeof(Resource).GetProperties();
+        var stateProperties = stateType.GetProperties();
+
+        foreach (var property in stateProperties)
+        {
+            var propertyName = ConverterUtils.GetPropertyName(property, options.PropertyNamingPolicy);
+            typeInfo.AddJsonPropertyInfo(property, propertyName);
+        }
+
+        foreach (var property in resourceProperties)
+        {
+            var propertyName = ConverterUtils.GetPropertyName(property, options.PropertyNamingPolicy);
+            typeInfo.AddJsonPropertyInfo(property, propertyName);
+        }
+
+        typeInfo.SetConverter(CreateConverter(type, options));
+
+        return typeInfo;
     }
 }

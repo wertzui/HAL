@@ -3,10 +3,9 @@ using HAL.AspNetCore.Abstractions;
 using HAL.AspNetCore.Utils;
 using HAL.Common;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
@@ -27,17 +26,14 @@ public partial class LinkFactory : ILinkFactory
     /// Initializes a new instance of the <see cref="LinkFactory"/> class.
     /// </summary>
     /// <param name="linkGenerator">The link generator from ASP.Net Core.</param>
-    /// <param name="actionContextAccessor">The action context accessor.</param>
+    /// <param name="httpContextAccessor">The HTTP context accessor.</param>
     /// <param name="apiExplorer">The API explorer.</param>
-    /// <exception cref="System.ArgumentNullException">
-    /// urlHelperFactory or actionContextAccessor or apiExplorer or linkGenerator
-    /// </exception>
     /// <exception cref="ArgumentNullException">
-    /// urlHelperFactory or actionContextAccessor or apiExplorer
+    /// linkGenerator or httpContextAccessor or apiExplorer
     /// </exception>
-    public LinkFactory(LinkGenerator linkGenerator, IActionContextAccessor actionContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
+    public LinkFactory(LinkGenerator linkGenerator, IHttpContextAccessor httpContextAccessor, IApiDescriptionGroupCollectionProvider apiExplorer)
     {
-        ActionContextAccessor = actionContextAccessor ?? throw new ArgumentNullException(nameof(actionContextAccessor));
+        HttpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         ApiExplorer = apiExplorer ?? throw new ArgumentNullException(nameof(apiExplorer));
         LinkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
     }
@@ -52,7 +48,7 @@ public partial class LinkFactory : ILinkFactory
     /// <summary>
     /// Gets the action context accessor.
     /// </summary>
-    protected IActionContextAccessor ActionContextAccessor { get; }
+    protected IHttpContextAccessor HttpContextAccessor { get; }
 
     /// <summary>
     /// Gets the API explorer.
@@ -98,11 +94,11 @@ public partial class LinkFactory : ILinkFactory
         ArgumentNullException.ThrowIfNull(resource);
         ArgumentNullException.ThrowIfNull(name);
 
-        var httpContext = GetHttpContext();
+        var httpContext = HttpContextAccessor.HttpContext;
         var href = httpContext is null ?
             LinkGenerator.GetUriByAction("Index", "Home", null, "https", new HostString("example.org"), options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}" :
             LinkGenerator.GetUriByAction(httpContext, "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}";
-        return resource.AddCurieLink(name, LinkGenerator.GetUriByAction(GetHttpContext(), "Index", "Home", options: new LinkOptions { AppendTrailingSlash = true }) + "swagger/index.html#/{rel}");
+        return resource.AddCurieLink(name, href);
     }
 
     /// <inheritdoc/>
@@ -134,8 +130,10 @@ public partial class LinkFactory : ILinkFactory
     public IDictionary<string, ICollection<Link>> CreateAllLinks(string? prefix = null, ApiVersion? version = null)
     {
         var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
+        var currentActionDescriptor = HttpContextAccessor.GetActionDescriptor();
+
         return actionDescriptors
-            .Where(descriptor => descriptor != GetActionContext().ActionDescriptor) // without the self link
+            .Where(descriptor => descriptor != currentActionDescriptor) // without the self link
             .Select(d => (ControllerName: RemoveVersionFrom(d.ControllerName), CreateTemplated(d)))
             .GroupBy(p => p.ControllerName)
             .ToDictionary(g => string.IsNullOrWhiteSpace(prefix) ? g.Key : $"{prefix}:{g.Key}", g => (ICollection<Link>)g.Select(p => p.Item2).ToHashSet());
@@ -145,10 +143,12 @@ public partial class LinkFactory : ILinkFactory
     public ICollection<Link> CreateAllLinksWithoutParameters(ApiVersion? version = null)
     {
         var actionDescriptors = GetControllerActionDescriptorsForVersion(version);
+        var currentActionDescriptor = HttpContextAccessor.GetActionDescriptor();
+
         return actionDescriptors
             .Where(descriptor =>
                 descriptor.Parameters.Count == 0 && // only without any parameters (we do not know how to fill these)
-                descriptor != GetActionContext().ActionDescriptor) // without the self link
+                descriptor != currentActionDescriptor) // without the self link
             .Cast<ControllerActionDescriptor>()
             .Select(descriptor => Create(name: $"{RemoveVersionFrom(descriptor.ControllerName)}.{descriptor.ActionName}", action: descriptor.ActionName, controller: descriptor.ControllerName))
             .ToList();
@@ -242,7 +242,7 @@ public partial class LinkFactory : ILinkFactory
         ArgumentNullException.ThrowIfNull(descriptor);
 
         var hrefBuilder = new StringBuilder();
-        var request = GetHttpContext()?.Request;
+        var request = HttpContextAccessor.HttpContext?.Request;
         if (request is not null)
             hrefBuilder.Append($"{request.Scheme}://{request.Host}/{request.PathBase}"); // now we have a URL like https://localhost:5001/
         else
@@ -262,7 +262,7 @@ public partial class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public string GetSelfHref(string? action = null, string? controller = null, object? routeValues = null, QueryString? queryString = null)
     {
-        var httpContext = GetHttpContext();
+        var httpContext = HttpContextAccessor.HttpContext;
         if (httpContext is null)
             return "https://example.org";
 
@@ -302,10 +302,10 @@ public partial class LinkFactory : ILinkFactory
     /// <inheritdoc/>
     public bool TryCreate(string? name, string? title, [NotNullWhen(true)] out Link? link, string? action = null, string? controller = null, object? values = null, string? protocol = null, string? host = null, string? fragment = null)
     {
-        var httpContext = GetHttpContext();
+        var httpContext = HttpContextAccessor.HttpContext;
         var href = httpContext is null ?
             LinkGenerator.GetUriByAction(action!, controller!, values, "https", host is null ? default : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment)) :
-            LinkGenerator.GetUriByAction(GetHttpContext(), ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
+            LinkGenerator.GetUriByAction(httpContext, ActionHelper.StripAsyncSuffix(action), ActionHelper.StripControllerSuffix(controller), values, protocol, host is null ? null : new HostString(host), fragment: fragment is null ? default : new FragmentString(fragment));
         if (href is null)
         {
             link = null;
@@ -350,10 +350,6 @@ public partial class LinkFactory : ILinkFactory
         isTemplated = queryStarted;
     }
 
-    /// <summary>
-    /// Gets the current <see cref="HttpContext"/>.
-    /// </summary>
-    protected HttpContext GetHttpContext() => GetActionContext().HttpContext;
 
     private static void AppendDirectReplaceParameter(ControllerActionDescriptor descriptor, StringBuilder sb, string routeTemplate, CharEnumerator templateEnumerator)
     {
@@ -498,8 +494,6 @@ public partial class LinkFactory : ILinkFactory
         return cleanControllerName;
     }
 
-    private ActionContext GetActionContext() => ActionContextAccessor.ActionContext ?? throw new InvalidOperationException("Unable to get the current ActionContext.");
-
     private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion? version)
     {
         var descriptorGroups = ApiExplorer.ApiDescriptionGroups.Items;
@@ -525,7 +519,7 @@ public partial class LinkFactory : ILinkFactory
 
     private string GetCurrentControllerName()
     {
-        if (GetActionContext().ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
+        if (HttpContextAccessor.GetControllerActionDescriptor() is ControllerActionDescriptor controllerActionDescriptor)
             return controllerActionDescriptor.ControllerName;
 
         throw new InvalidOperationException($"When no controller is given, this method must be executed inside a controller method.");

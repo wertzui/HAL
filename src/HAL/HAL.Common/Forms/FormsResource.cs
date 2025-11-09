@@ -1,5 +1,6 @@
 ﻿using HAL.Common.Converters;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Forms;
@@ -8,6 +9,7 @@ namespace HAL.Common.Forms;
 /// A HAL-Forms document is the same as a normal HAL resource, but also has a _templates property.
 /// </summary>
 [JsonConverter(typeof(FormsResourceJsonConverter))]
+[Description("A HAL-Forms document is the same as a normal HAL resource, but also has a _templates property.")]
 public record FormsResource : Resource
 {
     /// <summary>
@@ -20,6 +22,17 @@ public record FormsResource : Resource
     /// the following possible properties:
     /// </summary>
     [JsonPropertyName(Constants.FormTemplatesPropertyName)]
+    [Description(
+        """
+        The _templates collection describes the available state transition details including the
+        HTTP method, message content-type, and arguments for the transition. This is a REQUIRED
+        element. If the HAL-FORMS document does not contain this element or the contents are
+        unrecognized or unparseable, the HAL-FORMS document SHOULD be ignored. The _templates
+        element contains a dictionary collection of template objects.A valid HAL-FORMS document
+        has at least one entry in the _templates dictionary collection. Each template contains
+        the following possible properties:
+        """
+    )]
     public IDictionary<string, FormTemplate> Templates { get; }
 
     /// <summary>

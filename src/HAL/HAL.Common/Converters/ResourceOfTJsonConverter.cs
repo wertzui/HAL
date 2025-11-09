@@ -251,18 +251,6 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
         return state;
     }
 
-    private static string GetPropertyName(PropertyInfo property, JsonNamingPolicy? propertyNamingPolicy)
-    {
-        var attribute = property.GetCustomAttribute<JsonPropertyNameAttribute>(true);
-        if (attribute is not null)
-            return attribute.Name;
-
-        if (propertyNamingPolicy is not null)
-            return propertyNamingPolicy.ConvertName(property.Name);
-
-        return property.Name;
-    }
-
     private static bool TryGetConstructorParameter(Type stateType, string lowerPropertyName, [NotNullWhen(true)] out ParameterInfo? parameter)
     {
         var stateConstructors = ResourceJsonConverterCache.GetConstructors(stateType);
@@ -287,7 +275,7 @@ public class ResourceJsonConverter<T> : JsonConverter<Resource<T>>
 
     private static void WritePropertyNameAndValue<TState>(Utf8JsonWriter writer, TState? state, JsonSerializerOptions options, PropertyInfo property)
     {
-        var name = GetPropertyName(property, options.PropertyNamingPolicy);
+        var name = ConverterUtils.GetPropertyName(property, options.PropertyNamingPolicy);
         var value = property.GetValue(state);
         var defaultValue = property.PropertyType.IsValueType ? Activator.CreateInstance(property.PropertyType) : null;
 

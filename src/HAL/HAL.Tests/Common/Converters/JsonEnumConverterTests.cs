@@ -60,7 +60,7 @@ namespace HAL.Tests.Common.Converters
             Assert.AreEqual(expected, actual);
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("\"Flag1, Flag2\"", null, DisplayName = "JSON string and null")]
         [DataRow("[\"Flag1\",\"Flag2\"]", null, DisplayName = "JSON array and null")]
         [DataRow("\"Flag1, Flag2\"", JsonFlagsEnumSerializationHandling.Array, DisplayName = "JSON string and array handling")]

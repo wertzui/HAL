@@ -4,10 +4,10 @@ using HAL.AspNetCore.Forms;
 using HAL.AspNetCore.Forms.Abstractions;
 using HAL.AspNetCore.Forms.Customization;
 using HAL.Common.Converters;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -40,8 +40,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFormFactory, FormFactory>();
         services.AddSingleton<IFormsResourceGenerationCustomization, DefaultFormsResourceGenerationCustomization>();
 
-        services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-
         services.AddMemoryCache();
 
         builder
@@ -55,6 +53,12 @@ public static class ServiceCollectionExtensions
                 o.JsonSerializerOptions.Converters.Insert(1, new TimeOnlyJsonConverter());
                 o.JsonSerializerOptions.Converters.Add(new JsonEnumConverter(JsonNamingPolicy.CamelCase));
                 o.JsonSerializerOptions.Converters.Add(new ExceptionJsonConverterFactory());
+
+                o.JsonSerializerOptions.TypeInfoResolverChain.Add(new FormsResourceOfTJsonConverterFactory());
+                o.JsonSerializerOptions.TypeInfoResolverChain.Add(new FormsResourceJsonConverter());
+                o.JsonSerializerOptions.TypeInfoResolverChain.Add(new ResourceOfTJsonConverterFactory());
+                o.JsonSerializerOptions.TypeInfoResolverChain.Add(new FormsResourceJsonConverter());
+                o.JsonSerializerOptions.TypeInfoResolverChain.Add(new DefaultJsonTypeInfoResolver());
             });
 
         return builder;

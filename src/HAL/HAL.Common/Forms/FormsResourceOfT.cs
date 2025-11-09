@@ -1,6 +1,7 @@
 ﻿using HAL.Common.Converters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace HAL.Common.Forms;
@@ -10,6 +11,12 @@ namespace HAL.Common.Forms;
 /// <para>In addition this resource also has a state.</para>
 /// </summary>
 [JsonConverter(typeof(FormsResourceOfTJsonConverterFactory))]
+[Description(
+    """
+    A HAL-Forms document is the same as a normal HAL resource, but also has a _templates property.
+    In addition this resource also has a state.
+    """
+    )]
 public record FormsResource<TState> : FormsResource, IEquatable<FormsResource<TState>>
 {
     /// <summary>
@@ -34,6 +41,7 @@ public record FormsResource<TState> : FormsResource, IEquatable<FormsResource<TS
     /// Gets or sets the state of the resource.
     /// </summary>
     /// <value>The state.</value>
+    [Description("Gets or sets the state of the resource.")]
     public TState? State { get; set; }
 
     /// <inheritdoc/>
