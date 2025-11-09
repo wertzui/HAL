@@ -183,6 +183,8 @@ public class ResourceJsonConverter : JsonConverter<Resource>, IJsonTypeInfoResol
             typeInfo.AddJsonPropertyInfo(property, propertyName);
         }
 
+        typeInfo.SetConverter(this);
+
         return typeInfo;
     }
 }

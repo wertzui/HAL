@@ -187,7 +187,7 @@ public class FormsResourceJsonConverter : JsonConverter<FormsResource>, IJsonTyp
         if (type != typeof(FormsResource))
             return null;
 
-        var typeInfo = JsonTypeInfo.CreateJsonTypeInfo<Resource>(options);
+        var typeInfo = JsonTypeInfo.CreateJsonTypeInfo<FormsResource>(options);
 
         var resourceProperties = typeof(FormsResource).GetProperties();
 
@@ -196,6 +196,8 @@ public class FormsResourceJsonConverter : JsonConverter<FormsResource>, IJsonTyp
             var propertyName = ConverterUtils.GetPropertyName(property, options.PropertyNamingPolicy);
             typeInfo.AddJsonPropertyInfo(property, propertyName);
         }
+
+        typeInfo.SetConverter(this);
 
         return typeInfo;
     }
