@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="Hal.AspNetCore.OData/HAL.AspNetCore.OData.csproj" />
+  <Project Path="HAL.AspNetCore/HAL.AspNetCore.csproj" />
+  <Project Path="HAL.Client.Angular/HAL.Client.Angular.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="HAL.Client.Net/HAL.Client.Net.csproj" />
+  <Project Path="HAL.Common/HAL.Common.csproj" />
+  <Project Path="HAL.Tests/HAL.Tests.csproj" />
+</Solution>
