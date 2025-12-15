@@ -10,7 +10,9 @@ namespace System.Text.Json.Serialization.Metadata;
 public static class JsonTypeInfoExtensions
 {
     private static readonly FieldInfo _converterBackingField = typeof(JsonTypeInfo).GetField($"<{nameof(JsonTypeInfo.Converter)}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new InvalidOperationException("Cannot find backing field for JsonTypeInfo.Converter.");
-    private static readonly NullabilityInfoContext _nullabilityContext = new NullabilityInfoContext();
+
+    [field: ThreadStatic]
+    private static NullabilityInfoContext NullabilityContext => field ??= new NullabilityInfoContext();
 
     /// <summary>
     /// Adds a JSON property to the type info with explicit property type, name, and separate get/set nullability.
@@ -261,7 +263,7 @@ public static class JsonTypeInfoExtensions
     /// <returns>A new <see cref="JsonPropertyInfo"/> instance.</returns>
     public static JsonPropertyInfo CreateJsonPropertyInfo(this JsonTypeInfo typeInfo, PropertyInfo propertyInfo)
     {
-        var nullabilityInfo = _nullabilityContext.Create(propertyInfo);
+        var nullabilityInfo = NullabilityContext.Create(propertyInfo);
         return typeInfo.CreateJsonPropertyInfo(
             propertyInfo.PropertyType,
             propertyInfo.Name,
@@ -279,7 +281,7 @@ public static class JsonTypeInfoExtensions
     /// <returns>A new <see cref="JsonPropertyInfo"/> instance.</returns>
     public static JsonPropertyInfo CreateJsonPropertyInfo(this JsonTypeInfo typeInfo, PropertyInfo propertyInfo, string name)
     {
-        var nullabilityInfo = _nullabilityContext.Create(propertyInfo);
+        var nullabilityInfo = NullabilityContext.Create(propertyInfo);
         return typeInfo.CreateJsonPropertyInfo(
             propertyInfo.PropertyType,
             name ?? propertyInfo.Name,

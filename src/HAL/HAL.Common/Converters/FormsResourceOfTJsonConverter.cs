@@ -17,10 +17,12 @@ namespace HAL.Common.Converters;
 public static class FormsResourceJsonConverterCache
 {
     private static readonly ConcurrentDictionary<Type, IDictionary<ConstructorInfo, Dictionary<string, ParameterInfo>>> _constructorCache = new();
-    private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
     private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithCorrectCasing = new();
     private static readonly ConcurrentDictionary<Type, IDictionary<string, PropertyInfo>> _propertyCacheWithLowerCasing = new();
     private static readonly ConcurrentDictionary<Type, bool> _stateCanBeNullCache = new();
+
+    [field: ThreadStatic]
+    private static NullabilityInfoContext NullabilityContext => field ??= new NullabilityInfoContext();
 
     /// <summary>
     /// Gets all constructors and their parameters by their lower cased names.
@@ -65,7 +67,7 @@ public static class FormsResourceJsonConverterCache
         return _stateCanBeNullCache.GetOrAdd(resourceType, t =>
         {
             var stateProperty = t.GetProperty(nameof(FormsResource<TState>.State)) ?? throw new ArgumentException($"Unable to find the State property on Resource<{typeof(TState).Name}>.");
-            var nullabilityInfo = _nullabilityInfoContext.Create(stateProperty);
+            var nullabilityInfo = NullabilityContext.Create(stateProperty);
             var stateMustNotBeNull = nullabilityInfo.WriteState is NullabilityState.NotNull;
             return stateMustNotBeNull;
         });

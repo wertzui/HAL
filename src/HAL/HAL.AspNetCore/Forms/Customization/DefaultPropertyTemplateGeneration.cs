@@ -52,10 +52,12 @@ namespace HAL.AspNetCore.Forms.Customization
     /// </summary>
     public class DefaultPropertyTemplateGeneration : IPropertyTemplateGenerationCustomization
     {
-        private static readonly NullabilityInfoContext _nullabilityInfoContext = new();
         private static readonly JsonNamingPolicy _propertyNamingPolicy = new JsonSerializerOptions(JsonSerializerDefaults.Web).PropertyNamingPolicy!;
         private static readonly ConcurrentDictionary<Type, object?> _defaultDtos = new();
         private readonly IEnumerable<IForeignKeyLinkFactory> _foreignKeyLinkFactories;
+
+        [field: ThreadStatic]
+        private static NullabilityInfoContext NullabilityContext => field ??= new NullabilityInfoContext();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultPropertyTemplateGeneration"/> class.
@@ -549,7 +551,7 @@ namespace HAL.AspNetCore.Forms.Customization
         {
             Type propertyType = property.PropertyType;
             var nullablePropertyType = Nullable.GetUnderlyingType(propertyType);
-            var nullabilityInfo = _nullabilityInfoContext.Create(property);
+            var nullabilityInfo = NullabilityContext.Create(property);
             template.Required = nullabilityInfo.WriteState is NullabilityState.NotNull;
 
             if (property.Name == nameof(KeyValuePair<object, object>.Key) &&
