@@ -2,8 +2,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "./dist/out-tsc",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -13,18 +11,13 @@
     "declaration": false,
     "useDefineForClassFields": true,
     "experimentalDecorators": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "lib": [
-      "ES2023",
-      "DOM"
-    ],
     "paths": {
       "ngx-hal-client": [
-        "dist/ngx-hal-client/ngx-hal-client",
-        "dist/ngx-hal-client"
+        "./dist/ngx-hal-client"
       ]
     },
   },
