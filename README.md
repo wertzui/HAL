@@ -1,10 +1,11 @@
 # HAL
 
-A .NET 9 library for implementing the Hypertext Application Language (HAL) and HAL-Forms in web APIs and clients.
+A .NET 10 library for implementing the Hypertext Application Language (HAL) and HAL-Forms in web APIs and clients.
 
 ## Purpose
 
 HAL is a standard for building discoverable, self-describing REST APIs using hypermedia links. This library helps you:
+
 - Expose resources with links and forms for easy client navigation
 - Support both standard and OData-based endpoints
 - Integrate HAL in .NET and Angular applications
@@ -14,6 +15,7 @@ HAL is a standard for building discoverable, self-describing REST APIs using hyp
 ## Overview
 
 This project provides:
+
 - Core HAL resource and link models
 - JSON serialization support
 - ASP.NET Core integration for easy HAL responses
@@ -21,6 +23,7 @@ This project provides:
 - .NET and Angular client libraries
 
 ## Specifications
+
 - [IETF HAL Draft](https://tools.ietf.org/html/draft-kelly-json-hal-08)
 - [Informal HAL Documentation](http://stateless.co/hal_specification.html)
 - [HAL-Forms Specification](https://rwcbook.github.io/hal-forms/)
@@ -29,9 +32,9 @@ This project provides:
 
  1. `HAL.Common` which contains the `Resource`, `Resource<T>`, `FormsResource`, `FormsResource<T>` and `Link` implementations and the converters needed for serialization with `System.Text.Json`.
  2. `HAL.AspNetCore` adds `IResourceFactory`, `IFormFactory` and `ILinkFactory` which can be used in your controllers to easily generate resources from your models. It also comes with a `HalControllerBase` class which can be used for all Controllers which return HAL.
- 3. `HAL.AspNetCore.OData` adds `IODataResourceFactory` and `IODataFormFactory` which can be used in your controllers to easily generate list endoints with paging from OData $filter, $skip and $top syntax.  
- 4. `Hal.Client.Net` is a client library to consume HAL APIs in .Net applications. When using it, you should call `app.Services.AddHalClientFactoy()` to inject the `IHalClientFactory` which can then be resolved in your application.
- 5. `Hal.Client.Angular`/`@wertzui/ngx-hal-client` is a client library to consume HAL APIs in Angular applications. It exposes the `HalClientModule` which then provides the `HalClient` and a `FormService`.
+ 3. `HAL.AspNetCore.OData` adds `IODataResourceFactory` and `IODataFormFactory` which can be used in your controllers to easily generate list endpoints with paging from OData `$filter`, `$skip` and `$top` syntax.
+ 4. `HAL.Client.Net` is a client library to consume HAL APIs in .NET applications. Call `services.AddHalClient()` to register `IHalClient`, or `services.AddHalClientFactoy(clientNames)` to register `IHalClientFactory` for named clients. ([Full documentation](docs/hal-client-net.md))
+ 5. `HAL.Client.Angular` / `@wertzui/ngx-hal-client` is a client library to consume HAL APIs in Angular applications. Call `provideHalClient()` in your `app.config.ts` providers to register `HalClient` and `FormService`. ([Full documentation](docs/hal-client-angular.md))
 
 ## Installation
 
@@ -39,7 +42,7 @@ Add the desired package(s) via NuGet:
 
 ```sh
 # Example for HAL.AspNetCore
- dotnet add package HAL.AspNetCore
+dotnet add package HAL.AspNetCore
 ```
 
 ### Angular Client Installation
@@ -61,12 +64,11 @@ Use this approach for standard REST endpoints.
 ```csharp
 builder.Services
     .AddControllers()
-    .AddHal()
-    .AddJsonOptions(o =>
-    {
-        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
-    });
+    .AddHAL();
 ```
+
+> `AddHAL()` already configures all required JSON options (converters, `DefaultIgnoreCondition`, etc.).
+> You only need to call `AddJsonOptions` afterwards if you want to customize settings beyond the defaults.
 
 **Return HAL resources from your controller:**
 
@@ -83,7 +85,7 @@ public class MyController : HalControllerBase
 
     [HttpGet]
     [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Get))]
-    public ActionResult<IResource> GetList()
+    public ActionResult<Resource> GetList()
     {
         var models = new[]
         {
@@ -97,11 +99,11 @@ public class MyController : HalControllerBase
     }
 
     [HttpGet("{id}")]
-    public ActionResult<IResource<ModelFullDto>> Get(int id)
+    public ActionResult<Resource<ModelFullDto>> Get(int id)
     {
         var model = new ModelFullDto { Id = id, Name = $"Test{id}", Description = "Very important!" };
 
-        var result = _resourceFactory.CreateForGetEndpoint(model);
+        var result = _resourceFactory.CreateForEndpoint(model);
 
         return Ok(result);
     }
@@ -124,11 +126,7 @@ builder.Services
         options.InputFormatters.RemoveType<ODataInputFormatter>();
     })
     .AddOData()
-    .AddHALOData()
-    .AddJsonOptions(o => // not neccessary, but creates a much nicer output
-    {
-        o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
-    });
+    .AddHALOData();
 
 var app = builder.Build();
 
@@ -155,11 +153,10 @@ public class MyController : HalControllerBase
 
     [HttpGet]
     [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Get))]
-    public ActionResult<Resource> GetList(
-            // The SwaggerIgnore attribute and all parameters beside the options are just here to give you a nice swagger experience.
+    public ActionResult<Resource<Page>> GetList(
+            // The SwaggerIgnore attribute and all parameters besides options are just here to give you a nice Swagger experience.
             // If you do not need that, you can remove everything except the options parameter.
-            // If you are using RESTworld, you can also remove everything except the options parameter, because there is a custom Swagger filter for that.
-            [SwaggerIgnore] ODataQueryOptions<TEntity> options,
+            [SwaggerIgnore] ODataQueryOptions<MyModelListDto> options,
         [FromQuery(Name = "$filter")] string? filter = default,
         [FromQuery(Name = "$orderby")] string? orderby = default,
         [FromQuery(Name = "$top")] long? top = default,
@@ -172,9 +169,12 @@ public class MyController : HalControllerBase
         };
 
         // Apply the OData filtering
-        models = options.Apply(models.AsQueryable()).Cast<MyModelListDto>().ToArray()
+        var filtered = options.ApplyTo(models.AsQueryable())
+            .Cast<MyModelListDto>()
+            .ToArray();
 
-        var result = _resourceFactory.CreateForOdataListEndpointUsingSkipTopPaging(models, _ => "items", m => m.Id, options);
+        var result = _resourceFactory.CreateForODataListEndpointUsingSkipTopPaging(
+            filtered, _ => "items", m => m.Id, options.RawValues);
 
         return Ok(result);
     }
@@ -182,6 +182,15 @@ public class MyController : HalControllerBase
     // GET, PUT, POST, ...
 }
 ```
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [HAL.AspNetCore](docs/hal-aspnetcore.md) | Full reference for the server-side library: resource factory, form factory, link factory, home endpoint, paging, HAL-Forms customization, and content negotiation. |
+| [HAL-Forms Generation](docs/hal-forms-generation.md) | Deep-dive into how HAL-Forms templates are generated from C# types: attribute reference, type mapping, and custom generation hooks. |
+| [HAL.Client.Net](docs/hal-client-net.md) | Full reference for the .NET client library: registration, HTTP methods, link navigation, response handling, and HAL-Forms. |
+| [HAL.Client.Angular](docs/hal-client-angular.md) | Full reference for the Angular client library: setup, `HalClient` API, `FormService`, `SignalFormService`, and date serialization. |
 
 ## When to use HAL
 

@@ -27,8 +27,8 @@ public record Resource : IEquatable<Resource>
     /// <summary>
     ///   <para>
     ///  The reserved "_embedded" property is OPTIONAL</para>
-    ///   <para>   It is an object whose property names are link relation types (as<br />   defined by [RFC5988]) and values are either a Resource Object or an<br />   array of Resource Objects.</para>
-    ///   <para>   Embedded Resources MAY be a full, partial, or inconsistent version of<br />   the representation served from the target URI. </para>
+    ///   <para>   It is an object whose property names are link relation types (as defined by [RFC5988]) and values are either a Resource Object or an array of Resource Objects.</para>
+    ///   <para>   Embedded Resources MAY be a full, partial, or inconsistent version of the representation served from the target URI. </para>
     /// </summary>
     /// <value>The embedded.</value>
     [JsonPropertyName(Constants.EmbeddedPropertyName)]
@@ -45,7 +45,7 @@ public record Resource : IEquatable<Resource>
 
     /// <summary>
     ///   <para>   The reserved "_links" property is OPTIONAL.</para>
-    ///   <para>   It is an object whose property names are link relation types (as<br />   defined by [RFC5988]) and values are either a Link Object or an array<br />   of Link Objects.  The subject resource of these links is the Resource<br />   Object of which the containing "_links" object is a property.</para>
+    ///   <para>   It is an object whose property names are link relation types (as defined by [RFC5988]) and values are either a Link Object or an array of Link Objects.  The subject resource of these links is the Resource Object of which the containing "_links" object is a property.</para>
     /// </summary>
     /// <value>The links.</value>
     [JsonPropertyName(Constants.LinksPropertyName)]

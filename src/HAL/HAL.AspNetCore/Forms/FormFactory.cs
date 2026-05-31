@@ -72,7 +72,7 @@ public class FormFactory : IFormFactory
     public async ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
         var type = typeof(T);
-        var name = "FormTemplate_" + type.Name;
+        var name = "FormTemplate_" + (type.FullName ?? type.Name);
 
         // We do not cache method and title so we can reuse the same template for Create (POST)
         // and Edit (PUT) forms.

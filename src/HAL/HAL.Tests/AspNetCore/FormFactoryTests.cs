@@ -36,7 +36,7 @@ namespace HAL.Tests.AspNetCore
             Assert.AreEqual("title", form.Title);
             Assert.AreEqual("contentType", form.ContentType);
             Assert.IsNotNull(form.Properties);
-            Assert.AreEqual(2, form.Properties.Count);
+            Assert.HasCount(2, form.Properties);
 
             var nameProperty = form.Properties.SingleOrDefault(p => p.Name == "name");
             Assert.IsNotNull(nameProperty);
