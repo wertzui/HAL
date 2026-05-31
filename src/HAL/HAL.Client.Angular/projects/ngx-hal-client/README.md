@@ -91,16 +91,16 @@ import { HalClient, Resource, ProblemDetails } from '@wertzui/ngx-hal-client';
 })
 export class ApiService {
   private apiRoot = 'https://api.example.com';
-  
+
   constructor(private halClient: HalClient) { }
-  
+
   async getRootResource() {
     const response = await this.halClient.getResource<any>(this.apiRoot);
-    
-    if (response.body instanceof ProblemDetails) {
-      throw new Error(`API error: ${response.body.title}`);
+
+    if (!response.ok) {
+      throw new Error(`API error: ${(response.body as ProblemDetails).title}`);
     }
-    
+
     return response.body;
   }
 }
@@ -123,28 +123,28 @@ export class OrderService {
   async getOrderDetails(orderId: string) {
     // First, get the API root resource
     const rootResponse = await this.halClient.getResource<any>(this.apiRoot);
-    if (rootResponse.body instanceof ProblemDetails) {
-      throw new Error(`API error: ${rootResponse.body.title}`);
+    if (!rootResponse.ok) {
+      throw new Error(`API error: ${(rootResponse.body as ProblemDetails).title}`);
     }
-    
+
     // Find the orders link
     const ordersLink = rootResponse.body.findLinks('orders')[0];
     if (!ordersLink) {
       throw new Error('Orders link not found');
     }
-    
+
     // Get the orders collection
     const ordersResponse = await this.halClient.getListResource<OrderDto>(ordersLink.href);
-    if (ordersResponse.body instanceof ProblemDetails) {
-      throw new Error(`API error: ${ordersResponse.body.title}`);
+    if (!ordersResponse.ok) {
+      throw new Error(`API error: ${(ordersResponse.body as ProblemDetails).title}`);
     }
-    
+
     // Find the specific order in embedded resources
     const order = ordersResponse.body._embedded['orders'].find(o => o.id === orderId);
     if (!order) {
       throw new Error(`Order ${orderId} not found`);
     }
-    
+
     return order;
   }
 }
@@ -188,11 +188,11 @@ export class ProductService {
       productData,
       headers
     );
-    
-    if (response.body instanceof ProblemDetails) {
-      throw new Error(`Failed to create product: ${response.body.detail}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to create product: ${(response.body as ProblemDetails).detail}`);
     }
-    
+
     return response.body;
   }
 }
@@ -229,23 +229,26 @@ export class UserRegistrationService {
   async registerUser(registrationFormUri: string, userData: UserRegistrationDto) {
     // Get the registration form
     const formResponse = await this.halClient.getFormsResource<void>(registrationFormUri);
-    if (formResponse.body instanceof ProblemDetails) {
-      throw new Error(`Failed to get registration form: ${formResponse.body.title}`);
+    if (!formResponse.ok) {
+      throw new Error(`Failed to get registration form: ${(formResponse.body as ProblemDetails).title}`);
     }
-    
-    const formResource = formResponse.body as FormsResource;
-    
-    // Use FormService to submit the form with user data
-    const response = await this.formService.submitForm<UserRegistrationDto, UserProfileDto>(
-      formResource,
-      'register',
+
+    // Find the submit target from the default template
+    const template = formResponse.body._templates?.['default'];
+    if (!template?.target) {
+      throw new Error('No submit target found in the form template');
+    }
+
+    // Submit the form data
+    const response = await this.halClient.postAndGetResultAsResource<UserProfileDto>(
+      template.target,
       userData
     );
-    
-    if (response.body instanceof ProblemDetails) {
-      throw new Error(`Registration failed: ${response.body.detail}`);
+
+    if (!response.ok) {
+      throw new Error(`Registration failed: ${(response.body as ProblemDetails).detail}`);
     }
-    
+
     return response.body;
   }
 }
@@ -283,6 +286,12 @@ The main service for interacting with HAL-compliant APIs.
 | `postAndGetResultAsListResource<TListEntryDto>(uri: string, body: any, headers?: HttpHeaders)` | Sends a POST request and returns the result as a list resource |
 | `postAndGetResultAsFormsResource<TDto = void>(uri: string, body: any, headers?: HttpHeaders)` | Sends a POST request and returns the result as a forms resource |
 | `post<TDto, TResource extends Resource = Resource>(uri: string, body: any, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders)` | Sends a POST request to the specified URI |
+| `putAndGetResultAsResource<TDto>(uri: string, body: any, headers?: HttpHeaders)` | Sends a PUT request and returns the result as a resource |
+| `putAndGetResultAsListResource<TListEntryDto>(uri: string, body: any, headers?: HttpHeaders)` | Sends a PUT request and returns the result as a list resource |
+| `putAndGetResultAsFormsResource<TDto = void>(uri: string, body: any, headers?: HttpHeaders)` | Sends a PUT request and returns the result as a forms resource |
+| `put<TDto, TResource extends Resource = Resource>(uri: string, body: any, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders)` | Sends a PUT request to the specified URI |
+| `deleteAndGetResultAsResource<TDto>(uri: string, headers?: HttpHeaders)` | Sends a DELETE request and returns the result as a resource |
+| `delete<TDto, TResource extends Resource = Resource>(uri: string, factory: (dto: TDto & ResourceDto) => TResource & TDto, headers?: HttpHeaders)` | Sends a DELETE request to the specified URI |
 
 ### Resource
 
@@ -359,38 +368,37 @@ export class UserFormComponent implements OnInit {
   async ngOnInit() {
     // Fetch a form resource from the server
     const response = await this.halClient.getFormsResource<void>('https://api.example.com/users/form');
-    if (response.ok && !(response.body instanceof ProblemDetails)) {
+    if (response.ok) {
       // Store the form resource for later use
       this.formResource = response.body as FormsResource;
-      
+
       // Create form groups from the templates in the form resource
       this.formGroups = this.formService.createFormGroupsFromTemplates(this.formResource._templates);
-      
+
       // Now you can access form groups by their template names
       // e.g., this.formGroups['default'], this.formGroups['admin'], etc.
     }
   }
-  
+
   async submit() {
     if (this.formGroups['default'].valid && this.formResource) {
       const formData = this.formGroups['default'].value;
-      
+
       // Find a template with target URI for submission
       const template = this.formResource._templates['default'];
       if (template && template.target) {
         // Submit the form data to the specified target
         const submitResponse = await this.halClient.postAndGetResultAsResource<UserProfileDto>(
           template.target,
-          formData)
+          formData
         );
-          
-          if (submitResponse.ok && !(submitResponse.body instanceof ProblemDetails)) {
-            console.log('Form submitted successfully:', submitResponse.body);
-            // Handle successful submission
-          } else {
-            console.error('Form submission failed:', submitResponse.body);
-            // Handle submission error
-          }
+
+        if (submitResponse.ok) {
+          console.log('Form submitted successfully:', submitResponse.body);
+          // Handle successful submission
+        } else {
+          console.error('Form submission failed:', submitResponse.body);
+          // Handle submission error
         }
       }
     }
@@ -552,30 +560,28 @@ These examples demonstrate how to use the FormService to create form controls, g
 
 **Problem**: Unsure how to use templated links (URI templates).
 
-**Solution**: Use the URI Templates standard to expand templated links. For example:
+**Solution**: The `href` of a templated link contains a URI template (e.g., `/users/{userId}`). Substitute parameters manually or use the `uri-templates-es` package (already a transitive dependency) to expand them:
 
 ```typescript
-import * as UriTemplate from 'uri-templates';
+import UriTemplate from 'uri-templates-es';
 
-// For a templated link like "/users/{userId}"
-const userLink = resource.findLink('user');
-if (userLink && userLink.templated) {
-  const template = new UriTemplate(userLink.href);
-  const uri = template.fill({ userId: '123' });
-  // Now use the expanded URI with the HAL client
-  const response = await halClient.getResource<UserDto>(uri);
+const userLink = resource._links['user']?.[0];
+if (userLink?.templated) {
+  const expanded = new UriTemplate(userLink.href).fill({ userId: '123' });
+  const response = await halClient.getResource<UserDto>(expanded);
 }
 ```
 
 #### Error Handling Best Practices
 
-Always check if the response is a ProblemDetails instance before proceeding:
+Always check `response.ok` before accessing `response.body` as a resource:
 
 ```typescript
 const response = await halClient.getResource<ResourceDto>(uri);
-if (response.body instanceof ProblemDetails) {
+if (!response.ok) {
+  const problem = response.body as ProblemDetails;
   // Handle error based on status code
-  switch (response.body.status) {
+  switch (response.status) {
     case 404:
       console.error('Resource not found');
       break;
@@ -584,7 +590,7 @@ if (response.body instanceof ProblemDetails) {
       console.error('Authentication/authorization error');
       break;
     default:
-      console.error(`Error: ${response.body.title} - ${response.body.detail}`);
+      console.error(`Error: ${problem.title} - ${problem.detail}`);
   }
   throw new Error('API request failed');
 }
@@ -599,4 +605,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Unlicense.

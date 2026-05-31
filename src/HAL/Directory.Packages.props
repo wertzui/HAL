@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+	<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageVersion Include="Asp.Versioning.Abstractions" Version="10.0.0" />
+	<PackageVersion Include="coverlet.collector" Version="10.0.1" />
+	<PackageVersion Include="Macross.Json.Extensions" Version="3.0.0" />
+	<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
+	<PackageVersion Include="Microsoft.AspNetCore.OData" Version="9.4.1" />
+	<PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
+	<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+	<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
+	<PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
+	<PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
+	<PackageVersion Include="NSubstitute" Version="5.3.0" />
+	<PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
+	<PackageVersion Include="Tavis.UriTemplates" Version="2.0.0" />
+  </ItemGroup>
+</Project>

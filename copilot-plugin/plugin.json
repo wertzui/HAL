@@ -1,0 +1,11 @@
+{
+  "name": "hal-dev-tools",
+  "description": "Specialized agents for building HAL (Hypertext Application Language) APIs and clients with the HAL .NET and Angular libraries.",
+  "version": "1.0.0",
+  "author": {
+    "name": "wertzui"
+  },
+  "repository": "https://github.com/wertzui/HAL",
+  "keywords": ["hal", "dotnet", "aspnetcore", "angular", "rest"],
+  "agents": "agents/"
+}
