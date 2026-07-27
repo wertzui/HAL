@@ -14,7 +14,6 @@ export * from './lib/models/resourceOf';
 
 export * from './lib/services/form.service';
 export * from './lib/services/signal-form.service';
-export * from './lib/services/signal-form.service';
 export * from './lib/services/hal-client';
 export * from './lib/services/resource-factory';
 

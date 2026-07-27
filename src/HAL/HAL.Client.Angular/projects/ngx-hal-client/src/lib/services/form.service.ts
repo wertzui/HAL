@@ -1,13 +1,11 @@
-import { Injectable } from "@angular/core";
+import { Service } from "@angular/core";
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates } from "../models/formsResource";
 
-@Injectable({
-  providedIn: 'root'
-})
 /**
  * A service that provides methods for creating form groups and form controls from templates and properties.
  */
+@Service()
 export class FormService {
 
   /**
@@ -136,10 +134,9 @@ export class FormService {
     }
 
     if (property.type === PropertyType.Collection) {
-      const numberTemplates = property._templates as unknown as NumberTemplates;
-      if (!numberTemplates)
+      if (!property._templates)
         throw new Error(`The property ${property.name} is of type Collection, but has no templates.`);
-      return this.createFormArrayFromTemplates(numberTemplates, ['default']);
+      return this.createFormArrayFromTemplates(property._templates as NumberTemplates, ['default']);
     }
 
     return this.createSimpleFormControlFromProperty(property);
@@ -154,13 +151,13 @@ export class FormService {
     const value = FormService.getPropertyValue(property);
     const control = new FormControl(value);
 
-    if (property.max)
+    if (property.max !== undefined)
       control.addValidators(Validators.max(property.max));
-    if (property.maxLength)
+    if (property.maxLength !== undefined)
       control.addValidators(Validators.maxLength(property.maxLength));
-    if (property.min)
+    if (property.min !== undefined)
       control.addValidators(Validators.min(property.min));
-    if (property.minLength)
+    if (property.minLength !== undefined)
       control.addValidators(Validators.minLength(property.minLength));
     if (property.regex)
       control.addValidators(Validators.pattern(property.regex));

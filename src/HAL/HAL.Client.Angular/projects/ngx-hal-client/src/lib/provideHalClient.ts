@@ -1,6 +1,7 @@
 import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 import { HalClient } from './services/hal-client';
-import { FormService } from '../public-api';
+import { FormService } from './services/form.service';
+import { SignalFormService } from "./services/signal-form.service";
 
 // Store the default toJSON method for potential restoration
 const _defaultToJson = Date.prototype.toJSON;
@@ -58,6 +59,7 @@ export function provideHalClient(): EnvironmentProviders {
   
   return makeEnvironmentProviders([
     HalClient,
-    FormService
+    FormService,
+    SignalFormService
   ]);
 }

@@ -10,13 +10,13 @@
   },
   "private": true,
   "devDependencies": {
-    "@angular/build": "^21.2.6",
-    "@angular/cli": "21.2.6",
-    "@angular/compiler-cli": "21.2.7",
+    "@angular/build": "22.0.8",
+    "@angular/cli": "22.0.8",
+    "@angular/compiler-cli": "22.0.8",
     "@types/jasmine": "6.0.0",
-    "@types/node": "25.5.2",
-    "@vitest/browser-webdriverio": "^4.1.2",
-    "ng-packagr": "21.2.2",
-    "typescript": "5.9.3"
+    "@types/node": "26.1.2",
+    "@vitest/browser-webdriverio": "4.1.10",
+    "ng-packagr": "22.0.2",
+    "typescript": "6.0.2"
   }
 }

@@ -179,14 +179,14 @@ export class Resource {
 
     if (typeof dto === "string") {
       if (this._iso8601RegEx.test(dto)) {
-        var maybeDate = new Date(dto);
+        const maybeDate = new Date(dto);
         if (!isNaN(maybeDate.getTime()))
           return maybeDate;
       }
 
       if (this._timeRegEx.test(dto)) {
-        var maybeTime = new Date("0001-01-01T" + dto);
-        if (isNaN(maybeTime.getTime()))
+        const maybeTime = new Date("0001-01-01T" + dto);
+        if (!isNaN(maybeTime.getTime()))
           return maybeTime;
       }
     }

@@ -1,4 +1,4 @@
-import { Injectable, signal, WritableSignal } from "@angular/core";
+import { Service, signal, WritableSignal } from "@angular/core";
 import { form, required, email, min, max, minLength, maxLength, pattern, applyEach, SchemaPath, SchemaPathTree, FieldTree } from '@angular/forms/signals';
 import { Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates, NumberTemplates } from "../models/formsResource";
 
@@ -13,13 +13,11 @@ export interface SignalForm<T extends Record<string, unknown> = Record<string, u
   form: FieldTree<T>;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
 /**
  * A service that provides methods for creating Signal Forms from templates and properties.
  * This is the Signal Forms equivalent of {@link FormService}.
  */
+@Service()
 export class SignalFormService {
 
   /**

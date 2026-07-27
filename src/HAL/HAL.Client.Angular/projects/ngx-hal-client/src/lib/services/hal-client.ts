@@ -229,7 +229,7 @@ export class HalClient {
     }
     catch (e) {
       if (e instanceof HttpErrorResponse || e instanceof HttpResponse)
-        response = HalClient.convertErrorResponse(e);
+        return HalClient.convertErrorResponse(e);
       else
         return HalClient.convertError(e, "DELETE", uri, options);
     }
@@ -237,25 +237,17 @@ export class HalClient {
     if (!response)
       return HalClient.convertNoResponse("DELETE", uri, options);
 
-    if (!response.ok) {
-      try {
-        const errorResponse = HalClient.convertErrorResponse(response as HttpResponse<ProblemDetailsDto>);
-
-        return errorResponse;
-      }
-      catch (e) {
-        return HalClient.convertErrorResponse(response as HttpResponse<ProblemDetailsDto>);
-      }
-    }
+    if (!response.ok)
+      return HalClient.convertErrorResponse(response as HttpResponse<ProblemDetailsDto>);
 
     return response as HttpResponse<void>;
   }
 
   private static createOptions(body?: any, headers?: HttpHeaders): HttpClientOptions {
-    headers?.append('Accept', 'application/hal+json')
+    const mergedHeaders = (headers ?? new HttpHeaders()).append('Accept', 'application/hal+json');
     return {
       body: body,
-      headers: headers,
+      headers: mergedHeaders,
       responseType: 'json',
       observe: 'response'
     }
@@ -327,12 +319,12 @@ export class HalClient {
     return resourceResponse;
   }
 
-  private static convertError(error: unknown, method: string, uri: string, options: HttpClientOptions, body?: any): HttpResponse<ProblemDetails> {
+  private static convertError(error: unknown, method: string, uri: string, options: HttpClientOptions): HttpResponse<ProblemDetails> {
     const dto: ResourceDto & ProblemDetailsDto = {
       _links: { self: [{ href: uri }] },
-      title: "An error occured.",
+      title: "An error occurred.",
       status: 500,
-      detail: `An error occured while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)} and body ${JSON.stringify(body ?? "<empty>")}.`,
+      detail: `An error occurred while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)}.`,
       instance: uri
     };
 
@@ -348,12 +340,12 @@ export class HalClient {
     return resourceResponse;
   }
 
-  private static convertNoResponse(method: string, uri: string, options: HttpClientOptions, body?: any): HttpResponse<ProblemDetails> {
+  private static convertNoResponse(method: string, uri: string, options: HttpClientOptions): HttpResponse<ProblemDetails> {
     const dto: ResourceDto & ProblemDetailsDto = {
       _links: { self: [{ href: uri }] },
-      title: "An error occured.",
+      title: "An error occurred.",
       status: 500,
-      detail: `No response was returned while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)} and body ${JSON.stringify(body ?? "<empty>")}.`,
+      detail: `No response was returned while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)}.`,
       instance: uri
     };
 

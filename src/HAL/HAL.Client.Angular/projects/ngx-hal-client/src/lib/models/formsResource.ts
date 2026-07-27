@@ -7,7 +7,7 @@ import { Resource, ResourceDto } from './resource';
 export type SimpleValue = string | number | boolean | Date | null | undefined;
 
 /**
- * THis helper type converts a PropertyDto<X, Y, Z> to a Property<X, Y, Z> and preserfes the generic parameters.
+ * THis helper type converts a PropertyDto<X, Y, Z> to a Property<X, Y, Z> and preserves the generic parameters.
  */
 export type ExtractGenericPropertyType<TPropertyDto> = TPropertyDto extends PropertyDto<infer X, infer Y, infer Z> ? Property<X, Y, Z> : never
 
@@ -58,7 +58,7 @@ export interface TemplateDto<TProperties extends ReadonlyArray<PropertyDto<Simpl
   /**
    * Contains the identifier of the target URL for the client to use when submitting the
    * completed HAL-FORMS template. For example, if the client should submit the completed
-   * template to the following URL: http://api.example.org/jobs/ then the target proprety
+   * template to the following URL: http://api.example.org/jobs/ then the target property
    * would be target="http://api.example.org/jobs/". This is an OPTIONAL property. If this
    * property is not understood by the recipient, left blank, or contains an invalid URL
    * string, it SHOULD be ignored. The target property holds the same information as the
@@ -136,7 +136,7 @@ export interface PropertyDto<TValue extends SimpleValue, OptionsPromptField exte
   /**
    * The options element contains a set of possible values accessible either byValue (e.g.
    * inline) or byReference (e.g. via link.href) and can be used to provide a constrained
-   * list of possble values for a property field. See The options Element for details.
+   * list of possible values for a property field. See The options Element for details.
    * Support for the options object of a property element is OPTIONAL. If the client does not
    * understand or cannot parse the options element, the options element SHOULD be ignored
    * and the corresponding property SHOULD be treated as a simple text input element.
@@ -249,7 +249,7 @@ export interface PropertyDto<TValue extends SimpleValue, OptionsPromptField exte
  * Whatever value is ultimately selected gets placed into the property.options.selectedValues
  * array attribute.When sending the results of the completed HAL-FORMS to the server, content
  * property.options.selectedValues is serialized in a manner compliant with the media type
- * value in the contentType attribute (e.g.appilcation/json, application/x-www-form-urlencded,
+ * value in the contentType attribute (e.g.application/json, application/x-www-form-urlencoded,
  * etc.).
  * @param TValue The type of the value of the options.
  * @param PromptField The name of the prompt field. This is the same as the @see OptionsDto.promptField.
@@ -475,7 +475,7 @@ export interface NumberTemplates extends Partial<Record<string, NumberTemplate>>
  * Whatever value is ultimately selected gets placed into the property.options.selectedValues
  * array attribute.When sending the results of the completed HAL-FORMS to the server, content
  * property.options.selectedValues is serialized in a manner compliant with the media type
- * value in the contentType attribute (e.g.appilcation/json, application/x-www-form-urlencded,
+ * value in the contentType attribute (e.g.appilcation/json, application/x-www-form-urlencoded,
  * etc.).
  * @param TValue The type of the value of the options.
  * @param PromptField The name of the prompt field. This is the same as the @see OptionsDto.promptField.
@@ -722,12 +722,6 @@ export class Property<TValue extends SimpleValue = SimpleValue, OptionsPromptFie
   }
 };
 
-interface Array<T> {
-  // T[] | [T] enforces a tuple type.
-  // {[K in keyof this]: U} keeps a mapped tuple type.
-  map<U>(callbackfn: (value: T, index: number, tuple: T[] | [T]) => U, thisArg?: any): {[K in keyof this]: U}
-}
-
 export abstract class TemplateBase<TTitle extends string | number = string, TPropertyDtos extends ReadonlyArray<PropertyDto<SimpleValue, string, string>> = ReadonlyArray<PropertyDto<SimpleValue, string, string>>> {
     /**
    * The value of contentType is the media type the client SHOULD use when sending a request
@@ -755,11 +749,11 @@ export abstract class TemplateBase<TTitle extends string | number = string, TPro
     /**
      * Contains the identifier of the target URL for the client to use when submitting the
      * completed HAL-FORMS template. For example, if the client should submit the completed
-     * template to the following URL: http://api.example.org/jobs/ then the target proprety
+     * template to the following URL: http://api.example.org/jobs/ then the target property
      * would be target="http://api.example.org/jobs/". This is an OPTIONAL property. If this
      * property is not understood by the recipient, left blank, or contains an invalid URL
      * string, it SHOULD be ignored. The target property holds the same information as the
-     * _htarget query string property. If both the target prorperty and the _htarget query
+     * _htarget query string property. If both the target property and the _htarget query
      * string value appear in the same message, the _htarget query string SHOULD be used and
      * the target property SHOULD be ignored.
      */
@@ -920,31 +914,6 @@ export class FormsResource extends Resource {
 
       return template;
   }
-}
-
-const d1: PropertyDto<string, "x", "y"> = {
-  name: "name1",
-  value: "value",
-  options: {
-    promptField: "x",
-    valueField: "y",
-    inline: [{x: "promptX", y: "valueY"}],
-    selectedValues: []
-  }
-};
-const d2: PropertyDto<number, "xa", "ya"> = {
-  name: "name2",
-  value: 1,
-  options: {
-    promptField: "xa",
-    valueField: "ya",
-    inline: [{xa: "promptX", ya: 42}],
-    selectedValues: [1]
-  }
-};
-const dtos= [d1, d2] as const;
-const dt: TemplateDto<typeof dtos> = {
-  properties: dtos,
 }
 
 /**
