@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace HAL.AspNetCore.ContentNegotiation
@@ -20,7 +21,7 @@ namespace HAL.AspNetCore.ContentNegotiation
         /// <inheritdoc/>
         public Task InvokeAsync(HttpContext context)
         {
-            var feature = new AcceptHeaderFeature(context.Request.Headers.Accept);
+            var feature = new AcceptHeaderFeature(context.Request.Headers.GetCommaSeparatedValues(HeaderNames.Accept));
             context.Features.Set<IAcceptHeaderFeature>(feature);
 
             return _next(context);
