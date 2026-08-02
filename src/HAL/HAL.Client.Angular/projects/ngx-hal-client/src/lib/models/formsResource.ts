@@ -410,7 +410,8 @@ export enum PropertyPromptDisplayType {
  * document consumer SHOULD assume the type attribute is set to the default value: "text"
  * and render the display input as a simple text box. Possible settings for the type value
  * and the expected contents to be returned in it are: hidden, text, textarea, search, tel,
- * url, email, password, date, month, week, time, datetime-local, number, range, color. For
+ * url, email, password, date, month, week, time, datetime-local, number, range, color,
+ * bool, datetime-offset, duration, image, file, collection, object, percent, currency. For
  * hints on how to render and process various type values as well as for guidance on how
  * each type value affects to the contents of the associated value property, see [HTML5TYPE].
  */

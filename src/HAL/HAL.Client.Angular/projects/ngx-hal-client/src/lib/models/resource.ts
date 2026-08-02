@@ -153,13 +153,7 @@ export class Resource {
   }
 
   private static fromDto<TResource extends Resource>(dto: ResourceDto, TResource?: { new(dto: ResourceDto): TResource }): TResource | Resource {
-    const links = !(dto?._links) ? {} : Object.fromEntries(Object.entries(dto._links).map(([rel, links]) => [rel, Link.fromDtos(links)]));
-    const embedded = !(dto?._embedded) ? {} : Object.fromEntries(Object.entries(dto._embedded).map(([rel, embeddedResourceDtos]) => [rel, Resource.fromDtos(embeddedResourceDtos, TResource)]));
-    const dtoWithParsedDates = Resource.parseDates(dto);
-
-    const resource = Object.assign(TResource ? new TResource(dto) : new Resource(dto), dtoWithParsedDates, { _embedded: embedded, _links: links });
-
-    return resource;
+    return TResource ? new TResource(dto) : new Resource(dto);
   }
 
   private static fromDtos<TResource extends Resource>(dtos: ResourceDto[] | null | undefined, TResource?: { new(dto: ResourceDto): TResource }): (TResource | Resource)[] {
@@ -189,18 +183,32 @@ export class Resource {
         if (!isNaN(maybeTime.getTime()))
           return maybeTime;
       }
+
+      return dto;
     }
 
-    else if (Array.isArray(dto)) {
-      for (let i = 0; i < dto.length; i++) {
-        dto[i] = this.parseDates(dto[i]);
-      }
+    if (Array.isArray(dto)) {
+      // Build a new array instead of mutating the one that was passed in.
+      return dto.map(item => this.parseDates(item)) as unknown as T;
     }
 
-    else if (typeof dto === "object" && dto !== null) {
+    if (typeof dto === "object") {
+      // Build a new object instead of mutating the one that was passed in.
+      const result: { [name: string]: unknown } = {};
+
       for (const [key, value] of Object.entries(dto as { [name: string]: unknown })) {
-        (dto as { [name: string]: unknown })[key] = this.parseDates(value);
+        // _links and _embedded are already handled separately by the constructor (via
+        // Link.fromDtos and recursive Resource construction, respectively), which will parse
+        // dates for embedded resources itself. Recursing into them here as well would visit
+        // every embedded resource dto multiple times for no benefit, since the result is
+        // discarded in favor of the separately computed _links/_embedded values anyway.
+        if (key === "_links" || key === "_embedded")
+          continue;
+
+        result[key] = this.parseDates(value);
       }
+
+      return result as T;
     }
 
     return dto;

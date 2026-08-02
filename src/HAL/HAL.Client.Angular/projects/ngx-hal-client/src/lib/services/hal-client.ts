@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Resource, ResourceDto } from '../models/resource';
 import { lastValueFrom } from 'rxjs';
 import { ListResource, ListResourceDto, ProblemDetails, ProblemDetailsDto } from '../../public-api';
@@ -13,18 +13,20 @@ interface HttpClientOptions {
   observe: 'response';
 }
 
-@Injectable({
-  providedIn: 'root'
-})
 /**
  * The `HalClient` class provides a client for interacting with a server that implements the Hypertext Application Language (HAL) specification.
  * It provides methods for retrieving resources, list resources, and forms resources, through GET, POST, PUT and DELETE requests.
  * No Methods should throw exceptions, but instead return an `HttpResponse` object that contains either the requested resource or a `ProblemDetails` object.
  * The `HalClient` class is intended to be used as a singleton service in your application.
  */
+@Service()
 export class HalClient {
 
-  constructor(private _httpClient: HttpClient) { }
+  private readonly _httpClient: HttpClient;
+
+  constructor() {
+    this._httpClient = inject(HttpClient);
+  }
 
   /**
    * The HttpClient instance used by the HAL client.

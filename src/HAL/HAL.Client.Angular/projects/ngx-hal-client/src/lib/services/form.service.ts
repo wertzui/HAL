@@ -3,6 +3,29 @@ import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates } from "../models/formsResource";
 
 /**
+ * The shape of a form group's controls, as produced by {@link FormService.createFormGroupFromTemplate}.
+ */
+type FormGroupControls = { [key: string]: FormControlOrGroupOrArray };
+
+/**
+ * The type of value returned by {@link FormService.createFormControl}. It mirrors the possible
+ * shapes of a form built from a HAL-FORMS template: a plain control for simple properties, a
+ * group of controls for `Object` properties, or an array of groups for `Collection` properties.
+ * Each control inside a group or array is, recursively, one of these same three shapes.
+ *
+ * This is declared as an explicit, named, recursive type alias rather than being derived via
+ * `ReturnType<FormService["..."]>`. `createFormGroupFromTemplate` and `createFormControl`
+ * reference each other's return type; if both return types were themselves inferred purely from
+ * `ReturnType<FormService["otherMethod"]>`, TypeScript cannot resolve that cycle and reports
+ * TS2577 ("Return type annotation circularly references itself"). A named recursive type alias
+ * like this one does not have that limitation.
+ */
+export type FormControlOrGroupOrArray<TValue extends SimpleValue = SimpleValue> =
+  | FormGroup<FormGroupControls>
+  | FormArray<FormGroup<FormGroupControls>>
+  | FormControl<TValue | null | TValue[]>;
+
+/**
  * A service that provides methods for creating form groups and form controls from templates and properties.
  */
 @Service()
@@ -26,7 +49,7 @@ export class FormService {
    * const formGroups = this.formService.createFormGroupsFromTemplates(templates);
    * ```
    */
-  public createFormGroupsFromTemplates(templates: Templates): { [key: string]: ReturnType<FormService["createFormGroupFromTemplate"]> } {
+  public createFormGroupsFromTemplates(templates: Templates): { [key: string]: FormGroup<FormGroupControls> } {
     const tabs = Object.fromEntries(
       Object.entries(templates)
         .filter(([_, template]) => template !== undefined && template !== null)
@@ -59,7 +82,7 @@ export class FormService {
    * const formArray = this.formService.createFormArrayFromTemplates(templates);
    * ```
    */
-  public createFormArrayFromTemplates(templates: NumberTemplates, ignoredProperties: string[] = []): FormArray<ReturnType<FormService["createFormGroupFromTemplate"]>> {
+  public createFormArrayFromTemplates(templates: NumberTemplates, ignoredProperties: string[] = []): FormArray<FormGroup<FormGroupControls>> {
     const controls =
       Object.entries(templates)
         .filter(([key,]) => !ignoredProperties.some(p => key === p))
@@ -87,7 +110,7 @@ export class FormService {
    * const formGroup = this.formService.createFormGroupFromTemplate(template);
    * ```
    */
-  public createFormGroupFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(template: TemplateBase<string | number, TProperties>): FormGroup<{ [key: string]: ReturnType<FormService["createFormControl"]> }> {
+  public createFormGroupFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(template: TemplateBase<string | number, TProperties>): FormGroup<FormGroupControls> {
     const controls = Object.fromEntries(template.properties.map(p => [
       p.name,
       this.createFormControl(p)
@@ -125,7 +148,7 @@ export class FormService {
       OptionsPromptField extends string = "prompt", 
       OptionsValueField extends string = "value">(
     property: Property<TValue, OptionsPromptField, OptionsValueField>)
-    : ReturnType<FormService["createFormGroupFromTemplate"]> | ReturnType<FormService["createFormArrayFromTemplates"]> | ReturnType<FormService["createSimpleFormControlFromProperty"]> {
+    : FormControlOrGroupOrArray<TValue> {
     if (property.type === PropertyType.Object) {
       const defaultTemplate = property._templates['default'];
       if (!defaultTemplate)
@@ -165,6 +188,10 @@ export class FormService {
       control.addValidators(Validators.required);
     if (property.type === PropertyType.Email)
       control.addValidators(Validators.email);
+
+    // Validators added via addValidators() are not automatically applied to the control's
+    // current value/status, so we need to explicitly trigger a re-validation here.
+    control.updateValueAndValidity();
 
     return control;
   }

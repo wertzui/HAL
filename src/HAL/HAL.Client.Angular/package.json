@@ -1,22 +1,32 @@
 {
-  "name": "hal-client-angular-workspace",
-  "version": "0.0.0",
-  "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
-  },
-  "private": true,
-  "devDependencies": {
-    "@angular/build": "22.0.8",
-    "@angular/cli": "22.0.8",
-    "@angular/compiler-cli": "22.0.8",
-    "@types/jasmine": "6.0.0",
-    "@types/node": "26.1.2",
-    "@vitest/browser-webdriverio": "4.1.10",
-    "ng-packagr": "22.0.2",
-    "typescript": "6.0.2"
-  }
+    "name": "hal-client-angular-workspace",
+    "version": "0.0.0",
+    "scripts": {
+        "ng": "ng",
+        "start": "ng serve",
+        "build": "ng build",
+        "watch": "ng build --watch --configuration development",
+        "test": "ng test"
+    },
+    "private": true,
+    "dependencies": {
+        "@angular/common": "22.1.0",
+        "@angular/core": "22.1.0",
+        "@angular/forms": "22.1.0",
+        "uri-templates-es": "^2"
+    },
+    "devDependencies": {
+        "@angular/build": "22.0.9",
+        "@angular/cli": "22.0.9",
+        "@angular/compiler-cli": "22.1.0",
+        "@angular/platform-browser": "22.1.0",
+        "@types/jasmine": "6.0.0",
+        "@types/node": "26.1.2",
+        "@types/uri-templates": "0.1.34",
+        "@vitest/browser-webdriverio": "4.1.10",
+        "happy-dom": "^20.11.1",
+        "ng-packagr": "22.0.2",
+        "typescript": "6.0.2",
+        "vitest": "^4.1.10"
+    }
 }

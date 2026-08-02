@@ -25,10 +25,7 @@
           "defaultConfiguration": "production"
         },
         "test": {
-          "builder": "@angular/build:unit-test",
-          "options": {
-            "browsers": ["edge"]
-          }
+          "builder": "@angular/build:unit-test"
         }
       }
     }

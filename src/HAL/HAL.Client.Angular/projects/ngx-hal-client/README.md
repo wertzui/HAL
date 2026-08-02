@@ -83,16 +83,18 @@ This library includes support for RFC 7807 Problem Details, which is a standardi
 ### Basic Usage
 
 ```typescript
-import { Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { HalClient, Resource, ProblemDetails } from '@wertzui/ngx-hal-client';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class ApiService {
   private apiRoot = 'https://api.example.com';
 
-  constructor(private halClient: HalClient) { }
+  private readonly halClient: HalClient;
+
+  constructor() {
+    this.halClient = inject(HalClient);
+  }
 
   async getRootResource() {
     const response = await this.halClient.getResource<any>(this.apiRoot);
@@ -109,17 +111,19 @@ export class ApiService {
 ### Navigating Between Resources
 
 ```typescript
-import { Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { HalClient, Resource, ProblemDetails } from '@wertzui/ngx-hal-client';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class OrderService {
   private apiRoot = 'https://api.example.com';
-  
-  constructor(private halClient: HalClient) { }
-  
+
+  private readonly halClient: HalClient;
+
+  constructor() {
+    this.halClient = inject(HalClient);
+  }
+
   async getOrderDetails(orderId: string) {
     // First, get the API root resource
     const rootResponse = await this.halClient.getResource<any>(this.apiRoot);
@@ -160,16 +164,18 @@ interface OrderDto {
 ### Creating a New Resource
 
 ```typescript
-import { Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { HalClient, Resource, ProblemDetails } from '@wertzui/ngx-hal-client';
 import { HttpHeaders } from '@angular/common/http';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class ProductService {
-  constructor(private halClient: HalClient) { }
-  
+  private readonly halClient: HalClient;
+
+  constructor() {
+    this.halClient = inject(HalClient);
+  }
+
   async createProduct(rootResource: Resource, productData: NewProductDto) {
     // Find the products-collection link
     const productsLink = rootResource.findLinks('products-collection')[0];
@@ -213,19 +219,20 @@ interface ProductDto extends NewProductDto {
 ### Working with Forms Resources
 
 ```typescript
-import { Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { HalClient, FormsResource, ProblemDetails } from '@wertzui/ngx-hal-client';
 import { FormService } from '@wertzui/ngx-hal-client';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Service()
 export class UserRegistrationService {
-  constructor(
-    private halClient: HalClient,
-    private formService: FormService
-  ) { }
-  
+  private readonly halClient: HalClient;
+  private readonly formService: FormService;
+
+  constructor() {
+    this.halClient = inject(HalClient);
+    this.formService = inject(FormService);
+  }
+
   async registerUser(registrationFormUri: string, userData: UserRegistrationDto) {
     // Get the registration form
     const formResponse = await this.halClient.getFormsResource<void>(registrationFormUri);
@@ -410,6 +417,7 @@ export class UserFormComponent implements OnInit {
 
 ```typescript
 import { Component } from '@angular/core';
+import { inject } from '@angular/core';
 import { FormArray, FormGroup } from '@angular/forms';
 import { FormsResource, FormService, PropertyType } from '@wertzui/ngx-hal-client';
 
@@ -438,8 +446,12 @@ import { FormsResource, FormService, PropertyType } from '@wertzui/ngx-hal-clien
 })
 export class ComplexFormComponent {
   userForm: FormGroup;
-  
-  constructor(private formService: FormService) {
+
+  private readonly formService: FormService;
+
+  constructor() {
+    this.formService = inject(FormService);
+
     // Example of a complex form template structure. This is normally returned by your API
     const templates = {
       default: {
@@ -498,7 +510,7 @@ export class ComplexFormComponent {
 ##### Creating Form Controls with Validators
 
 ```typescript
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormService, Property, PropertyType } from '@wertzui/ngx-hal-client';
 import { FormControl } from '@angular/forms';
 
@@ -512,8 +524,12 @@ import { FormControl } from '@angular/forms';
 })
 export class ValidatorExampleComponent {
   emailControl: FormControl;
-  
-  constructor(private formService: FormService) {
+
+  private readonly formService: FormService;
+
+  constructor() {
+    this.formService = inject(FormService);
+
     // Define a property with validators
     const emailProperty: Property<string, string, string> = {
       name: 'email',
