@@ -37,7 +37,7 @@ jobs:
           value: ${{ steps.login.outputs.NUGET_API_KEY }}
           key: ${{ secrets.ENCRYPTION_KEY }}
 
-  build-test-pack-publish:
+  build-test-pack-publish-nuget:
     needs: login
     permissions:
       contents: write
@@ -49,12 +49,6 @@ jobs:
       encryption_key: ${{ secrets.ENCRYPTION_KEY }}
 
   build-test-pack-publish-npm:
-    # Runs after the NuGet build so both converge on the same commit-based GitHub
-    # release (the npm packages are appended to the release the NuGet build created).
-    # Uses npm trusted publishing (OIDC) — no npm token secret needed.
-    # The trusted publisher on npmjs.com must be configured with workflow filename:
-    # build-test-pack-publish.yml (the calling workflow, not the reusable one).
-    needs: build-test-pack-publish
     permissions:
       contents: write
       id-token: write   # Required for npm trusted publishing (OIDC)
