@@ -139,7 +139,26 @@ export class SignalFormService {
     return { model: modelSignal, form: signalForm };
   }
 
-  private buildModelFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(
+  /**
+   * Builds a default model object from the given template, using each property's own value (or, for
+   * `Object`/`Collection` properties, recursing into their nested templates the same way
+   * {@link createSignalFormFromTemplate} does internally when no model override is provided).
+   * @remarks
+   * This is the same logic {@link createSignalFormFromTemplate} uses internally to build its model when no
+   * `model` override is given, exposed here as public API. It is primarily useful for consumers that need to
+   * construct a correctly-shaped default value for a single template outside of a full `SignalForm` - most
+   * notably, when adding a new item to a `Collection` property, where a new item's default value must be built
+   * from that collection's own default template.
+   * @param template The template to build a default model object from.
+   * @returns A default model object, with nested `Object`/`Collection` properties recursively resolved.
+   *
+   * @example
+   * ```typescript
+   * const itemTemplate: Template = collectionProperty._templates['default'];
+   * const newItem = this.signalFormService.buildModelFromTemplate(itemTemplate);
+   * ```
+   */
+  public buildModelFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(
     template: TemplateBase<string | number, TProperties>
   ): Record<string, unknown> {
     const model: Record<string, unknown> = {};

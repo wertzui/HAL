@@ -490,4 +490,126 @@ describe('SignalFormService', () => {
             });
         });
     });
+
+    describe('buildModelFromTemplate', () => {
+        it('builds a default model with each property\'s own value for simple properties', () => {
+            const template = buildTemplate([
+                buildProperty({ name: 'name', value: 'John Doe' }),
+                buildProperty({ name: 'age', type: PropertyType.Number, value: 42 }),
+            ]);
+
+            const model = service.buildModelFromTemplate(template);
+
+            expect(model).toEqual({ name: 'John Doe', age: 42 });
+        });
+
+        it('recursively builds a nested model for an Object property using its default template', () => {
+            const addressProperty = buildProperty({
+                name: 'address',
+                type: PropertyType.Object,
+                value: null,
+                _templates: {
+                    default: {
+                        properties: [
+                            buildProperty({ name: 'street', value: 'Main St' }),
+                            buildProperty({ name: 'city', value: 'Springfield' }),
+                        ],
+                    },
+                },
+            });
+            const template = buildTemplate([addressProperty]);
+
+            const model = service.buildModelFromTemplate(template);
+
+            expect(model).toEqual({
+                address: { street: 'Main St', city: 'Springfield' },
+            });
+        });
+
+        it('builds an array model for a Collection property from its indexed templates', () => {
+            const itemsProperty = buildProperty({
+                name: 'items',
+                type: PropertyType.Collection,
+                value: null,
+                _templates: {
+                    default: { properties: [buildProperty({ name: 'name', value: '' })] },
+                    '0': { properties: [buildProperty({ name: 'name', value: 'Item A' })] },
+                    '1': { properties: [buildProperty({ name: 'name', value: 'Item B' })] },
+                },
+            });
+            const template = buildTemplate([itemsProperty]);
+
+            const model = service.buildModelFromTemplate(template);
+
+            expect(model).toEqual({ items: [{ name: 'Item A' }, { name: 'Item B' }] });
+        });
+
+        it('resolves a value from options.selectedValues, same as the model built internally by createSignalFormFromTemplate', () => {
+            const template = buildTemplate([
+                buildProperty({
+                    name: 'color',
+                    value: null,
+                    options: {
+                        inline: [
+                            { prompt: 'Red', value: 'red' },
+                            { prompt: 'Blue', value: 'blue' },
+                        ],
+                        selectedValues: ['blue'],
+                    },
+                }),
+            ]);
+
+            const model = service.buildModelFromTemplate(template);
+
+            expect(model).toEqual({ color: 'blue' });
+        });
+
+        it('is useful for building a default item value for a new Collection entry, given only the item template', () => {
+            // This mirrors the primary intended use case: a consumer (e.g. a "collection input" component)
+            // that needs to build a correctly-shaped default value for a brand new item, given only the
+            // collection property's own default item template - without needing a full SignalForm/FieldTree.
+            const itemsProperty = buildProperty({
+                name: 'items',
+                type: PropertyType.Collection,
+                value: null,
+                _templates: {
+                    default: {
+                        properties: [
+                            buildProperty({ name: 'name', value: '' }),
+                            buildProperty({ name: 'quantity', type: PropertyType.Number, value: 1 }),
+                        ],
+                    },
+                },
+            });
+
+            const itemTemplate = itemsProperty._templates!['default']!;
+            const newItem = service.buildModelFromTemplate(itemTemplate as Template);
+
+            expect(newItem).toEqual({ name: '', quantity: 1 });
+        });
+
+        it('throws when an Object property has no default template', () => {
+            const addressProperty = buildProperty({
+                name: 'address',
+                type: PropertyType.Object,
+                value: null,
+            });
+            const template = buildTemplate([addressProperty]);
+
+            expect(() => service.buildModelFromTemplate(template)).toThrow();
+        });
+
+        it('produces an empty array when a Collection property has no templates', () => {
+            const itemsProperty = buildProperty({
+                name: 'items',
+                type: PropertyType.Collection,
+                value: null,
+            });
+            const template = buildTemplate([itemsProperty]);
+
+            const model = service.buildModelFromTemplate(template);
+
+            expect(model).toEqual({ items: [] });
+        });
+    });
 });
