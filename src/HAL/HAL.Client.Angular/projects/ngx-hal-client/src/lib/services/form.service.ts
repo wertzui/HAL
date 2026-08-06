@@ -174,13 +174,13 @@ export class FormService {
     const value = FormService.getPropertyValue(property);
     const control = new FormControl(value);
 
-    if (property.max !== undefined)
+    if (property.max !== undefined && property.max !== null)
       control.addValidators(Validators.max(property.max));
-    if (property.maxLength !== undefined)
+    if (property.maxLength !== undefined && property.maxLength !== null)
       control.addValidators(Validators.maxLength(property.maxLength));
-    if (property.min !== undefined)
+    if (property.min !== undefined && property.min !== null)
       control.addValidators(Validators.min(property.min));
-    if (property.minLength !== undefined)
+    if (property.minLength !== undefined && property.minLength !== null)
       control.addValidators(Validators.minLength(property.minLength));
     if (property.regex)
       control.addValidators(Validators.pattern(property.regex));

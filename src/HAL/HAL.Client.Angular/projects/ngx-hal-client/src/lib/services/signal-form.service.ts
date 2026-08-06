@@ -245,13 +245,13 @@ export class SignalFormService {
       required(fieldPath as SchemaPath<SimpleValue>);
     if (property.type === PropertyType.Email)
       email(fieldPath as SchemaPath<string>);
-    if (property.max !== undefined)
+    if (property.max !== undefined && property.max !== null)
       max(fieldPath as SchemaPath<number>, property.max);
-    if (property.min !== undefined)
+    if (property.min !== undefined && property.min !== null)
       min(fieldPath as SchemaPath<number>, property.min);
-    if (property.maxLength !== undefined)
+    if (property.maxLength !== undefined && property.maxLength !== null)
       maxLength(fieldPath as SchemaPath<string>, property.maxLength);
-    if (property.minLength !== undefined)
+    if (property.minLength !== undefined && property.minLength !== null)
       minLength(fieldPath as SchemaPath<string>, property.minLength);
     if (property.regex)
       pattern(fieldPath as SchemaPath<string>, new RegExp(property.regex));

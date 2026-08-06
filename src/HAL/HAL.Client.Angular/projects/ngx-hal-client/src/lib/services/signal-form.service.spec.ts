@@ -234,6 +234,72 @@ describe('SignalFormService', () => {
                 expect(asAny(validSignalForm.form).code().valid()).toBe(true);
                 expect(asAny(invalidSignalForm.form).code().valid()).toBe(false);
             });
+
+            // Regression tests: HAL-FORMS JSON returned by a real server typically includes
+            // max/min/maxLength/minLength explicitly set to `null` (rather than omitting them)
+            // when they are unset. `createSignalFormFromTemplate` must tolerate this and not apply
+            // (or crash while trying to apply) a validator for a `null` constraint. Previously, a
+            // `!== undefined` check let `null` values through into `max`/`min`/`maxLength`/
+            // `minLength`, which then crashed with e.g. "maxLength is not a function".
+            it('does not throw and does not apply a max validator when max is null', () => {
+
+                const template = buildTemplate([
+                    buildProperty({ name: 'age', type: PropertyType.Number, max: null as unknown as number, value: 5 }),
+                ]);
+
+                expect(() => TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template))).not.toThrow();
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+                expect(asAny(signalForm.form).age().valid()).toBe(true);
+            });
+
+            it('does not throw and does not apply a min validator when min is null', () => {
+
+                const template = buildTemplate([
+                    buildProperty({ name: 'age', type: PropertyType.Number, min: null as unknown as number, value: 5 }),
+                ]);
+
+                expect(() => TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template))).not.toThrow();
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+                expect(asAny(signalForm.form).age().valid()).toBe(true);
+            });
+
+            it('does not throw and does not apply a maxLength validator when maxLength is null', () => {
+
+                const template = buildTemplate([
+                    buildProperty({ name: 'name', maxLength: null as unknown as number, value: 'abc' }),
+                ]);
+
+                expect(() => TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template))).not.toThrow();
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+                expect(asAny(signalForm.form).name().valid()).toBe(true);
+            });
+
+            it('does not throw and does not apply a minLength validator when minLength is null', () => {
+
+                const template = buildTemplate([
+                    buildProperty({ name: 'name', minLength: null as unknown as number, value: 'abc' }),
+                ]);
+
+                expect(() => TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template))).not.toThrow();
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+                expect(asAny(signalForm.form).name().valid()).toBe(true);
+            });
+
+            it('still applies max/min/maxLength/minLength validators when they are 0 (falsy but not null)', () => {
+
+                const template = buildTemplate([
+                    buildProperty({ name: 'name', maxLength: 0, minLength: 0, value: '' }),
+                ]);
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                expect(asAny(signalForm.form).name().maxLength()).toBe(0);
+                expect(asAny(signalForm.form).name().minLength()).toBe(0);
+            });
         });
 
         describe('Object property type', () => {
