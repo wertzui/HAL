@@ -102,6 +102,104 @@ describe('SignalFormService', () => {
             );
         });
 
+        describe('null property value on text-like PropertyTypes', () => {
+            // Regression tests: real HAL-FORMS servers commonly return `value: null` for an unset
+            // property on a "new" resource template. For a plain-text-like PropertyType, defaulting
+            // this to `null` (instead of an empty string) causes Angular Signal Forms' native
+            // `<input>` binding to apply a numeric-parse heuristic (since `null` looks like "could be
+            // a number field") - which then reports a spurious 'parse' validation error (and,
+            // because the model value never gets updated when parsing fails, an equally spurious
+            // "field is required" error) the moment the user types non-numeric text. Defaulting to
+            // `''` for these types avoids ever entering that ambiguous state.
+            const textLikePropertyTypeCases: PropertyType[] = [
+                PropertyType.Hidden,
+                PropertyType.Text,
+                PropertyType.Search,
+                PropertyType.Tel,
+                PropertyType.Url,
+                PropertyType.Email,
+                PropertyType.Password,
+                PropertyType.Color,
+                PropertyType.Percent,
+                PropertyType.Currency,
+            ];
+
+            it.each(textLikePropertyTypeCases)(
+                'defaults a null value to an empty string for PropertyType.%s',
+                (type) => {
+
+                    const template = buildTemplate([
+                        buildProperty({ name: 'data', type, value: null }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(signalForm.model()).toEqual({ data: '' });
+                }
+            );
+
+            it('defaults an omitted (undefined) type to an empty string, same as PropertyType.Text', () => {
+
+                const template = buildTemplate([
+                    { name: 'data', value: null },
+                ]);
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                expect(signalForm.model()).toEqual({ data: '' });
+            });
+
+            // Types rendered via a dedicated custom control (not a bare native <input>) are
+            // unaffected by the native-input parse heuristic and should keep `null` as their
+            // "unset" default, matching their actual runtime value type (number | Date | boolean | null).
+            const nonTextLikePropertyTypeCases: PropertyType[] = [
+                PropertyType.Number,
+                PropertyType.Range,
+                PropertyType.Bool,
+                PropertyType.Date,
+                PropertyType.Month,
+                PropertyType.Week,
+                PropertyType.Time,
+                PropertyType.DatetimeLocal,
+                PropertyType.DatetimeOffset,
+                PropertyType.Duration,
+                PropertyType.Image,
+                PropertyType.File,
+            ];
+
+            it.each(nonTextLikePropertyTypeCases)(
+                'still defaults a null value to null (not an empty string) for PropertyType.%s',
+                (type) => {
+
+                    const template = buildTemplate([
+                        buildProperty({ name: 'data', type, value: null }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(signalForm.model()).toEqual({ data: null });
+                }
+            );
+
+            it('does not throw a parse error and accepts free-form text after a null-defaulted value is edited', () => {
+                // End-to-end style check of the actual bug report: build a form the same way
+                // createSignalFormFromTemplate would for a "new" resource (value: null), then
+                // simulate the user typing free-form text into the field's value and assert no
+                // validation error of kind 'parse' is present and the value round-trips correctly.
+                const template = buildTemplate([
+                    buildProperty({ name: 'name', required: true, value: null }),
+                ]);
+
+                const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                asAny(signalForm.form).name().value.set('My new blog');
+
+                expect(signalForm.model()).toEqual({ name: 'My new blog' });
+                expect(asAny(signalForm.form).name().errors().some((e: { kind: string }) => e.kind === 'parse')).toBe(false);
+                expect(asAny(signalForm.form).name().valid()).toBe(true);
+            });
+        });
+
         describe('special validators', () => {
             it('marks a field as required when the property is required', () => {
 

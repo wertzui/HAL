@@ -187,15 +187,53 @@ export class SignalFormService {
     return SignalFormService.getSimplePropertyValue(property);
   }
 
-  private static getSimplePropertyValue(property: Property<SimpleValue, string, string>): SimpleValue | SimpleValue[] {
-    if (property.options && Array.isArray(property.options.selectedValues) && property.options.selectedValues.length > 0) {
-      if (property.options.maxItems !== undefined && property.options.maxItems > 1)
-        return property.options.selectedValues;
+  /**
+   * `PropertyType`s whose value is unambiguously a plain string, and are typically rendered as a bare
+   * native `<input>` element with no dedicated `ControlValueAccessor`/custom control bound to it.
+   * @remarks
+   * Angular requires string values which are bound to native <input>s to not be null, but an empty string instead.
+   * See https://angular.dev/guide/forms/signals/models#initializing-all-fields
+   *
+   * Deliberately excludes types that are rendered via a dedicated custom control (`Number`, `Bool`,
+   * date/time-like types, `Image`, `File`) - those are unaffected by this heuristic (Signal Forms uses
+   * a different, `ControlValueAccessor`-based binding path for them) and `null` remains their correct
+   * "unset" representation. Also excludes `Range`, whose native `<input type="range">` element never
+   * reports an empty string value, so it does not hit the *parse* branch of the heuristic either way,
+   * and forcing `''` there would make its value unexpectedly `string` instead of `number | null`.
+   */
+  private static readonly STRING_DEFAULT_PROPERTY_TYPES: ReadonlySet<PropertyType> = new Set([
+    PropertyType.Hidden,
+    PropertyType.Text,
+    PropertyType.Search,
+    PropertyType.Tel,
+    PropertyType.Url,
+    PropertyType.Email,
+    PropertyType.Password,
+    PropertyType.Color,
+    PropertyType.Percent,
+    PropertyType.Currency,
+  ]);
 
-      return property.options.selectedValues[0];
+  private static getSimplePropertyValue(property: Property<SimpleValue, string, string>): SimpleValue | SimpleValue[] {
+    if (property.options) {
+      if (Array.isArray(property.options.selectedValues) && property.options.selectedValues.length > 0) {
+        if (property.options.maxItems !== undefined && property.options.maxItems > 1)
+          return property.options.selectedValues;
+
+        return property.options.selectedValues[0];
+      }
+
+      // A property with `options` is rendered via a dropdown/select control (not a bare native
+      // `<input>`), so it is never subject to the native-input numeric-parse heuristic described
+      // above - `null` remains the correct "unset" representation here.
+      return property.value ?? null;
     }
 
-    return property.value ?? null;
+    if (property.value != null)
+      return property.value;
+
+    // HAL-FORMS treats a missing `type` as 'text' (see PropertyDto.type's doc comment).
+    return SignalFormService.STRING_DEFAULT_PROPERTY_TYPES.has(property.type ?? PropertyType.Text) ? '' : null;
   }
 
   private applyValidationFromTemplate<TProperties extends ReadonlyArray<PropertyDto<SimpleValue, string, string>>>(
