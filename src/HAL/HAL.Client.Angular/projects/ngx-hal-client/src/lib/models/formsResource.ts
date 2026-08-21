@@ -877,7 +877,10 @@ export class FormsResource extends Resource {
   public constructor(dto: FormsResourceDto) {
     super(dto);
 
-    this._templates = (!(dto?._templates) ? {} : Object.fromEntries(Object.entries(dto._templates).map(([rel, templateDto]) => [rel, new Template(templateDto)]))) as Templates;
+    if(typeof this._templates !== "object") {
+        console.warn("A FormsResource was created from a dto which did not have a '_templates' property.");
+        this._templates = {};
+    }
   }
 
   /**

@@ -326,7 +326,7 @@ export class HalClient {
       _links: { self: [{ href: uri }] },
       title: "An error occurred.",
       status: 500,
-      detail: `An error occurred while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)}.`,
+      detail: `An error occurred while executing the ${method}-request to ${uri} with options ${JSON.stringify(options)}. The error was: ${JSON.stringify(error)}`,
       instance: uri
     };
 
