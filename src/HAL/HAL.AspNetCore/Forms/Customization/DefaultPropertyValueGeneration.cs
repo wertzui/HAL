@@ -100,7 +100,7 @@ namespace HAL.AspNetCore.Forms.Customization
             if (values is null)
                 return templates;
 
-            int i = 0;
+            var i = 0;
             foreach (var value in values)
             {
                 var filledTemplate = await formValueFactory.FillWithAsync(defaultTemplate, value);

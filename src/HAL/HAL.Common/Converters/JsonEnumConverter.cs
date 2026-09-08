@@ -3,134 +3,133 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace System.Text.Json.Serialization
+namespace System.Text.Json.Serialization;
+
+/// <summary>
+/// <see cref="JsonConverterFactory"/> to convert enums to and from strings, respecting <see cref="EnumMemberAttribute"/> decorations. Supports nullable enums.
+/// </summary>
+public class JsonEnumConverter : JsonConverterFactory
 {
+    private readonly HashSet<Type>? _enumTypes;
+    private readonly JsonEnumConverterOptions? _options;
+
     /// <summary>
-    /// <see cref="JsonConverterFactory"/> to convert enums to and from strings, respecting <see cref="EnumMemberAttribute"/> decorations. Supports nullable enums.
+    /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
     /// </summary>
-    public class JsonEnumConverter : JsonConverterFactory
+    public JsonEnumConverter()
     {
-        private readonly HashSet<Type>? _EnumTypes;
-        private readonly JsonEnumConverterOptions? _Options;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
-        /// </summary>
-        public JsonEnumConverter()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
+    /// </summary>
+    /// <param name="namingPolicy">
+    /// Optional naming policy for writing enum values.
+    /// </param>
+    /// <param name="jsonFlagsEnumSerializationHandling">
+    /// Defines how flags enums are serialized. Default value: <see cref="JsonFlagsEnumSerializationHandling.Array"/>.
+    /// </param>
+    /// <param name="allowIntegerValues">
+    /// True to allow undefined enum values. When true, if an enum value isn't
+    /// defined it will output as a number rather than a string.
+    /// </param>
+    public JsonEnumConverter(JsonNamingPolicy? namingPolicy = null, JsonFlagsEnumSerializationHandling jsonFlagsEnumSerializationHandling = JsonFlagsEnumSerializationHandling.Array, bool allowIntegerValues = true)
+        : this(new JsonEnumConverterOptions { NamingPolicy = namingPolicy, JsonFlagsEnumSerializationHandling = jsonFlagsEnumSerializationHandling, AllowIntegerValues = allowIntegerValues })
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
+    /// </summary>
+    /// <param name="options"><see cref="JsonEnumConverterOptions"/>.</param>
+    /// <param name="targetEnumTypes">Optional list of supported enum types to be converted. Specify <see langword="null"/> or empty to convert all enums.</param>
+    public JsonEnumConverter(JsonEnumConverterOptions options, params Type[] targetEnumTypes)
+    {
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+
+        if (targetEnumTypes != null && targetEnumTypes.Length > 0)
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
-        /// </summary>
-        /// <param name="namingPolicy">
-        /// Optional naming policy for writing enum values.
-        /// </param>
-        /// <param name="jsonFlagsEnumSerializationHandling">
-        /// Defines how flags enums are serialized. Default value: <see cref="JsonFlagsEnumSerializationHandling.Array"/>.
-        /// </param>
-        /// <param name="allowIntegerValues">
-        /// True to allow undefined enum values. When true, if an enum value isn't
-        /// defined it will output as a number rather than a string.
-        /// </param>
-        public JsonEnumConverter(JsonNamingPolicy? namingPolicy = null, JsonFlagsEnumSerializationHandling jsonFlagsEnumSerializationHandling = JsonFlagsEnumSerializationHandling.Array, bool allowIntegerValues = true)
-            : this(new JsonEnumConverterOptions { NamingPolicy = namingPolicy, JsonFlagsEnumSerializationHandling = jsonFlagsEnumSerializationHandling, AllowIntegerValues = allowIntegerValues })
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JsonEnumConverter"/> class.
-        /// </summary>
-        /// <param name="options"><see cref="JsonEnumConverterOptions"/>.</param>
-        /// <param name="targetEnumTypes">Optional list of supported enum types to be converted. Specify <see langword="null"/> or empty to convert all enums.</param>
-        public JsonEnumConverter(JsonEnumConverterOptions options, params Type[] targetEnumTypes)
-        {
-            _Options = options ?? throw new ArgumentNullException(nameof(options));
-
-            if (targetEnumTypes != null && targetEnumTypes.Length > 0)
-            {
 #if NETSTANDARD2_0
-				_EnumTypes = new HashSet<Type>();
+                _EnumTypes = new HashSet<Type>();
 #else
-                _EnumTypes = new HashSet<Type>(targetEnumTypes.Length);
+            _enumTypes = new HashSet<Type>(targetEnumTypes.Length);
 #endif
-                foreach (Type enumType in targetEnumTypes)
+            foreach (var enumType in targetEnumTypes)
+            {
+                if (enumType.IsEnum)
                 {
-                    if (enumType.IsEnum)
+                    _enumTypes.Add(enumType);
+                    continue;
+                }
+
+                if (enumType.IsGenericType)
+                {
+                    (var IsNullableEnum, var UnderlyingType) = TestNullableEnum(enumType);
+                    if (IsNullableEnum)
                     {
-                        _EnumTypes.Add(enumType);
+                        _enumTypes.Add(UnderlyingType!);
                         continue;
                     }
-
-                    if (enumType.IsGenericType)
-                    {
-                        (bool IsNullableEnum, Type? UnderlyingType) = TestNullableEnum(enumType);
-                        if (IsNullableEnum)
-                        {
-                            _EnumTypes.Add(UnderlyingType!);
-                            continue;
-                        }
-                    }
-
-                    throw new NotSupportedException($"Type {enumType} is not supported by JsonStringEnumMemberConverter. Only enum types can be converted.");
                 }
+
+                throw new NotSupportedException($"Type {enumType} is not supported by JsonStringEnumMemberConverter. Only enum types can be converted.");
             }
         }
+    }
 
 #pragma warning disable CA1062 // Validate arguments of public methods
-        /// <inheritdoc/>
-        public override bool CanConvert(Type typeToConvert)
-        {
-            // Don't perform a typeToConvert == null check for performance. Trust our callers will be nice.
-            return _EnumTypes != null
-                ? _EnumTypes.Contains(typeToConvert)
-                : typeToConvert.IsEnum;
-        }
+    /// <inheritdoc/>
+    public override bool CanConvert(Type typeToConvert)
+    {
+        // Don't perform a typeToConvert == null check for performance. Trust our callers will be nice.
+        return _enumTypes != null
+            ? _enumTypes.Contains(typeToConvert)
+            : typeToConvert.IsEnum;
+    }
 #pragma warning restore CA1062 // Validate arguments of public methods
 
-        /// <inheritdoc/>
-        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    /// <inheritdoc/>
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        (var IsNullableEnum, var UnderlyingType) = TestNullableEnum(typeToConvert);
+
+        try
         {
-            (bool IsNullableEnum, Type? UnderlyingType) = TestNullableEnum(typeToConvert);
-
-            try
-            {
-                return (JsonConverter)Activator.CreateInstance(
-                    typeof(JsonEnumConverter<>).MakeGenericType(IsNullableEnum ? UnderlyingType! : typeToConvert),
-                    BindingFlags.Instance | BindingFlags.Public,
-                    binder: null,
-                    args: new object?[] { _Options },
-                    culture: null)!;
-            }
-            catch (TargetInvocationException targetInvocationEx)
-            {
-                if (targetInvocationEx.InnerException != null)
-                    throw targetInvocationEx.InnerException;
-                throw;
-            }
+            return (JsonConverter)Activator.CreateInstance(
+                typeof(JsonEnumConverter<>).MakeGenericType(IsNullableEnum ? UnderlyingType! : typeToConvert),
+                BindingFlags.Instance | BindingFlags.Public,
+                binder: null,
+                args: new object?[] { _options },
+                culture: null)!;
         }
-
-        private static (bool IsNullableEnum, Type? UnderlyingType) TestNullableEnum(Type typeToConvert)
+        catch (TargetInvocationException targetInvocationEx)
         {
-            Type? UnderlyingType = Nullable.GetUnderlyingType(typeToConvert);
-
-            return (UnderlyingType?.IsEnum ?? false, UnderlyingType);
+            if (targetInvocationEx.InnerException != null)
+                throw targetInvocationEx.InnerException;
+            throw;
         }
+    }
 
-        internal static ulong GetEnumValue(TypeCode enumTypeCode, object value)
+    private static (bool IsNullableEnum, Type? UnderlyingType) TestNullableEnum(Type typeToConvert)
+    {
+        var UnderlyingType = Nullable.GetUnderlyingType(typeToConvert);
+
+        return (UnderlyingType?.IsEnum ?? false, UnderlyingType);
+    }
+
+    internal static ulong GetEnumValue(TypeCode enumTypeCode, object value)
+    {
+        return enumTypeCode switch
         {
-            return enumTypeCode switch
-            {
-                TypeCode.Int32 => (ulong)(int)value,
-                TypeCode.Int64 => (ulong)(long)value,
-                TypeCode.Int16 => (ulong)(short)value,
-                TypeCode.Byte => (byte)value,
-                TypeCode.UInt32 => (uint)value,
-                TypeCode.UInt64 => (ulong)value,
-                TypeCode.UInt16 => (ushort)value,
-                TypeCode.SByte => (ulong)(sbyte)value,
-                _ => throw new NotSupportedException($"Enum '{value}' of {enumTypeCode} type is not supported."),
-            };
-        }
+            TypeCode.Int32 => (ulong)(int)value,
+            TypeCode.Int64 => (ulong)(long)value,
+            TypeCode.Int16 => (ulong)(short)value,
+            TypeCode.Byte => (byte)value,
+            TypeCode.UInt32 => (uint)value,
+            TypeCode.UInt64 => (ulong)value,
+            TypeCode.UInt16 => (ushort)value,
+            TypeCode.SByte => (ulong)(sbyte)value,
+            _ => throw new NotSupportedException($"Enum '{value}' of {enumTypeCode} type is not supported."),
+        };
     }
 }

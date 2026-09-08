@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace HAL.Common.Converters;
 
 /// <summary>
-/// In addition to "normal" dictionary de-/serialization, this converter can also deserialize dictionaries from JSON that looks like [{"key":"foo", "value": 1}] so is if it was an <see cref="IEnumerable{KeyValuePair{string, TValue}}"/>.
+/// In addition to "normal" dictionary de-/serialization, this converter can also deserialize dictionaries from JSON that looks like [{"key":"foo", "value": 1}] so is if it was an <see cref="IEnumerable{T}">IEnumerable&lt;KeyValuePair&lt;string, TValue&gt;&gt;</see>.
 /// Declare your DTO properties with a <see cref="JsonConverterAttribute"/> that uses this factory, if they are an <see cref="IDictionary{TKey, TValue}"/> and TKey is a string.
 /// This ensures that a HAL-Forms resource can be saved.
 /// </summary>

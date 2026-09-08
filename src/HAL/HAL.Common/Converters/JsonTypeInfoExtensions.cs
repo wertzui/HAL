@@ -493,7 +493,7 @@ public static class JsonTypeInfoExtensions
         if (!type.IsGenericType)
             return type.Name;
 
-        var genericTypeName = type.Name.Substring(0, type.Name.IndexOf('`'));
+        var genericTypeName = type.Name[..type.Name.IndexOf('`')];
         var genericArgs = string.Join(", ", type.GetGenericArguments().Select(GetPrettyName));
         return $"{genericTypeName}<{genericArgs}>";
     }

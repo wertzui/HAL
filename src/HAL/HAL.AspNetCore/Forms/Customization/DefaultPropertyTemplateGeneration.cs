@@ -529,7 +529,7 @@ namespace HAL.AspNetCore.Forms.Customization
             if (link is null)
                 return;
 
-            bool isMultiSelect = property.PropertyType.IsAssignableTo(typeof(IEnumerable));
+            var isMultiSelect = property.PropertyType.IsAssignableTo(typeof(IEnumerable));
 
             template.Type = null; // Either type or options can be set, but not both.
             template.Options = new Options<object?>(link)
@@ -549,7 +549,7 @@ namespace HAL.AspNetCore.Forms.Customization
         /// <param name="formTemplateFactory">The factory which is currently calling this customization.</param>
         private static async ValueTask AddTypeInformationAsync(Property template, PropertyInfo property, IFormTemplateFactory formTemplateFactory)
         {
-            Type propertyType = property.PropertyType;
+            var propertyType = property.PropertyType;
             var nullablePropertyType = Nullable.GetUnderlyingType(propertyType);
             var nullabilityInfo = NullabilityContext.Create(property);
             template.Required = nullabilityInfo.WriteState is NullabilityState.NotNull;

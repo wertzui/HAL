@@ -60,7 +60,7 @@ public class ODataResourceFactory : ResourceFactory, IODataResourceFactory
         if (string.IsNullOrWhiteSpace(singleGetMethod))
             throw new ArgumentException($"'{nameof(singleGetMethod)}' cannot be null or whitespace.", nameof(singleGetMethod));
 
-        (long skip, long top) = _oDataQueryFactory.GetSkipAndTop(maxTop, oDataQueryOptions);
+        (var skip, var top) = _oDataQueryFactory.GetSkipAndTop(maxTop, oDataQueryOptions);
 
         var currentPage = (skip == 0 ? 0 : skip / top) + 1;
         var totalPages = totalCount.HasValue ? (long)Math.Ceiling((double)totalCount / top) : default;

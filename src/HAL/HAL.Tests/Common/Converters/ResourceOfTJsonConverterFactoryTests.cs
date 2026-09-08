@@ -19,7 +19,7 @@ public class ResourceOfTJsonConverterFactoryTests
         var tcs = new TaskCompletionSource<bool>();
 
         var tasks = new Task[100];
-        for (int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = Task.Run(async () =>
             {

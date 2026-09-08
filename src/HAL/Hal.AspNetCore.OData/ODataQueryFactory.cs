@@ -63,7 +63,7 @@ public class ODataQueryFactory : IODataQueryFactory
         string? nextHref = null;
         string? lastHref = null;
 
-        string firstHref = baseHref + GenerateQuery(rawValues, skipOverride: "0");
+        var firstHref = baseHref + GenerateQuery(rawValues, skipOverride: "0");
 
         if (skip > 0)
             prevHref = baseHref + GenerateQuery(rawValues, skipOverride: Math.Max(0, skip - top).ToString());

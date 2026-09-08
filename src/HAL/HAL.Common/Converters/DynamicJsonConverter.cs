@@ -30,7 +30,7 @@ public class DynamicJsonConverter : JsonConverter<dynamic?>
 
         if (reader.TokenType == JsonTokenType.Number)
         {
-            if (reader.TryGetInt64(out long l))
+            if (reader.TryGetInt64(out var l))
             {
                 return l;
             }
@@ -40,7 +40,7 @@ public class DynamicJsonConverter : JsonConverter<dynamic?>
 
         if (reader.TokenType == JsonTokenType.String)
         {
-            if (reader.TryGetDateTime(out DateTime datetime))
+            if (reader.TryGetDateTime(out var datetime))
             {
                 return datetime;
             }
@@ -50,11 +50,11 @@ public class DynamicJsonConverter : JsonConverter<dynamic?>
 
         if (reader.TokenType == JsonTokenType.StartObject)
         {
-            using JsonDocument documentV = JsonDocument.ParseValue(ref reader);
+            using var documentV = JsonDocument.ParseValue(ref reader);
             return ReadObject(documentV.RootElement);
         }
         // Use JsonElement as fallback.
-        JsonDocument document = JsonDocument.ParseValue(ref reader);
+        var document = JsonDocument.ParseValue(ref reader);
         return document.RootElement.Clone();
     }
 
