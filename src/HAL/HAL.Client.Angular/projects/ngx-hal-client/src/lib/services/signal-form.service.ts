@@ -1,5 +1,5 @@
 import { Service, signal, WritableSignal } from "@angular/core";
-import { form, required, email, min, max, minLength, maxLength, pattern, applyEach, SchemaPath, SchemaPathTree, FieldTree } from '@angular/forms/signals';
+import { form, required, requiredError, validate, metadata, REQUIRED, email, min, max, minLength, maxLength, pattern, applyEach, SchemaPath, SchemaPathTree, FieldTree } from '@angular/forms/signals';
 import { Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates, NumberTemplates } from "../models/formsResource";
 
 /**
@@ -279,8 +279,23 @@ export class SignalFormService {
       return;
     }
 
-    if (property.required)
-      required(fieldPath as SchemaPath<SimpleValue>);
+    if (property.required) {
+      if (property.type === PropertyType.Bool) {
+        // Angular's built-in `required()` validator treats `false` as "empty" (see its internal
+        // `isEmpty()` helper), which is correct for a plain "must be checked" checkbox, but wrong for
+        // a nullable `Bool` property (rendered as a tri-state checkbox, e.g. RESTworld's
+        // `rw-tri-state-checkbox`): there, `false` is a valid, deliberate answer and only
+        // `null`/`undefined` means "not yet answered". Use a corrected, `null`-only check instead,
+        // while still setting the `REQUIRED` metadata (as `required()` itself would) so bound
+        // controls/directives that read `field.required()` keep reflecting the required state.
+        const boolFieldPath = fieldPath as SchemaPath<boolean | null | undefined>;
+        metadata(boolFieldPath, REQUIRED, () => true);
+        validate(boolFieldPath, ctx => ctx.value() == null ? requiredError() : undefined);
+      }
+      else {
+        required(fieldPath as SchemaPath<SimpleValue>);
+      }
+    }
     if (property.type === PropertyType.Email)
       email(fieldPath as SchemaPath<string>);
     if (property.max !== undefined && property.max !== null)

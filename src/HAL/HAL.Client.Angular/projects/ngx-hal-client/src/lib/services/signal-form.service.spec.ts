@@ -225,6 +225,59 @@ describe('SignalFormService', () => {
                 expect(asAny(signalForm.form).name().valid()).toBe(true);
             });
 
+            describe('required Bool properties (tri-state checkbox)', () => {
+                // Angular's built-in `required()` validator treats `false` as "empty" (correct for a plain
+                // "must be checked" checkbox), but a `Bool` property is rendered as a tri-state checkbox
+                // (true/false/null) where `false` is a valid, deliberate answer and only `null`/`undefined`
+                // means "not yet answered". These tests guard against regressing back to the built-in
+                // `required()` semantics for `Bool` properties.
+                it('treats false as a valid value', () => {
+                    const template = buildTemplate([
+                        buildProperty({ name: 'active', type: PropertyType.Bool, required: true, value: false }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(asAny(signalForm.form).active().required()).toBe(true);
+                    expect(asAny(signalForm.form).active().valid()).toBe(true);
+                    expect(asAny(signalForm.form).active().errors()).toEqual([]);
+                });
+
+                it('treats true as a valid value', () => {
+                    const template = buildTemplate([
+                        buildProperty({ name: 'active', type: PropertyType.Bool, required: true, value: true }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(asAny(signalForm.form).active().required()).toBe(true);
+                    expect(asAny(signalForm.form).active().valid()).toBe(true);
+                });
+
+                it('treats null as invalid, with a "required" error', () => {
+                    const template = buildTemplate([
+                        buildProperty({ name: 'active', type: PropertyType.Bool, required: true, value: null }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(asAny(signalForm.form).active().required()).toBe(true);
+                    expect(asAny(signalForm.form).active().valid()).toBe(false);
+                    expect(asAny(signalForm.form).active().errors().some((e: { kind: string }) => e.kind === 'required')).toBe(true);
+                });
+
+                it('is valid regardless of value when not required', () => {
+                    const template = buildTemplate([
+                        buildProperty({ name: 'active', type: PropertyType.Bool, value: null }),
+                    ]);
+
+                    const signalForm = TestBed.runInInjectionContext(() => service.createSignalFormFromTemplate(template));
+
+                    expect(asAny(signalForm.form).active().required()).toBe(false);
+                    expect(asAny(signalForm.form).active().valid()).toBe(true);
+                });
+            });
+
             it('treats a valid email address as valid', () => {
 
                 const template = buildTemplate([
