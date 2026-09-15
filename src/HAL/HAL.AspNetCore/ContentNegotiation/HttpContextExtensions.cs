@@ -1,21 +1,20 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System;
 
-namespace HAL.AspNetCore.ContentNegotiation
+namespace HAL.AspNetCore.ContentNegotiation;
+
+/// <summary>
+/// Contains extension methods for the <see cref="HttpContext"/> class.
+/// </summary>
+public static class HttpContextExtensions
 {
     /// <summary>
-    /// Contains extension methods for the <see cref="HttpContext"/> class.
+    /// Gets the <see cref="IAcceptHeaderFeature"/> from the <see cref="HttpContext.Features"/> of the request.
     /// </summary>
-    public static class HttpContextExtensions
+    public static IAcceptHeaderFeature GetAcceptHeaders(this HttpContext context)
     {
-        /// <summary>
-        /// Gets the <see cref="IAcceptHeaderFeature"/> from the <see cref="HttpContext.Features"/> of the request.
-        /// </summary>
-        public static IAcceptHeaderFeature GetAcceptHeaders(this HttpContext context)
-        {
-            ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(context);
 
-            return context.Features.Get<IAcceptHeaderFeature>() ?? throw new InvalidOperationException($"The {nameof(AcceptHeaderMiddleware)} was not registered.");
-        }
+        return context.Features.Get<IAcceptHeaderFeature>() ?? throw new InvalidOperationException($"The {nameof(AcceptHeaderMiddleware)} was not registered.");
     }
 }

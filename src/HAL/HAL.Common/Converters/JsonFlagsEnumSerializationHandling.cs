@@ -1,17 +1,16 @@
-﻿namespace HAL.Common
+﻿namespace HAL.Common;
+
+/// <summary>
+/// Defines how flags enums are serialized.
+/// </summary>
+public enum JsonFlagsEnumSerializationHandling
 {
     /// <summary>
-    /// Defines how flags enums are serialized.
+    /// Serialize flags enum as an array of strings.
     /// </summary>
-    public enum JsonFlagsEnumSerializationHandling
-    {
-        /// <summary>
-        /// Serialize flags enum as an array of strings.
-        /// </summary>
-        Array,
-        /// <summary>
-        /// Serialize flags enum as a comma separated string.
-        /// </summary>
-        String
-    }
+    Array,
+    /// <summary>
+    /// Serialize flags enum as a comma separated string.
+    /// </summary>
+    String
 }

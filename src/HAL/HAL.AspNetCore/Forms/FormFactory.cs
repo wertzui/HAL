@@ -50,7 +50,9 @@ public class FormFactory : IFormFactory
     protected ILinkFactory LinkFactory { get; }
 
     /// <summary>
-    /// The customizations which are applied in <see cref="CreateResourceForEndpointAsync{T}(T, HttpMethod, string, string, string, string?, object?)"/>.
+    /// The customizations which are applied in
+    /// <see cref="CreateResourceForEndpointAsync{TValue, TTemplate}(TValue, HttpMethod, string, string, string, string?, object?)"/>
+    /// .
     /// </summary>
     protected IEnumerable<IFormsResourceGenerationCustomization> Customizations { get; }
 
@@ -65,33 +67,8 @@ public class FormFactory : IFormFactory
     protected IFormValueFactory ValueFactory { get; }
 
     /// <inheritdoc/>
-    public ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json)
-        => CreateFormAsync(value, target, method.Method, title, contentType);
-
-    /// <inheritdoc/>
     public ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json)
         => CreateFormAsync<TValue, TTemplate>(value, target, method.Method, title, contentType);
-
-    /// <inheritdoc/>
-    public async ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
-    {
-        var name = $"FormTemplate_{typeof(T).FullName ?? typeof(T).Name}_{contentType}";
-
-        // We do not cache method and title so we can reuse the same template for Create (POST)
-        // and Edit (PUT) forms.
-        if (!Cache.TryGetValue(name, out FormTemplate? template) || template is null)
-        {
-            template = await TemplateFactory.CreateTemplateForAsync<T>("template_does_not_need_a_method", contentType: contentType);
-            Cache.Set(name, template);
-        }
-
-        var filled = await ValueFactory.FillWithAsync(template, value);
-        filled.Method = method;
-        filled.Title = title;
-        filled.Target = target;
-
-        return filled;
-    }
 
     /// <inheritdoc/>
     public async ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
@@ -118,16 +95,16 @@ public class FormFactory : IFormFactory
     public FormsResource CreateResource(FormTemplate defaultTemplate) => new(new Dictionary<string, FormTemplate> { { Constants.DefaultFormTemplateName, defaultTemplate } });
 
     /// <inheritdoc/>
-    public async ValueTask<FormsResource> CreateResourceForEndpointAsync<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null)
+    public async ValueTask<FormsResource> CreateResourceForEndpointAsync<TValue, TTemplate>(TValue value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null)
     {
         var resource = new FormsResource(new Dictionary<string, FormTemplate>())
             .AddSelfLink(LinkFactory, action, controller, routeValues);
 
         foreach (var customization in Customizations)
         {
-            if (customization.AppliesTo(resource, value, method, title, contentType, action, controller, routeValues))
+            if (customization.AppliesTo<TValue, TTemplate>(resource, value, method, title, contentType, action, controller, routeValues))
             {
-                await customization.ApplyAsync(resource, value, method, title, contentType, action, controller, routeValues, this);
+                await customization.ApplyAsync<TValue, TTemplate>(resource, value, method, title, contentType, action, controller, routeValues, this);
             }
         }
 

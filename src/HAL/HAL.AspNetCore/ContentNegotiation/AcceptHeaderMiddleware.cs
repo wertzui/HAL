@@ -2,29 +2,28 @@
 using Microsoft.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace HAL.AspNetCore.ContentNegotiation
+namespace HAL.AspNetCore.ContentNegotiation;
+
+/// <summary>
+/// This filter adds an <see cref="IAcceptHeaderFeature"/> to the <see cref="HttpContext.Features"/> of the request.
+/// </summary>
+public class AcceptHeaderMiddleware
 {
+    private readonly RequestDelegate _next;
+
     /// <summary>
-    /// This filter adds an <see cref="IAcceptHeaderFeature"/> to the <see cref="HttpContext.Features"/> of the request.
+    /// Creates a new instance of the <see cref="AcceptHeaderMiddleware"/> class.
     /// </summary>
-    public class AcceptHeaderMiddleware
+    public AcceptHeaderMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
+        _next = next ?? throw new System.ArgumentNullException(nameof(next));
+    }
+    /// <inheritdoc/>
+    public Task InvokeAsync(HttpContext context)
+    {
+        var feature = new AcceptHeaderFeature(context.Request.Headers.GetCommaSeparatedValues(HeaderNames.Accept));
+        context.Features.Set<IAcceptHeaderFeature>(feature);
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="AcceptHeaderMiddleware"/> class.
-        /// </summary>
-        public AcceptHeaderMiddleware(RequestDelegate next)
-        {
-            _next = next ?? throw new System.ArgumentNullException(nameof(next));
-        }
-        /// <inheritdoc/>
-        public Task InvokeAsync(HttpContext context)
-        {
-            var feature = new AcceptHeaderFeature(context.Request.Headers.GetCommaSeparatedValues(HeaderNames.Accept));
-            context.Features.Set<IAcceptHeaderFeature>(feature);
-
-            return _next(context);
-        }
+        return _next(context);
     }
 }

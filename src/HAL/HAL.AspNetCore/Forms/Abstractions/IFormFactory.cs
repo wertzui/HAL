@@ -12,30 +12,6 @@ namespace HAL.AspNetCore.Forms.Abstractions;
 public interface IFormFactory
 {
     /// <summary>
-    /// Creates the <see cref="FormTemplate"/> for the given type and fills it with the given value.
-    /// </summary>
-    /// <typeparam name="T">The type to create the form template for.</typeparam>
-    /// <param name="value">The value to fill the form template with.</param>
-    /// <param name="target">The URL to which the form is submitted to.</param>
-    /// <param name="method">The HTTP method to use when submitting the form.</param>
-    /// <param name="title">The title of the form.</param>
-    /// <param name="contentType">The content type that is used when submitting the form.</param>
-    /// <returns>A <see cref="FormTemplate"/> for the type, filled with the given values.</returns>
-    ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json);
-
-    /// <summary>
-    /// Creates the <see cref="FormTemplate"/> for the given type and fills it with the given value.
-    /// </summary>
-    /// <typeparam name="T">The type to create the form template for.</typeparam>
-    /// <param name="value">The value to fill the form template with.</param>
-    /// <param name="target">The URL to which the form is submitted to.</param>
-    /// <param name="method">The HTTP method to use when submitting the form.</param>
-    /// <param name="title">The title of the form.</param>
-    /// <param name="contentType">The content type that is used when submitting the form.</param>
-    /// <returns>A <see cref="FormTemplate"/> for the type, filled with the given values.</returns>
-    ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
-
-    /// <summary>
     /// Creates the <see cref="FormTemplate"/> using one type for values and another type for validations.
     /// </summary>
     /// <typeparam name="TTemplate">The type that defines the editable properties and validations.</typeparam>
@@ -69,10 +45,11 @@ public interface IFormFactory
     FormsResource CreateResource(FormTemplate defaultTemplate);
 
     /// <summary>
-    /// Creates a resource which holds a "default" form template for the given type with the
-    /// given value.
+    /// Creates a resource which holds a "default" form template using one type for values and another type for
+    /// validations.
     /// </summary>
-    /// <typeparam name="T">The type to create the form template for.</typeparam>
+    /// <typeparam name="TTemplate">The type that defines the editable properties and validations.</typeparam>
+    /// <typeparam name="TValue">The type whose values are used to fill the form.</typeparam>
     /// <param name="value">The value to fill the form template with.</param>
     /// <param name="method">The HTTP method to use when submitting the form.</param>
     /// <param name="title">The title of the form.</param>
@@ -81,5 +58,5 @@ public interface IFormFactory
     /// <param name="controller">The controller to which the form will be submitted to.</param>
     /// <param name="routeValues">The route values to which the form will be submitted to.</param>
     /// <returns></returns>
-    ValueTask<FormsResource> CreateResourceForEndpointAsync<T>(T value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null);
+    ValueTask<FormsResource> CreateResourceForEndpointAsync<TValue, TTemplate>(TValue value, HttpMethod method, string title, string contentType = Constants.MediaTypes.Json, string action = "Get", string? controller = null, object? routeValues = null);
 }

@@ -62,9 +62,9 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
 
         foreach (var customization in Customizations)
         {
-            if (customization.AppliesTo(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null))
+            if (customization.AppliesTo<Page?, TDto>(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null))
             {
-                await customization.ApplyAsync(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null, this);
+                await customization.ApplyAsync<Page?, TDto>(formResource, formResource.State, HttpMethod.Parse(searchForm.Method), searchForm.Title!, searchForm.ContentType, listGetMethod, controller, null, this);
             }
         }
 
@@ -195,7 +195,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
 
     private async ValueTask<FormTemplate> CreateEditFormTemplateAsync<TDto>(string? target)
     {
-        var editForm = await TemplateFactory.CreateTemplateForAsync<TDto>(HttpMethod.Put.ToString(), "Edit");
+        var editForm = await TemplateFactory.CreateTemplateForAsync<TDto, TDto>(HttpMethod.Put.ToString(), "Edit");
         editForm.Target = target;
 
         editForm.Properties ??= [];
@@ -205,7 +205,7 @@ public class ODataFormFactory : FormFactory, IODataFormFactory
 
     private async ValueTask<FormTemplate> CreateSearchFormTemplateAsync<TDto>(string listGetMethod)
     {
-        var searchForm = await TemplateFactory.CreateTemplateForAsync<TDto>(HttpMethod.Get.ToString(), "Search", "application/x-www-form-urlencoded");
+        var searchForm = await TemplateFactory.CreateTemplateForAsync<TDto, TDto>(HttpMethod.Get.ToString(), "Search", "application/x-www-form-urlencoded");
         searchForm.Target = listGetMethod;
 
         if (searchForm.Properties is not null)
