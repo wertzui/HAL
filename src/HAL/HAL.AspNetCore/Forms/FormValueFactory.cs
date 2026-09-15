@@ -3,6 +3,7 @@ using HAL.AspNetCore.Forms.Customization;
 using HAL.Common.Forms;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -46,7 +47,12 @@ public class FormValueFactory : IFormValueFactory
         var filledProperties = new List<Property>(properties.Count);
         foreach (var property in properties)
         {
-            var propertyInfo = GetPropertyInfo(property, dtoValueType);
+            if (!TryGetPropertyInfo(property, dtoValueType, out var propertyInfo))
+            {
+                filledProperties.Add(property);
+                continue;
+            }
+
             var value = propertyInfo.GetValue(dtoValue);
             var filledProperty = await FillPropertyAsync(propertyInfo, property, value, dtoValue);
 
@@ -90,11 +96,9 @@ public class FormValueFactory : IFormValueFactory
         return filled;
     }
 
-    private static PropertyInfo GetPropertyInfo(Property halProperty, Type valueType)
+    private static bool TryGetPropertyInfo(Property halProperty, Type valueType, [NotNullWhen(true)] out PropertyInfo? propertyInfo)
     {
-        var propertyInfo = valueType.GetProperty(halProperty.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase) ??
-            throw new ArgumentException($"The HAL-Forms property {halProperty.Name} does not exist in the value Type {valueType.Name} (case is ignored). This may indicate that the property name has been changed in a customization to something that can no longer relate to the real property.", nameof(halProperty));
-
-        return propertyInfo;
+        propertyInfo = valueType.GetProperty(halProperty.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        return propertyInfo is not null;
     }
 }
