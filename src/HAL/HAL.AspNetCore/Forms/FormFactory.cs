@@ -69,16 +69,40 @@ public class FormFactory : IFormFactory
         => CreateFormAsync(value, target, method.Method, title, contentType);
 
     /// <inheritdoc/>
+    public ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json)
+        => CreateFormAsync<TValue, TTemplate>(value, target, method.Method, title, contentType);
+
+    /// <inheritdoc/>
     public async ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
     {
-        var type = typeof(T);
-        var name = "FormTemplate_" + (type.FullName ?? type.Name);
+        var name = $"FormTemplate_{typeof(T).FullName ?? typeof(T).Name}_{contentType}";
 
         // We do not cache method and title so we can reuse the same template for Create (POST)
         // and Edit (PUT) forms.
         if (!Cache.TryGetValue(name, out FormTemplate? template) || template is null)
         {
             template = await TemplateFactory.CreateTemplateForAsync<T>("template_does_not_need_a_method", contentType: contentType);
+            Cache.Set(name, template);
+        }
+
+        var filled = await ValueFactory.FillWithAsync(template, value);
+        filled.Method = method;
+        filled.Title = title;
+        filled.Target = target;
+
+        return filled;
+    }
+
+    /// <inheritdoc/>
+    public async ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
+    {
+        var name = $"FormTemplate_{typeof(TValue).FullName ?? typeof(TValue).Name}_{typeof(TTemplate).FullName ?? typeof(TTemplate).Name}_{contentType}";
+
+        // We do not cache method and title so we can reuse the same template for Create (POST)
+        // and Edit (PUT) forms.
+        if (!Cache.TryGetValue(name, out FormTemplate? template) || template is null)
+        {
+            template = await TemplateFactory.CreateTemplateForAsync<TValue, TTemplate>("template_does_not_need_a_method", contentType: contentType);
             Cache.Set(name, template);
         }
 

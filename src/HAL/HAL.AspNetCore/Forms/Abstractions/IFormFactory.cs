@@ -36,6 +36,32 @@ public interface IFormFactory
     ValueTask<FormTemplate> CreateFormAsync<T>(T value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
 
     /// <summary>
+    /// Creates the <see cref="FormTemplate"/> using one type for values and another type for validations.
+    /// </summary>
+    /// <typeparam name="TTemplate">The type that defines the editable properties and validations.</typeparam>
+    /// <typeparam name="TValue">The type whose values are used to fill the form.</typeparam>
+    /// <param name="value">The value to fill the form template with.</param>
+    /// <param name="target">The URL to which the form is submitted to.</param>
+    /// <param name="method">The HTTP method to use when submitting the form.</param>
+    /// <param name="title">The title of the form.</param>
+    /// <param name="contentType">The content type that is used when submitting the form.</param>
+    /// <returns>A <see cref="FormTemplate"/> combining values and validations from different types.</returns>
+    ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, HttpMethod method, string? title = null, string contentType = Constants.MediaTypes.Json);
+
+    /// <summary>
+    /// Creates the <see cref="FormTemplate"/> using one type for values and another type for validations.
+    /// </summary>
+    /// <typeparam name="TTemplate">The type that defines the editable properties and validations.</typeparam>
+    /// <typeparam name="TValue">The type whose values are used to fill the form.</typeparam>
+    /// <param name="value">The value to fill the form template with.</param>
+    /// <param name="target">The URL to which the form is submitted to.</param>
+    /// <param name="method">The HTTP method to use when submitting the form.</param>
+    /// <param name="title">The title of the form.</param>
+    /// <param name="contentType">The content type that is used when submitting the form.</param>
+    /// <returns>A <see cref="FormTemplate"/> combining values and validations from different types.</returns>
+    ValueTask<FormTemplate> CreateFormAsync<TValue, TTemplate>(TValue value, string target, string method, string? title = null, string contentType = Constants.MediaTypes.Json);
+
+    /// <summary>
     /// Creates an empty <see cref="FormsResource"/>.
     /// </summary>
     /// <param name="defaultTemplate">The "default" template.</param>

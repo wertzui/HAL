@@ -48,7 +48,46 @@ public class FormTemplateFactory : IFormTemplateFactory
     }
 
     /// <inheritdoc/>
+    public async ValueTask<FormTemplate> CreateTemplateForAsync(Type valueType, Type templateType, string method, string? title = null, string contentType = Constants.MediaTypes.Json)
+    {
+        ArgumentNullException.ThrowIfNull(valueType);
+        ArgumentNullException.ThrowIfNull(templateType);
+
+        var properties = await CreatePropertiesForAsync(valueType, templateType);
+
+        var formTemplate = new FormTemplate
+        {
+            ContentType = contentType,
+            Properties = properties,
+            Title = title
+        };
+
+        if (!string.IsNullOrWhiteSpace(method))
+            formTemplate.Method = method;
+
+        return formTemplate;
+    }
+
+    /// <inheritdoc/>
     public ValueTask<FormTemplate> CreateTemplateForAsync<TDto>(string method, string? title = null, string contentType = Constants.MediaTypes.Json) => CreateTemplateForAsync(typeof(TDto), method, title, contentType);
+
+    /// <inheritdoc/>
+    public async ValueTask<FormTemplate> CreateTemplateForAsync<TValue, TTemplate>(string method, string? title = null, string contentType = Constants.MediaTypes.Json)
+    {
+        var properties = await CreatePropertiesForAsync(typeof(TValue), typeof(TTemplate));
+
+        var formTemplate = new FormTemplate
+        {
+            ContentType = contentType,
+            Properties = properties,
+            Title = title
+        };
+
+        if (!string.IsNullOrWhiteSpace(method))
+            formTemplate.Method = method;
+
+        return formTemplate;
+    }
 
     /// <inheritdoc/>
     public async ValueTask<IDictionary<string, FormTemplate>> CreateTemplatesWithDefaultEntryAsync(Type dtoType, string? method, string? title = null, string contentType = Constants.MediaTypes.Json)
@@ -80,12 +119,47 @@ public class FormTemplateFactory : IFormTemplateFactory
         return properties;
     }
 
+    private async ValueTask<ICollection<Property>> CreatePropertiesForAsync(Type valueType, Type templateType)
+    {
+        var templateProperties = await CreatePropertiesForAsync(templateType);
+        var properties = new List<Property>(templateProperties.Count);
+        var propertyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var property in templateProperties)
+        {
+            properties.Add(property);
+            propertyNames.Add(property.Name);
+        }
+
+        var valuePropertyInfos = valueType.GetProperties()
+            .OrderBy(property => (property.GetCustomAttribute<DisplayAttribute>(true)?.GetOrder()).GetValueOrDefault());
+
+        foreach (var propertyInfo in valuePropertyInfos)
+        {
+            var propertyName = _propertyNamingPolicy.ConvertName(propertyInfo.Name);
+            if (propertyNames.Contains(propertyName))
+                continue;
+
+            var propertyResult = await CreatePropertyTemplateAsync(propertyInfo, skipValidationAttributes: true);
+            if (!propertyResult.Include)
+                continue;
+
+            properties.Add(propertyResult.Property!);
+            propertyNames.Add(propertyResult.Property.Name);
+        }
+
+        return properties;
+    }
+
     /// <summary>
     /// Creates the template for the given property.
     /// </summary>
     /// <param name="propertyInfo">The property to create the template for.</param>
     /// <returns>The generated property template.</returns>
-    private async ValueTask<PropertyCreationResult> CreatePropertyTemplateAsync(PropertyInfo propertyInfo)
+    private ValueTask<PropertyCreationResult> CreatePropertyTemplateAsync(PropertyInfo propertyInfo)
+        => CreatePropertyTemplateAsync(propertyInfo, skipValidationAttributes: false);
+
+    private async ValueTask<PropertyCreationResult> CreatePropertyTemplateAsync(PropertyInfo propertyInfo, bool skipValidationAttributes)
     {
         var halProperty = new Property(_propertyNamingPolicy.ConvertName(propertyInfo.Name));
 
@@ -116,7 +190,22 @@ public class FormTemplateFactory : IFormTemplateFactory
             }
         }
 
+        if (skipValidationAttributes)
+            ClearValidationMetadata(halProperty);
+
         return PropertyCreationResult.Created(halProperty);
+    }
+
+    private static void ClearValidationMetadata(Property property)
+    {
+        property.Max = null;
+        property.MaxLength = null;
+        property.Min = null;
+        property.MinLength = null;
+        property.Options = null;
+        property.Regex = null;
+        property.Required = false;
+        property.Step = null;
     }
 
     private class PropertyCreationResult
