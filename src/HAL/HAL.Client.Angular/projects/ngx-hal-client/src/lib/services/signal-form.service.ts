@@ -1,6 +1,6 @@
 import { Service, signal, WritableSignal } from "@angular/core";
-import { form, required, requiredError, validate, metadata, REQUIRED, email, min, max, minLength, maxLength, pattern, applyEach, SchemaPath, SchemaPathTree, FieldTree } from '@angular/forms/signals';
-import { Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates, NumberTemplates } from "../models/formsResource";
+import { applyEach, email, FieldTree, form, max, maxLength, metadata, min, minLength, pattern, required, REQUIRED, requiredError, SchemaPath, SchemaPathTree, validate } from '@angular/forms/signals';
+import { NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates } from "../models/formsResource";
 
 /**
  * Wraps the signal model and the form field tree created by Signal Forms.
@@ -249,6 +249,10 @@ export class SignalFormService {
   }
 
   private applyValidationFromProperty(property: Property<SimpleValue, string, string>, fieldPath: SchemaPath<unknown>): void {
+    // Don't apply validation to read-only properties, because their values cannot be changed by the user.
+    if (property.readOnly)
+      return;
+
     if (property.type === PropertyType.Object) {
       const defaultTemplate = property._templates['default'];
       if (defaultTemplate) {
