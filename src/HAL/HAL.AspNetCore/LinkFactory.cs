@@ -496,16 +496,33 @@ public partial class LinkFactory : ILinkFactory
 
     private IEnumerable<ApiDescription> GetActionDescriptorsForVersion(ApiVersion? version)
     {
-        var descriptorGroups = ApiExplorer.ApiDescriptionGroups.Items;
+        var descriptors = ApiExplorer.ApiDescriptionGroups.Items
+            .SelectMany(g => g.Items);
 
         if (version is not null)
         {
-            return descriptorGroups
-                .SelectMany(g => g.Items)
+            return descriptors
                 .Where(d => d.GetProperty<ApiVersion>() == version);
         }
 
-        return descriptorGroups[^1].Items;
+        // When no version is given, use the latest version in which each endpoint exists.
+        // An endpoint does not need to exist in every version, so we cannot just take the
+        // descriptors of the latest version group.
+        return descriptors
+            .GroupBy(GetVersionIndependentEndpointKey)
+            .SelectMany(g =>
+            {
+                var latestVersion = g.Max(d => d.GetProperty<ApiVersion>());
+                return g.Where(d => d.GetProperty<ApiVersion>() == latestVersion);
+            });
+    }
+
+    private static (string Controller, string Action, string? Method) GetVersionIndependentEndpointKey(ApiDescription description)
+    {
+        if (description.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
+            return (RemoveVersionFrom(controllerActionDescriptor.ControllerName).ToUpperInvariant(), controllerActionDescriptor.ActionName.ToUpperInvariant(), description.HttpMethod);
+
+        return (description.ActionDescriptor.DisplayName ?? description.ActionDescriptor.Id, string.Empty, description.HttpMethod);
     }
 
     private IEnumerable<ControllerActionDescriptor> GetControllerActionDescriptorsForVersion(ApiVersion? version)

@@ -1,6 +1,9 @@
-﻿using HAL.AspNetCore;
+﻿using Asp.Versioning;
+using HAL.AspNetCore;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
@@ -16,7 +19,7 @@ public class LinkFactoryTests
     /// Creates a <see cref="LinkFactory"/> whose underlying <see cref="LinkGenerator"/> always
     /// returns <paramref name="generatedUri"/> regardless of the route values passed.
     /// </summary>
-    private static LinkFactory CreateSut(string generatedUri = "http://mockuri")
+    private static LinkFactory CreateSut(string generatedUri = "http://mockuri", IApiDescriptionGroupCollectionProvider? apiExplorer = null)
     {
         var httpContextAccessor = new HttpContextAccessor
         {
@@ -26,7 +29,82 @@ public class LinkFactoryTests
         linkGeneratorMock
             .GetUriByAddress(httpContextAccessor.HttpContext, Arg.Any<RouteValuesAddress>(), Arg.Any<RouteValueDictionary>(), Arg.Any<RouteValueDictionary?>(), Arg.Any<string?>(), Arg.Any<HostString?>(), Arg.Any<PathString?>(), Arg.Any<FragmentString>(), Arg.Any<LinkOptions?>())
             .Returns(generatedUri);
-        return new LinkFactory(linkGeneratorMock, httpContextAccessor, Substitute.For<IApiDescriptionGroupCollectionProvider>());
+        return new LinkFactory(linkGeneratorMock, httpContextAccessor, apiExplorer ?? Substitute.For<IApiDescriptionGroupCollectionProvider>());
+    }
+
+    private static ApiDescription CreateApiDescription(string controllerName, string actionName, string routeTemplate, ApiVersion version)
+    {
+        var description = new ApiDescription
+        {
+            ActionDescriptor = new ControllerActionDescriptor
+            {
+                ControllerName = controllerName,
+                ActionName = actionName,
+                EndpointMetadata = [new RouteAttribute(routeTemplate)],
+                Parameters = []
+            },
+            HttpMethod = "GET"
+        };
+        description.SetProperty(version);
+        return description;
+    }
+
+    private static IApiDescriptionGroupCollectionProvider CreateApiExplorer(params ApiDescriptionGroup[] groups)
+    {
+        var apiExplorer = Substitute.For<IApiDescriptionGroupCollectionProvider>();
+        apiExplorer.ApiDescriptionGroups.Returns(new ApiDescriptionGroupCollection(groups, 1));
+        return apiExplorer;
+    }
+
+    [TestMethod]
+    public void CreateTemplated_without_version_finds_controller_that_only_exists_in_an_older_version()
+    {
+        // Arrange – "Foo" only exists in v1 while "Bar" only exists in v2 (the last group).
+        var apiExplorer = CreateApiExplorer(
+            new ApiDescriptionGroup("v1", [CreateApiDescription("Foo", "Get", "v1/Foo", new ApiVersion(1))]),
+            new ApiDescriptionGroup("v2", [CreateApiDescription("Bar", "Get", "v2/Bar", new ApiVersion(2))]));
+        var sut = CreateSut(apiExplorer: apiExplorer);
+
+        // Act
+        var links = sut.CreateTemplated("Get", "Foo", version: null);
+
+        // Assert
+        Assert.HasCount(1, links);
+        Assert.Contains("v1/Foo", links.First().Href);
+    }
+
+    [TestMethod]
+    public void CreateTemplated_without_version_uses_latest_version_of_the_endpoint()
+    {
+        // Arrange – "Foo" exists in v1 and v2.
+        var apiExplorer = CreateApiExplorer(
+            new ApiDescriptionGroup("v1", [CreateApiDescription("Foo", "Get", "v1/Foo", new ApiVersion(1))]),
+            new ApiDescriptionGroup("v2", [CreateApiDescription("Foo", "Get", "v2/Foo", new ApiVersion(2))]));
+        var sut = CreateSut(apiExplorer: apiExplorer);
+
+        // Act
+        var links = sut.CreateTemplated("Get", "Foo", version: null);
+
+        // Assert
+        Assert.HasCount(1, links);
+        Assert.Contains("v2/Foo", links.First().Href);
+    }
+
+    [TestMethod]
+    public void CreateTemplated_with_version_only_returns_endpoints_of_that_version()
+    {
+        // Arrange – "Foo" exists in v1 and v2.
+        var apiExplorer = CreateApiExplorer(
+            new ApiDescriptionGroup("v1", [CreateApiDescription("Foo", "Get", "v1/Foo", new ApiVersion(1))]),
+            new ApiDescriptionGroup("v2", [CreateApiDescription("Foo", "Get", "v2/Foo", new ApiVersion(2))]));
+        var sut = CreateSut(apiExplorer: apiExplorer);
+
+        // Act
+        var links = sut.CreateTemplated("Get", "Foo", new ApiVersion(1));
+
+        // Assert
+        Assert.HasCount(1, links);
+        Assert.Contains("v1/Foo", links.First().Href);
     }
 
     [TestMethod]
