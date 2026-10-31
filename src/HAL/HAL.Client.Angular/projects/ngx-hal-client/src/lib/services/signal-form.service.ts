@@ -1,4 +1,4 @@
-import { Service, signal, WritableSignal } from "@angular/core";
+import { inject, Injector, runInInjectionContext, Service, signal, WritableSignal } from "@angular/core";
 import { applyEach, email, FieldTree, form, max, maxLength, metadata, min, minLength, pattern, required, REQUIRED, requiredError, SchemaPath, SchemaPathTree, validate } from '@angular/forms/signals';
 import { NumberTemplates, Property, PropertyDto, PropertyType, SimpleValue, TemplateBase, Templates } from "../models/formsResource";
 
@@ -19,6 +19,11 @@ export interface SignalForm<T extends Record<string, unknown> = Record<string, u
  */
 @Service()
 export class SignalFormService {
+  private _injector: Injector;
+
+  constructor() {
+    this._injector = inject(Injector);
+  }
 
   /**
    * Creates signal forms from templates.
@@ -132,9 +137,12 @@ export class SignalFormService {
   ): SignalForm {
     const modelValue = model ?? this.buildModelFromTemplate(template);
     const modelSignal = signal(modelValue);
-    const signalForm = form(modelSignal, (schemaPath: SchemaPathTree<Record<string, unknown>>) => {
+
+    // form() requires an injection context (for whatever reason), so we need to wrap the form creation here.
+    // We are using the injector which got injected into this service to provide the necessary injection context for the form creation.
+    const signalForm = runInInjectionContext(this._injector, () => form(modelSignal, (schemaPath: SchemaPathTree<Record<string, unknown>>) => {
       this.applyValidationFromTemplate(template, schemaPath);
-    });
+    }));
 
     return { model: modelSignal, form: signalForm };
   }
